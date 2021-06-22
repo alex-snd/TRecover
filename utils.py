@@ -81,7 +81,6 @@ def clean_blogs(blogs_folder: str) -> None:
         for blog_file in [join(blogs_folder, file) for file in listdir(blogs_folder)]:
 
             text_flag = False
-            text = str()
 
             with open(blog_file, mode='r') as f:
                 while True:
@@ -117,8 +116,6 @@ def set_seeds(seed: int = 2531) -> None:
 
 def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int, dropout: float,
               device: torch.device = torch.device('cpu'), weights: str = None) -> ZReader:
-    assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
-
     model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
     if weights and isfile(weights) and exists(weights):
