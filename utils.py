@@ -1,8 +1,8 @@
 import re
-from datetime import datetime
 from os import listdir
-from os.path import join
+from os.path import join, exists, isfile
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -108,23 +108,29 @@ def clean_blogs(blogs_folder: str) -> None:
     print(f'Result size: {result_size}')
 
 
+def set_seeds(seed: int = 2531) -> None:
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # multi-GPU
+
+
 def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int, dropout: float,
-              device: torch.device = torch.device('cpu')) -> ZReader:
-    assert d_model % n_heads == 0
+              device: torch.device = torch.device('cpu'), weights: str = None) -> ZReader:
+    assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
 
-    return ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
+    model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
+    if weights and isfile(weights) and exists(weights):
+        model.load_parameters(weights, device=device)
 
-def save_parameters(epoch_idx: int, z_reader: ZReader) -> None:
-    date = datetime.now()
-    weights_name = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}_{epoch_idx}'
-
-    z_reader.save_parameters(filename=join(config.weights_path, weights_name))
+    return model
 
 
-def visualize_columns(grid: torch.tensor, delimiter: str = '|') -> None:
+def visualize_columns(grid: torch.tensor, delimiter: str = '') -> str:
     columns = list()
     max_depth = 0
+    visualization = str()
 
     for c in range(grid.size(0)):
         columns.append([Collate.num_to_alphabet[pos] for pos in range(grid.size(1)) if grid[c, pos]])
@@ -132,18 +138,19 @@ def visualize_columns(grid: torch.tensor, delimiter: str = '|') -> None:
 
     for d in range(max_depth):
         for c in range(grid.size(0)):
-            print(f'{delimiter}{columns[c][d]}' if d < len(columns[c]) else f'{delimiter} ', end='')
-        print(delimiter)
+            visualization += f'{delimiter}{columns[c][d]}' if d < len(columns[c]) else f'{delimiter} '
+        visualization += f'{delimiter}\n'
+
+    return visualization
 
 
-def visualize_target(tgt: torch.tensor, delimiter: str = '|') -> None:
+def visualize_target(tgt: torch.tensor, delimiter: str = '') -> str:
     tgt = [Collate.num_to_alphabet[ch_id] for ch_id in tgt.tolist()]
 
-    print(f'{delimiter}{delimiter.join(tgt)}{delimiter}')
+    return f'{delimiter}{delimiter.join(tgt)}{delimiter}'
 
 
-def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, width: int,
-              device: torch.device) -> list:
+def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
     step_candidates = list()
 
     for tgt_inp, score in candidates:
