@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 
 import config
 from data import WikiDataset, Collate
-from model import ZReader
 from scheduler import Scheduler, IdentityScheduler
 from utils import set_seeds, get_model, visualize_columns, visualize_target
 
@@ -38,9 +37,9 @@ class Trainer(object):
             self.n_columns_to_show = None
 
         date = datetime.now()
-        experiment_mark = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}'
+        self.experiment_mark = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}'
 
-        self.experiment_folder = join(working_dir, experiment_mark)
+        self.experiment_folder = join(working_dir, self.experiment_mark)
         self.weights_folder = join(self.experiment_folder, 'weights')
 
         if not exists(self.experiment_folder):
@@ -48,19 +47,16 @@ class Trainer(object):
         if not exists(self.weights_folder):
             mkdir(self.weights_folder)
 
-        self.__log_file = open(join(self.experiment_folder, f'{experiment_mark}.log'), mode='w')
+        self.__log_file = open(join(self.experiment_folder, f'{self.experiment_mark}.log'), mode='w')
+
+        self.__log_init_params()
 
     @property
     def lr(self) -> float:
         return self.optimizer.param_groups[0]['lr']
 
-    @staticmethod
-    def __get_step_weights_name(epoch_idx: int) -> str:
-        date = datetime.now()
-        return f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}_{epoch_idx}'
-
     def save_parameters(self, weights_name: str) -> None:
-        self.model.save_parameters(filename=join(self.weights_folder, weights_name))
+        self.model.save_parameters(filename=join(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
 
     def __train_step(self, offset: int, train_loader: DataLoader, accumulation_step: int = 1) -> None:
         self.model.train()
@@ -174,6 +170,9 @@ class Trainer(object):
     def train(self, n_epochs: int, train_loader: DataLoader, val_loader: DataLoader, vis_loader: DataLoader,
               epoch_seek: int = 0, accumulation_step: int = 1, vis_interval: int = 1, saving_interval: int = 1):
 
+        self.__log(f'Batch size: {train_loader.batch_size}')
+        self.__log(f'Accumulation step: {accumulation_step}')
+
         if len(train_loader) % accumulation_step != 0:
             self.__log('WARNING: Train dataset size must be evenly divisible by batch_size * accumulation_step')
 
@@ -189,7 +188,7 @@ class Trainer(object):
                     self.__vis_step(vis_loader)
 
                 if epoch_idx % saving_interval == 0:
-                    self.save_parameters(self.__get_step_weights_name(offset + len(train_loader)))
+                    self.save_parameters(str(offset + len(train_loader)))
 
         except KeyboardInterrupt:
             print('Interrupted')
@@ -199,14 +198,20 @@ class Trainer(object):
 
             self.close()
 
+    def close(self) -> None:
+        self.__log_file.close()
+
+    def __log_init_params(self) -> None:
+        self.__log(f'Date: {self.experiment_mark}')
+        self.__log(f'Model: {self.model}')
+        self.__log(f'Optimizer: {self.optimizer}'.replace('\n', ''))
+        self.__log(f'Scheduler: {self.scheduler}')
+
     def __log(self, info: str) -> None:
         self.__log_file.write(f'{info}\n')
 
         if self.verbose:
             print(info)
-
-    def close(self) -> None:
-        self.__log_file.close()
 
 
 def train() -> None:
@@ -234,9 +239,6 @@ def train() -> None:
     dropout = 0.1
     weights_name = ''
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
-
     # -----------------------------------------OPTIMIZATION PARAMETERS--------------------------------------------------
     criterion = CrossEntropyLoss(ignore_index=-1)
     lr = 0  # fictive with Scheduler
