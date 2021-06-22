@@ -31,10 +31,20 @@ class PositionalEncoding(nn.Module):
 
 class ZReader(nn.Module):
     def __init__(self, token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int,
-                 dropout):
+                 dropout: float):
+        assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
+
         super(ZReader, self).__init__()
-        self.scale = math.sqrt(d_model)
+
         self.token_size = token_size
+        self.pe_max_len = pe_max_len
+        self.num_layers = num_layers
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.d_ff = d_ff
+        self.dropout = dropout
+
+        self.scale = math.sqrt(d_model)
 
         self.mapping = nn.Linear(in_features=token_size, out_features=d_model)
 
@@ -52,6 +62,10 @@ class ZReader(nn.Module):
 
         self.init_weights()
 
+    def __str__(self) -> str:
+        return f'<ZReader(token_size={self.token_size}, pe_max_len={self.pe_max_len}, num_layers={self.num_layers}, ' \
+               f'd_model={self.d_model}, n_heads={self.n_heads}, d_ff={self.d_ff}, dropout={self.dropout})>'
+
     def init_weights(self) -> None:
         for p in self.parameters():
             if p.dim() > 1:
@@ -67,7 +81,6 @@ class ZReader(nn.Module):
 
     def decode(self, tgt_inp: torch.tensor, encoded_src: torch.tensor, tgt_attn_mask: torch.tensor,
                tgt_pad_mask: torch.tensor, src_pad_mask) -> torch.tensor:
-
         tgt_inp = tgt_inp.transpose(0, 1)
 
         tgt_inp = F.relu(self.mapping(tgt_inp)) * self.scale
@@ -78,14 +91,12 @@ class ZReader(nn.Module):
 
     def predict(self, tgt_inp: torch.tensor, encoded_src: torch.tensor, tgt_attn_mask: torch.tensor,
                 tgt_pad_mask: torch.tensor, src_pad_mask) -> torch.tensor:
-
         decoded = self.decode(tgt_inp, encoded_src, tgt_attn_mask, tgt_pad_mask, src_pad_mask)
 
         return self.inv_mapping(decoded).transpose(0, 1)
 
     def forward(self, src: torch.tensor, src_pad_mask: torch.tensor,
                 tgt_inp: torch.tensor, tgt_attn_mask: torch.tensor, tgt_pad_mask: torch.tensor) -> torch.tensor:
-
         encoded_src = self.encode(src, src_pad_mask)
 
         return self.predict(tgt_inp, encoded_src, tgt_attn_mask, tgt_pad_mask, src_pad_mask)
