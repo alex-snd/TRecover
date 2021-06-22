@@ -109,11 +109,11 @@ def test(params: argparse.Namespace) -> None:
 
         print(basename(file))
         print('-' * printing_scale)
-        visualize_columns(src, delimiter=params.delimiter)
+        print(visualize_columns(src, delimiter=params.delimiter), end='')
         for tgt, _ in chains:
             print('-' * printing_scale)
-            visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:],  # first token is empty_token
-                             delimiter=params.delimiter)
+            print(visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:],  # first token is empty_token
+                                   delimiter=params.delimiter), end='')
 
         print(f'Elapsed: {time() - start_time:>7.3f}s\n')
 
