@@ -129,5 +129,7 @@ dmypy.json
 .pyre/
 
 .idea
+mlruns
 data/
 weights/
+model

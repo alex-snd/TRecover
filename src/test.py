@@ -1,8 +1,7 @@
 import argparse
 import math
 import re
-from os import listdir
-from os.path import join, basename
+from pathlib import Path
 from time import time
 
 import numpy as np
@@ -87,9 +86,9 @@ def test(params: argparse.Namespace) -> None:
         n_columns_to_show = 0
 
     if params.file_path:
-        files = [params.file_path, ]
+        files = [Path(params.file_path), ]
     else:
-        files = [join(params.tests_folder, f) for f in listdir(params.tests_folder)]
+        files = [Path(params.tests_folder, f) for f in Path(params.tests_folder).iterdir()]
 
     if params.noisy:
         files_columns = create_noise_columns(files, params.min_noise, params.max_noise, Collate.num_to_alphabet,
@@ -107,13 +106,13 @@ def test(params: argparse.Namespace) -> None:
         src_scale = src.size(0) * max(2 * len(params.delimiter), 1) + 1 * len(params.delimiter)
         printing_scale = params.console_width if 0 < params.console_width < src_scale else src_scale
 
-        print(basename(file))
+        print(file.name)
         print('-' * printing_scale)
         print(visualize_columns(src, delimiter=params.delimiter), end='')
         for tgt, _ in chains:
             print('-' * printing_scale)
             print(visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:],  # first token is empty_token
-                                   delimiter=params.delimiter), end='')
+                                   delimiter=params.delimiter))
 
         print(f'Elapsed: {time() - start_time:>7.3f}s\n')
 
@@ -124,7 +123,7 @@ def get_params() -> argparse.Namespace:
     parser.add_argument('-f', '--file_path', action='store', dest='file_path', default=None,
                         help='')
 
-    parser.add_argument('-tf', '--tests_folder', action='store', dest='tests_folder', default=config.tests_folder,
+    parser.add_argument('-tf', '--tests_folder', action='store', dest='tests_folder', default=config.EXAMPLES_DIR,
                         help='')
 
     parser.add_argument('-noisy', '--noisy', action='store_true', dest='noisy',
@@ -177,7 +176,7 @@ def get_params() -> argparse.Namespace:
                         help='')
 
     parser.add_argument('-w', '--weights', action='store', dest='weights',
-                        default=join(config.weights_path, '0522_2147_336000'), help='')
+                        default=Path(config.MODEL_DIR, '0603_1753_455000'), help='')
 
     parser.add_argument('-bw', '--beam_weights', action='store', dest='beam_weights', type=int, default=5,
                         help='')

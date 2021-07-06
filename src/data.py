@@ -1,5 +1,4 @@
-from os import listdir
-from os.path import join, getsize, exists
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -80,7 +79,7 @@ class WikiDataset(Dataset):
 
         self.datafiles = datafiles
         self.n_files = range(len(self.datafiles))
-        self.file_sizes = [getsize(file) for file in self.datafiles]
+        self.file_sizes = [file.stat().st_size for file in self.datafiles]
         self.distribution = self.__get_distribution()
         self.min_threshold = min_threshold
         self.max_threshold = max_threshold
@@ -108,7 +107,7 @@ class WikiDataset(Dataset):
     @staticmethod
     def __exists(datafiles: list) -> bool:
         for file in datafiles:
-            if not exists(file):
+            if not file.exists():
                 print(f'{file} doesnt exist')
                 return False
 
@@ -130,7 +129,7 @@ class WikiDataset(Dataset):
 
 
 if __name__ == '__main__':
-    train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
+    train_files = [Path(config.TRAIN_DATA, file) for file in config.TRAIN_DATA.iterdir()]
     dataset = WikiDataset(train_files, min_threshold=200, max_threshold=200, dataset_size=5)
 
     loader = dataset.create_dataloader(batch_size=3, min_noise=1, max_noise=8)

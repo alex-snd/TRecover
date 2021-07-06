@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -63,8 +64,8 @@ class ZReader(nn.Module):
         self.init_weights()
 
     def __str__(self) -> str:
-        return f'<ZReader(token_size={self.token_size}, pe_max_len={self.pe_max_len}, num_layers={self.num_layers}, ' \
-               f'd_model={self.d_model}, n_heads={self.n_heads}, d_ff={self.d_ff}, dropout={self.dropout})>'
+        return f'ZReader(token_size={self.token_size}, pe_max_len={self.pe_max_len}, num_layers={self.num_layers}, ' \
+               f'd_model={self.d_model}, n_heads={self.n_heads}, d_ff={self.d_ff}, dropout={self.dropout})'
 
     def init_weights(self) -> None:
         for p in self.parameters():
@@ -101,10 +102,10 @@ class ZReader(nn.Module):
 
         return self.predict(tgt_inp, encoded_src, tgt_attn_mask, tgt_pad_mask, src_pad_mask)
 
-    def save_parameters(self, filename: str) -> None:
+    def save(self, filename: Path) -> None:
         torch.save(self.state_dict(), filename)
 
-    def load_parameters(self, filename: str, device: torch.device) -> None:
+    def load_parameters(self, filename: Path, device: torch.device) -> None:
         self.load_state_dict(torch.load(filename, map_location=device))
 
 

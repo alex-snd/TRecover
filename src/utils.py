@@ -1,6 +1,6 @@
+import json
 import re
-from os import listdir
-from os.path import join, exists, isfile
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -11,7 +11,7 @@ from data import Collate
 from model import ZReader
 
 
-def clean_wiki_text(filename: str, drop_threshold: float = 0.62) -> None:
+def clean_wiki_text(filename: Path, drop_threshold: float = 0.62) -> None:
     result_size = 0
 
     with open(filename, mode='r') as wiki_file, open(f'{filename}.clean', mode='w') as writer:
@@ -39,7 +39,7 @@ def clean_wiki_text(filename: str, drop_threshold: float = 0.62) -> None:
     print(f'Result size: {result_size}')
 
 
-def clean_wiki_qa(filename: str) -> None:
+def clean_wiki_qa(filename: Path) -> None:
     result_size = 0
     questions = set()
 
@@ -74,11 +74,11 @@ def clean_wiki_qa(filename: str) -> None:
     print(f'Result size: {result_size}')
 
 
-def clean_blogs(blogs_folder: str) -> None:
+def clean_blogs(blogs_folder: Path) -> None:
     result_size = 0
 
-    with open(f'{join(config.data_path, "blogs")}.clean', mode='w') as writer:
-        for blog_file in [join(blogs_folder, file) for file in listdir(blogs_folder)]:
+    with open(f'{Path(config.DATA_DIR, "raw_data", "blogs")}.clean', mode='w') as writer:
+        for blog_file in [Path(blogs_folder, file) for file in blogs_folder.iterdir()]:
 
             text_flag = False
 
@@ -115,13 +115,18 @@ def set_seeds(seed: int = 2531) -> None:
 
 
 def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int, dropout: float,
-              device: torch.device = torch.device('cpu'), weights: str = None) -> ZReader:
+              device: torch.device = torch.device('cpu'), weights: Path = None) -> ZReader:
     model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
-    if weights and isfile(weights) and exists(weights):
+    if weights and weights.exists() and weights.is_file():
         model.load_parameters(weights, device=device)
 
     return model
+
+
+def save_parameters(data: dict, filepath: Path, sort=False) -> None:
+    with open(filepath, 'w') as f:
+        json.dumps(data, indent=2, fp=f, sort_keys=sort)
 
 
 def visualize_columns(grid: torch.tensor, delimiter: str = '') -> str:

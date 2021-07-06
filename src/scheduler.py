@@ -10,7 +10,7 @@ class Scheduler(object):
         self.__update_rate()
 
     def __str__(self) -> str:
-        return f'<Scheduler(warmup={self.warmup}, step_size={self.step_size}, factor={self.factor})>'
+        return f'Scheduler(warmup={self.warmup}, step_size={self.step_size}, factor={self.factor})'
 
     def step(self) -> None:
         self.__step += 1
