@@ -5,15 +5,15 @@ from time import time
 import requests
 import torch
 import typer
-from typer import Argument, Option
+from typer import Typer, Argument, Option
 
 import utils
 from data import Collate
 
-app = typer.Typer()
+cli = Typer()
 
 
-@app.command()
+@cli.command()
 def download_weights(sharing_link: str, save_dir: str = './') -> None:
     """
         Download model weights from Yandex disk
@@ -64,7 +64,7 @@ def download_weights(sharing_link: str, save_dir: str = './') -> None:
     typer.secho(f'Downloaded "{filename}" to "{Path(save_dir, filename).absolute()}"', fg=typer.colors.GREEN, bold=True)
 
 
-@app.command()
+@cli.command()
 def zread(model_artifacts: str = Argument(..., help='Path to model artifacts json file'),
           weights_path: str = Argument(..., help='Path to model weights'),
           inference_path: str = Argument(..., help='Path to file or dir for inference'),
@@ -129,4 +129,4 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
 
 
 if __name__ == '__main__':
-    app()
+    cli()
