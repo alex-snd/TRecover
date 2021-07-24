@@ -71,7 +71,7 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
           cuda: bool = Option(True, help='CUDA enabled'),
           gpu_id: int = Option(0, help='GPU id'),
           separator: str = Option(' ', help='Columns separator in the input files'),
-          noisy: bool = Option(False, help='Input files are plain texts and needed to be noisy'),
+          noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
           max_noise: int = Option(5, help='Max noise parameter. Maximum value is alphabet size'),
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
@@ -102,12 +102,12 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
         n_columns_to_show = 0
 
     if noisy:
-        files_columns = utils.create_noisy_columns(files, min_noise, max_noise, Collate.num_to_alphabet,
-                                                   n_columns_to_show)
+        files_columns = utils.read_files_columns(files, separator, n_columns_to_show)
     else:
-        files_columns = utils.read_columns(files, separator, n_columns_to_show)
+        files_columns = utils.create_files_noisy_columns(files, min_noise, max_noise, Collate.num_to_alphabet,
+                                                         n_columns_to_show)
 
-    files_src = utils.columns_to_tensors(files_columns, Collate.alphabet_to_num, device)
+    files_src = utils.files_columns_to_tensors(files_columns, Collate.alphabet_to_num, device)
 
     for file, src in zip(files, files_src):
         start_time = time()

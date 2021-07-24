@@ -133,7 +133,6 @@ def save_parameters(data: dict, filepath: Path, sort=False) -> None:
         json.dumps(data, indent=2, fp=f, sort_keys=sort)
 
 
-# TODO highlight
 def visualize_columns(grid: torch.tensor, delimiter: str = '') -> str:
     columns = list()
     max_depth = 0
@@ -157,22 +156,30 @@ def visualize_target(tgt: torch.tensor, delimiter: str = '') -> str:
     return f'{delimiter}{delimiter.join(tgt)}{delimiter}'
 
 
-def create_noisy_columns(files: list, min_noise: int, max_noise: int, num_to_alphabet: dict,
-                         n_to_show: int = 0) -> list:
+def create_noisy_columns(data: str, min_noise: int, max_noise: int, num_to_alphabet: dict) -> list:
     np.random.seed(None)
+    columns = list()
+
+    data = re.sub(r'[^A-Za-z]', '', data).lower()
+
+    for symbol in data:
+        noise_size = np.random.randint(low=min_noise, high=max_noise, size=1)[0]
+        noise_indexes = np.random.randint(low=0, high=len(num_to_alphabet), size=noise_size)
+
+        columns.append(f"{symbol}{''.join([num_to_alphabet[s_id] for s_id in noise_indexes])}")
+
+    return columns
+
+
+def create_files_noisy_columns(files: list, min_noise: int, max_noise: int, num_to_alphabet: dict,
+                               n_to_show: int = 0) -> list:
     files_columns = list()
 
     for file in files:
         with open(file) as f:
-            data = re.sub(r'[^A-Za-z]', '', f.read()).lower()
+            data = f.read()
 
-        columns = list()
-
-        for symbol in data:
-            noise_size = np.random.randint(low=min_noise, high=max_noise, size=1)[0]
-            noise_indexes = np.random.randint(low=0, high=len(num_to_alphabet), size=noise_size)
-
-            columns.append(symbol + ''.join([num_to_alphabet[s_id] for s_id in noise_indexes]))
+        columns = create_noisy_columns(data, min_noise, max_noise, num_to_alphabet)
 
         if n_to_show:
             columns = columns[:n_to_show]
@@ -182,15 +189,21 @@ def create_noisy_columns(files: list, min_noise: int, max_noise: int, num_to_alp
     return files_columns
 
 
-def read_columns(files: list, separator: str, n_to_show: int = 0) -> list:
+def data_to_columns(data: str, separator: str = ' ') -> list:
+    data = re.sub(separator, ' ', data)
+    cleaned_data = re.sub(r'[^A-Za-z ]', '', data).lower()
+
+    return cleaned_data.split(' ')
+
+
+def read_files_columns(files: list, separator: str, n_to_show: int = 0) -> list:
     files_columns = list()
 
     for file in files:
         with open(file) as f:
-            data = re.sub(separator, ' ', f.read())
+            data = f.read()
 
-        cleaned_data = re.sub(r'[^A-Za-z ]', '', data).lower()
-        columns = cleaned_data.split(' ')
+        columns = data_to_columns(data, separator)
 
         if n_to_show:
             columns = columns[:n_to_show]
@@ -200,19 +213,20 @@ def read_columns(files: list, separator: str, n_to_show: int = 0) -> list:
     return files_columns
 
 
-def columns_to_tensors(files_columns: list, alphabet_to_num: dict, device: torch.device = torch.device('cpu')) -> list:
-    files_src = list()
+def columns_to_tensor(columns: list, alphabet_to_num: dict,
+                      device: torch.device = torch.device('cpu')) -> torch.tensor:
+    tensor = torch.zeros((len(columns), len(alphabet_to_num)), dtype=torch.float, device=device)
 
-    for columns in files_columns:
-        src = torch.zeros((len(columns), len(alphabet_to_num)), dtype=torch.float, device=device)
+    for col in range(len(columns)):
+        for symbol in columns[col]:
+            tensor[col, alphabet_to_num[symbol]] = 1
 
-        for col in range(len(columns)):
-            for symbol in columns[col]:
-                src[col, alphabet_to_num[symbol]] = 1
+    return tensor
 
-        files_src.append(src)
 
-    return files_src
+def files_columns_to_tensors(files_columns: list, alphabet_to_num: dict,
+                             device: torch.device = torch.device('cpu')) -> list:
+    return [columns_to_tensor(columns, alphabet_to_num, device) for columns in files_columns]
 
 
 def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
