@@ -273,7 +273,7 @@ def train(params: Namespace) -> None:
 
     z_reader = get_model(params.token_size, params.pe_max_len, params.num_layers, params.d_model, params.n_heads,
                          params.d_ff, params.dropout, params.device,
-                         weights=Path(config.MODEL_DIR, params.weights_name))
+                         weights=Path(params.weights_folder, params.weights_name))
 
     optimizer = torch.optim.Adam(z_reader.parameters(), lr=params.lr, betas=(0.9, 0.98), eps=1e-9)
 
@@ -331,6 +331,7 @@ def main() -> None:
         n_heads=16,
         d_ff=2048,
         dropout=0.1,
+        weights_folder='',
         weights_name='',
         device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         # -----------------------------------------OPTIMIZATION PARAMETERS----------------------------------------------
