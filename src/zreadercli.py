@@ -10,7 +10,7 @@ from typer import Typer, Argument, Option
 import utils
 from data import Collate
 
-cli = Typer()
+cli = Typer(name='ZreaderAPI')
 
 
 @cli.command()
