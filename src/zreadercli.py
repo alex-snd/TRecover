@@ -1,6 +1,8 @@
 import math
 from pathlib import Path
 from time import time
+from zipfile import ZipFile
+import os
 
 import requests
 import torch
@@ -8,45 +10,39 @@ import typer
 from typer import Typer, Argument, Option
 
 import utils
-from data import Collate
 
 cli = Typer(name='ZreaderAPI')
 
 
-@cli.command()
-def download_weights(sharing_link: str, save_dir: str = './') -> None:
+def download_from_disk(sharing_link: str = Argument(..., help='Sharing link to the file on Yandex disk'),
+                       save_dir: str = Option('./', help='Path where to store downloaded file')) -> str or None:
     """
-        Download model weights from Yandex disk
+        Download file from Yandex disk
 
         Notes
         -----
         sharing_link: str
-            Sharing link to the model weights on Yandex disk
+            Sharing link to the file on Yandex disk
 
         save_dir: str
-            Path where to save the downloaded weights
+            Path where to store downloaded file
+
+
+        Returns
+        -------
+        filepath: Path or None
+            Path to the downloaded file. None if failed to download
 
     """
 
-    def get_real_direct_link():
-        pk_request = requests.get(
-            f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
-
-        return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
-
-    def extract_filename():
-        for chunk in direct_link.strip().split('&'):
-            if chunk.startswith('filename='):
-                return chunk.split('=')[1]
-
+    if not (direct_link := utils.get_real_direct_link(sharing_link)):
+        typer.secho(f'Failed to download "{sharing_link}"', fg=typer.colors.BRIGHT_RED, bold=True)
         return None
 
-    if not (direct_link := get_real_direct_link()):
-        typer.secho(f'Failed to download "{sharing_link}"', fg=typer.colors.BRIGHT_RED, bold=True)
+    filename = utils.extract_filename(direct_link) or 'downloaded_data'  # Try to recover the filename from the link
+    filepath = Path(save_dir, filename)
 
-    filename = extract_filename() or 'downloaded_weights'  # Try to recover the filename from the link
-
-    with Path(save_dir, filename).open(mode='wb') as fw:
+    with filepath.open(mode='wb') as fw:
         response = requests.get(direct_link, stream=True)
         total_length = response.headers.get('content-length')
 
@@ -62,6 +58,50 @@ def download_weights(sharing_link: str, save_dir: str = './') -> None:
                     fw.write(data)
 
     typer.secho(f'Downloaded "{filename}" to "{Path(save_dir, filename).absolute()}"', fg=typer.colors.GREEN, bold=True)
+
+    return filepath
+
+
+@cli.command()
+def download_data(sharing_link: str = Argument(..., help='Sharing link to the train data on Yandex disk'),
+                  save_dir: str = Option('./', help='Path where to store downloaded data')) -> None:
+    """
+        Download train data from Yandex disk
+
+        Notes
+        -----
+        sharing_link: str
+            Sharing link to the train data on Yandex disk
+
+        save_dir: str
+            Path where to store downloaded data
+
+    """
+
+    if filepath := download_from_disk(sharing_link, save_dir):
+        with ZipFile(filepath) as zf:
+            zf.extractall(path=Path(save_dir, filepath.stem))
+
+        os.remove(filepath)
+
+
+@cli.command()
+def download_weights(sharing_link: str = Argument(..., help='Sharing link to the model weights on Yandex disk'),
+                     save_dir: str = Option('./', help='Path where to save downloaded weights')) -> None:
+    """
+        Download model weights from Yandex disk
+
+        Notes
+        -----
+        sharing_link: str
+            Sharing link to the model weights on Yandex disk
+
+        save_dir: str
+            Path where to save downloaded weights
+
+    """
+
+    download_from_disk(sharing_link, save_dir)
 
 
 @cli.command()
@@ -104,15 +144,14 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
     if noisy:
         files_columns = utils.read_files_columns(files, separator, n_columns_to_show)
     else:
-        files_columns = utils.create_files_noisy_columns(files, min_noise, max_noise, Collate.num_to_alphabet,
-                                                         n_columns_to_show)
+        files_columns = utils.create_files_noisy_columns(files, min_noise, max_noise, n_columns_to_show)
 
-    files_src = utils.files_columns_to_tensors(files_columns, Collate.alphabet_to_num, device)
+    files_src = utils.files_columns_to_tensors(files_columns, device)
 
     for file, src in zip(files, files_src):
         start_time = time()
 
-        chains = utils.beam_search(src, z_reader, beam_width, device)
+        chains = utils.beam_search(src, z_reader, beam_width, device)  # TODO progress bar
 
         src_scale = src.size(0) * max(2 * len(delimiter), 1) + 1 * len(delimiter)
         printing_scale = console_width if 0 < console_width < src_scale else src_scale
