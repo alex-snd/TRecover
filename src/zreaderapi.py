@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
@@ -11,23 +10,25 @@ from typer import Typer, Option
 
 import config
 import utils
+from api_schemas import PredictPayload
 from model import ZReader
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
 api = FastAPI(title='ZreaderAPI', description='Description will be here', version='0.1')
 
 model: ZReader  # declare model for further initialization on server startup
+artifacts: dict  # mlflow artifacts
+device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
 
 @api.on_event('startup')
 async def load_model():
-    global model
+    global model, artifacts, device
 
     model_artifacts = config.INFERENCE_DIR / 'artifacts.json'
     weights_path = config.INFERENCE_DIR / 'weights'
 
     artifacts = utils.load_artifacts(model_artifacts)
-    device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
     model = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
                             artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
@@ -42,7 +43,6 @@ def construct_response(handler: eval) -> object:
     async def wrap(request: Request, *args, **kwargs):
         results = await handler(request, *args, **kwargs)
 
-        # Construct response
         response = {
             'message': results['message'],
             'method': request.method,
@@ -51,7 +51,6 @@ def construct_response(handler: eval) -> object:
             'url': request.url._url,
         }
 
-        # Add data
         if 'data' in results:
             response['data'] = results['data']
 
@@ -74,23 +73,42 @@ async def index(request: Request) -> dict:
 async def parameters(request: Request, param: str) -> dict:
     """ Get a specific parameter's value used for a run. """
 
+    global artifacts
+
     response = {
         'message': HTTPStatus.OK.phrase,
         'status-code': HTTPStatus.OK,
         'data': {
-            param: 'TODO',
+            param: artifacts.get(param, 'Not found')
         }
     }
+
     return response
 
 
-@api.get('/sleep/{sec}')
-async def sleep(sec: int) -> dict:
-    global model
+@api.post("/zread", tags=["Prediction"])
+@construct_response
+async def predict(request: Request, payload: PredictPayload) -> dict:
+    global model, device
 
-    await asyncio.sleep(sec)
+    columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
+    src = utils.columns_to_tensor(columns, device)
 
-    return {'ZreaderAPI': f'Sleep for: {sec}', 'd_ff': model.d_ff}
+    chains = utils.beam_search(src, model, payload.beam_width, device)
+    chains = [(utils.visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:], payload.delimiter), prob)
+              for tgt, prob in chains]
+
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status-code': HTTPStatus.OK,
+        'data': {
+            'columns': utils.visualize_columns(src, payload.delimiter),
+            'zread': chains[0],
+            'chains': chains
+        }
+    }
+
+    return response
 
 
 @cli.command()
