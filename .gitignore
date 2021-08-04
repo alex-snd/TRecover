@@ -132,4 +132,5 @@ dmypy.json
 mlruns
 data/
 weights/
-model
+inference
+src/streamlit_test.py

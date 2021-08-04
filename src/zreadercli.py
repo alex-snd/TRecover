@@ -1,8 +1,8 @@
 import math
+import os
 from pathlib import Path
 from time import time
 from zipfile import ZipFile
-import os
 
 import requests
 import torch
@@ -161,8 +161,7 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
         print(utils.visualize_columns(src, delimiter=delimiter), end='')
         for tgt, _ in chains:
             print('-' * printing_scale)
-            print(utils.visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:],  # first token is empty_token
-                                         delimiter=delimiter))
+            print(utils.visualize_target(tgt, delimiter=delimiter))
 
         print(f'Elapsed: {time() - start_time:>7.3f}s\n')
 

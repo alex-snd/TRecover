@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 import numpy as np
+import requests
 import torch
 import torch.nn.functional as F
 
@@ -107,6 +108,21 @@ def clean_blogs(blogs_folder: Path) -> None:
     print(f'Result size: {result_size}')
 
 
+def get_real_direct_link(sharing_link: str) -> str:
+    pk_request = requests.get(
+        f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
+
+    return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
+
+
+def extract_filename(direct_link: str) -> str:
+    for chunk in direct_link.strip().split('&'):
+        if chunk.startswith('filename='):
+            return chunk.split('=')[1]
+
+    return None
+
+
 def set_seeds(seed: int = 2531) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -125,6 +141,7 @@ def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n
 
 
 def load_artifacts(model_artifacts: Path) -> dict:
+    # TODO load mlflow artifacts
     return json.load(model_artifacts.open())
 
 
@@ -156,7 +173,7 @@ def visualize_target(tgt: torch.tensor, delimiter: str = '') -> str:
     return f'{delimiter}{delimiter.join(tgt)}{delimiter}'
 
 
-def create_noisy_columns(data: str, min_noise: int, max_noise: int, num_to_alphabet: dict) -> list:
+def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> list:
     np.random.seed(None)
     columns = list()
 
@@ -164,22 +181,21 @@ def create_noisy_columns(data: str, min_noise: int, max_noise: int, num_to_alpha
 
     for symbol in data:
         noise_size = np.random.randint(low=min_noise, high=max_noise, size=1)[0]
-        noise_indexes = np.random.randint(low=0, high=len(num_to_alphabet), size=noise_size)
+        noise_indexes = np.random.randint(low=0, high=len(Collate.num_to_alphabet), size=noise_size)
 
-        columns.append(f"{symbol}{''.join([num_to_alphabet[s_id] for s_id in noise_indexes])}")
+        columns.append(f"{symbol}{''.join([Collate.num_to_alphabet[s_id] for s_id in noise_indexes])}")
 
     return columns
 
 
-def create_files_noisy_columns(files: list, min_noise: int, max_noise: int, num_to_alphabet: dict,
-                               n_to_show: int = 0) -> list:
+def create_files_noisy_columns(files: list, min_noise: int, max_noise: int, n_to_show: int = 0) -> list:
     files_columns = list()
 
     for file in files:
         with open(file) as f:
             data = f.read()
 
-        columns = create_noisy_columns(data, min_noise, max_noise, num_to_alphabet)
+        columns = create_noisy_columns(data, min_noise, max_noise)
 
         if n_to_show:
             columns = columns[:n_to_show]
@@ -213,20 +229,18 @@ def read_files_columns(files: list, separator: str, n_to_show: int = 0) -> list:
     return files_columns
 
 
-def columns_to_tensor(columns: list, alphabet_to_num: dict,
-                      device: torch.device = torch.device('cpu')) -> torch.tensor:
-    tensor = torch.zeros((len(columns), len(alphabet_to_num)), dtype=torch.float, device=device)
+def columns_to_tensor(columns: list, device: torch.device = torch.device('cpu')) -> torch.tensor:
+    tensor = torch.zeros((len(columns), len(Collate.alphabet_to_num)), dtype=torch.float, device=device)
 
     for col in range(len(columns)):
         for symbol in columns[col]:
-            tensor[col, alphabet_to_num[symbol]] = 1
+            tensor[col, Collate.alphabet_to_num[symbol]] = 1
 
     return tensor
 
 
-def files_columns_to_tensors(files_columns: list, alphabet_to_num: dict,
-                             device: torch.device = torch.device('cpu')) -> list:
-    return [columns_to_tensor(columns, alphabet_to_num, device) for columns in files_columns]
+def files_columns_to_tensors(files_columns: list, device: torch.device = torch.device('cpu')) -> list:
+    return [columns_to_tensor(columns, device) for columns in files_columns]
 
 
 def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
@@ -258,7 +272,7 @@ def beam_search(src: torch.tensor, z_reader: ZReader, width: int, device: torch.
     for _ in range(src.size(1)):
         candidates = beam_step(candidates, encoded_src, z_reader, width, device)
 
-    return candidates
+    return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]  # first token is empty_token
 
 
 if __name__ == '__main__':

@@ -88,15 +88,14 @@ async def parameters(request: Request, param: str) -> dict:
 
 @api.post("/zread", tags=["Prediction"])
 @construct_response
-async def predict(request: Request, payload: PredictPayload) -> dict:
+async def predict(payload: PredictPayload) -> dict:
     global model, device
 
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
     src = utils.columns_to_tensor(columns, device)
 
     chains = utils.beam_search(src, model, payload.beam_width, device)
-    chains = [(utils.visualize_target(torch.argmax(tgt.squeeze(), dim=-1)[1:], payload.delimiter), prob)
-              for tgt, prob in chains]
+    chains = [(utils.visualize_target(tgt, payload.delimiter), prob) for tgt, prob in chains]
 
     response = {
         'message': HTTPStatus.OK.phrase,
