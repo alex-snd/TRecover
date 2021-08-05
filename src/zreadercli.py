@@ -117,6 +117,11 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
           console_width: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')) -> None:
+    if min_noise >= max_noise:
+        typer.secho('Maximum noise range must be grater than minimum noise range',
+                    fg=typer.colors.BRIGHT_RED, bold=True)
+        return
+
     artifacts = utils.load_artifacts(Path(model_artifacts))
 
     inference_path = Path(inference_path)
