@@ -28,7 +28,7 @@ class PredictPayload(BaseModel):
         if not 0 <= max_noise <= len(Collate.num_to_alphabet):
             raise ValueError(f'Maximum noise range must be in between 0 and {len(Collate.num_to_alphabet)}')
 
-        if values['min_noise'] > max_noise:
+        if values['min_noise'] >= max_noise:
             raise ValueError('Maximum noise range must be grater than minimum noise range')
 
         return max_noise
