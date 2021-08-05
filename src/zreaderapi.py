@@ -88,7 +88,7 @@ async def parameters(request: Request, param: str) -> dict:
 
 @api.post("/zread", tags=["Prediction"])
 @construct_response
-async def predict(payload: PredictPayload) -> dict:
+async def predict(request: Request, payload: PredictPayload) -> dict:
     global model, device
 
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
