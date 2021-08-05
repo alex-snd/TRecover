@@ -131,7 +131,7 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
     elif inference_path.is_dir():
         files = [file for file in inference_path.iterdir()]
     else:
-        typer.secho(f'Files for inference needed to be specified', fg=typer.colors.BRIGHT_RED, bold=True)
+        typer.secho('Files for inference needed to be specified', fg=typer.colors.BRIGHT_RED, bold=True)
         return
 
     device = torch.device(f'cuda:{gpu_id}' if cuda and torch.cuda.is_available() else 'cpu')
@@ -156,19 +156,20 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
     for file, src in zip(files, files_src):
         start_time = time()
 
-        chains = utils.beam_search(src, z_reader, beam_width, device)  # TODO progress bar
+        chains = utils.beam_search(src, z_reader, beam_width, device,
+                                   beam_loop=utils.interactive_loop(
+                                       label=typer.style(f'Processing {file.name}', fg=typer.colors.BLUE, bold=True)))
 
         src_scale = src.size(0) * max(2 * len(delimiter), 1) + 1 * len(delimiter)
         printing_scale = console_width if 0 < console_width < src_scale else src_scale
 
-        print(file.name)
         print('-' * printing_scale)
         print(utils.visualize_columns(src, delimiter=delimiter), end='')
         for tgt, _ in chains:
             print('-' * printing_scale)
             print(utils.visualize_target(tgt, delimiter=delimiter))
 
-        print(f'Elapsed: {time() - start_time:>7.3f}s\n')
+        typer.secho(f'Elapsed: {time() - start_time:>7.3f}s\n', fg=typer.colors.BLUE, bold=True)
 
 
 if __name__ == '__main__':

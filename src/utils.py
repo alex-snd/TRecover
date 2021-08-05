@@ -6,6 +6,7 @@ import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
+import typer
 
 import config
 from data import Collate
@@ -262,15 +263,35 @@ def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, wi
     return step_candidates[:width]
 
 
-def beam_search(src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+def interactive_loop(label: str = 'Processing') -> eval:
+    def inner_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+        candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+        with typer.progressbar(length=encoded_src.size(0), label=label, show_pos=True) as progress:
+            for _ in progress:
+                candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+
+        return candidates
+
+    return inner_loop
+
+
+def standard_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+    candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+    for _ in range(encoded_src.size(0)):
+        candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+
+    return candidates
+
+
+def beam_search(src: torch.tensor, z_reader: ZReader, width: int, device: torch.device,
+                beam_loop: eval = standard_loop) -> list:
     src = src.unsqueeze(dim=0)
 
     encoded_src = z_reader.encode(src, src_pad_mask=None)
 
-    candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
-
-    for _ in range(src.size(1)):
-        candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+    candidates = beam_loop(encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]  # first token is empty_token
 
