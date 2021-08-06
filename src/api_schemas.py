@@ -41,10 +41,78 @@ class PredictPayload(BaseModel):
         return beam_width
 
     class Config:
-        """ Needed to declare examples of data the app can receive for API documentation"""
+        """ PredictPayload example for API documentation"""
 
         schema_extra = {
             'example': {
-                'texts': 'Hi! my name is Sasha.'
+                'data': 'As people around the country went into the streets to cheer the conviction, some businesses '
+                        'in Portland boarded up their windows once again.',
+                'min_noise': 2,
+                'max_noise': 5,
+                'beam_width': 5,
+                'delimiter': ''
+            }
+        }
+
+
+class PredictResponse(BaseModel):
+    message: str
+    method: str
+    status_code: int
+    timestamp: str
+    url: str
+    data: dict
+
+    class Config:
+        """ PredictPayload example for API documentation"""
+
+        schema_extra = {
+            'example': {
+                "message": "OK",
+                "method": "POST",
+                "status_code": 200,
+                "timestamp": "2021-08-06T09:14:43.832328",
+                "url": "http://localhost:5001/zread",
+                "data": {
+                    "columns": "aecdoijeaacsndlheccaeeeuhcagifndhherdrccadtacdeelccecggaaalemhbkiebfiineldedibekdjganda"
+                               "eafdedgcdfeaceindfjbjebaagacc\njgieqplgfbjuseruheoufppxidlnsntglifsfyeegeuldhfkrpdghiho"
+                               "icohomsomiiksjrvmkkjxninrqleoebobliwlqpphmikklqilqmonceqtgig\nlsmivvpkmhowxitwmnrwntryl"
+                               "enswoxhtphto kmmf oiwplwthhnomvtgtiqn strtrvvvyssqnzpnottmiruqqfpjxzuwtmrlrwrtzown oujz"
+                               "xhrn\nq pkyyuz ryx oz n   yvu w  t   iu nwr  sts so  wz x qqnzzp pzv yvs uwy  vzrs  prx"
+                               "vzxs v grv   zx  p   y t s s p  kvs\n  q   x         p    z         o  z t   v   r     "
+                               "    w    z x   t z z        xvy   u    t                  x    v w\n",
+                    "zread": [
+                        "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboardedu"
+                        "ptheirwindowsonceagain",
+                        -5.332423858530319
+                    ],
+                    "chains": [
+                        [
+                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboar"
+                            "deduptheirwindowsonceagain",
+                            -5.332423858530319
+                        ],
+                        [
+                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsomebusinessesinportlandboar"
+                            "deduptheirwindowsonceagain",
+                            -5.484715415203709
+                        ],
+                        [
+                            "lwpeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboar"
+                            "deduptheirwindowsonceagain",
+                            -6.023200242937946
+                        ],
+                        [
+                            "aspeoplearoundthecountrywentintothestreetstoowelltheconvictionsstriksinessesinportlandboar"
+                            "deduptheirwindowsonceagain",
+                            -6.484925642163489
+                        ],
+                        [
+                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandbea"
+                            "rdeduptheirwindowsonceagain",
+                            -7.280832245267902
+                        ]
+                    ]
+                }
             }
         }

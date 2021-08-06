@@ -10,7 +10,7 @@ from typer import Typer, Option
 
 import config
 import utils
-from api_schemas import PredictPayload
+from api_schemas import PredictPayload, PredictResponse
 from model import ZReader
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
@@ -46,7 +46,7 @@ def construct_response(handler: eval) -> object:
         response = {
             'message': results['message'],
             'method': request.method,
-            'status-code': results['status-code'],
+            'status_code': results['status_code'],
             'timestamp': datetime.now().isoformat(),
             'url': request.url._url,
         }
@@ -64,7 +64,7 @@ def construct_response(handler: eval) -> object:
 async def index(request: Request) -> dict:
     return {
         'message': HTTPStatus.OK.phrase,
-        'status-code': HTTPStatus.OK
+        'status_code': HTTPStatus.OK
     }
 
 
@@ -77,7 +77,7 @@ async def parameters(request: Request, param: str) -> dict:
 
     response = {
         'message': HTTPStatus.OK.phrase,
-        'status-code': HTTPStatus.OK,
+        'status_code': HTTPStatus.OK,
         'data': {
             param: artifacts.get(param, 'Not found')
         }
@@ -86,7 +86,7 @@ async def parameters(request: Request, param: str) -> dict:
     return response
 
 
-@api.post("/zread", tags=["Prediction"])
+@api.post("/zread", tags=["Prediction"], response_model=PredictResponse)
 @construct_response
 async def predict(request: Request, payload: PredictPayload) -> dict:
     global model, device
@@ -99,7 +99,7 @@ async def predict(request: Request, payload: PredictPayload) -> dict:
 
     response = {
         'message': HTTPStatus.OK.phrase,
-        'status-code': HTTPStatus.OK,
+        'status_code': HTTPStatus.OK,
         'data': {
             'columns': utils.visualize_columns(src, payload.delimiter),
             'zread': chains[0],
