@@ -117,11 +117,9 @@ async def zread(request: Request, payload: PredictPayload) -> dict:
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'data': {
-            'columns': utils.visualize_columns(src, payload.delimiter),
-            'zread': chains[0],
-            'chains': chains
-        }
+        'columns': utils.visualize_columns(src, payload.delimiter),
+        'zread': chains[0],
+        'chains': chains
     }
 
     return response
@@ -146,10 +144,8 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> dict:
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'data': {
-            'identifier': identifier,
-            'size': len(columns)
-        }
+        'identifier': identifier,
+        'size': len(columns)
     }
 
     return response
@@ -172,9 +168,7 @@ async def status(request: Request, identifier: str) -> dict:
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'data': {
-            identifier: job_status
-        }
+        'job_status': job_status
     }
 
     return response

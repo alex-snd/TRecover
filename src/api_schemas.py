@@ -61,7 +61,9 @@ class PredictResponse(BaseModel):
     status_code: int
     timestamp: str
     url: str
-    data: dict
+    columns: str
+    zread: list
+    chains: list
 
     class Config:
         """ PredictPayload example for API documentation"""
@@ -71,49 +73,47 @@ class PredictResponse(BaseModel):
                 "message": "OK",
                 "method": "POST",
                 "status_code": 200,
-                "timestamp": "2021-08-06T09:14:43.832328",
+                "timestamp": "2021-08-08T17:34:42.390414",
                 "url": "http://localhost:5001/zread",
-                "data": {
-                    "columns": "aecdoijeaacsndlheccaeeeuhcagifndhherdrccadtacdeelccecggaaalemhbkiebfiineldedibekdjganda"
-                               "eafdedgcdfeaceindfjbjebaagacc\njgieqplgfbjuseruheoufppxidlnsntglifsfyeegeuldhfkrpdghiho"
-                               "icohomsomiiksjrvmkkjxninrqleoebobliwlqpphmikklqilqmonceqtgig\nlsmivvpkmhowxitwmnrwntryl"
-                               "enswoxhtphto kmmf oiwplwthhnomvtgtiqn strtrvvvyssqnzpnottmiruqqfpjxzuwtmrlrwrtzown oujz"
-                               "xhrn\nq pkyyuz ryx oz n   yvu w  t   iu nwr  sts so  wz x qqnzzp pzv yvs uwy  vzrs  prx"
-                               "vzxs v grv   zx  p   y t s s p  kvs\n  q   x         p    z         o  z t   v   r     "
-                               "    w    z x   t z z        xvy   u    t                  x    v w\n",
-                    "zread": [
-                        "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboardedu"
+                "columns": "adheclceariagdfceclmfmahaecebfjbddefbcdabspeceaeloheckhhfafbkjebcebbdimesdeabcplfkfaddbiard"
+                           "eabdahearagmdhjcfdbeagaic\nflononfphsohmslegoopmtcvppnocjtdehqmeeeefutorhckrtjmfojmicrionsi"
+                           "frvpeoniugfkhlropljhitcjjvgldcgikmhtkinjotrnjcickjkk\nzsptxplwlwwinwthl vunxryw ptinvlqwtst"
+                           "omjtwvpxxel uwnhwntrftqtpyomswth omwhklin xrtlsnuuoquoogtplmuivqyw rwsokrkqmnln\n   z wo r "
+                           " utz ys   qz  y   s  ot w  rrow  q  fs w  x yv j w w tywzul  n owst   x sts  wy   quqts rur"
+                           "   z v n qr rr \n      s    x        x          qz      rx  v  px       w q     y    s  x s"
+                           "        x         x   u v w       u s  xx \n",
+                "zread": [
+                    "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedupthe"
+                    "irwindowsonceagain",
+                    -6.104937998053401
+                ],
+                "chains": [
+                    [
+                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedu"
                         "ptheirwindowsonceagain",
-                        -5.332423858530319
+                        -6.104937998053401
                     ],
-                    "chains": [
-                        [
-                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboar"
-                            "deduptheirwindowsonceagain",
-                            -5.332423858530319
-                        ],
-                        [
-                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsomebusinessesinportlandboar"
-                            "deduptheirwindowsonceagain",
-                            -5.484715415203709
-                        ],
-                        [
-                            "lwpeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandboar"
-                            "deduptheirwindowsonceagain",
-                            -6.023200242937946
-                        ],
-                        [
-                            "aspeoplearoundthecountrywentintothestreetstoowelltheconvictionsstriksinessesinportlandboar"
-                            "deduptheirwindowsonceagain",
-                            -6.484925642163489
-                        ],
-                        [
-                            "aspeoplearoundthecountrywentintothestreetstocheertheconvictionsstriksinessesinportlandbea"
-                            "rdeduptheirwindowsonceagain",
-                            -7.280832245267902
-                        ]
+                    [
+                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofsbusinessesinportlandboardedu"
+                        "ptheirwindowsonceagain",
+                        -6.2104413745624925
+                    ],
+                    [
+                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofsbusinessesinportsandboardedu"
+                        "ptheirwindowsonceagain",
+                        -6.6121470403370495
+                    ],
+                    [
+                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportsandboardedu"
+                        "ptheirwindowsonceagain",
+                        -6.840312714927222
+                    ],
+                    [
+                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedu"
+                        "ptheirwindowconcergain",
+                        -7.29570330515071
                     ]
-                }
+                ]
             }
         }
 
@@ -124,7 +124,8 @@ class InteractiveResponse(BaseModel):
     status_code: int
     timestamp: str
     url: str
-    data: dict
+    identifier: str
+    size: int
 
     class Config:
         """ InteractiveResponse example for API documentation"""
@@ -134,10 +135,9 @@ class InteractiveResponse(BaseModel):
                 "message": "OK",
                 "method": "POST",
                 "status_code": 200,
-                "timestamp": "2021-08-06T09:14:43.832328",
-                "url": "http://localhost:5001/zread",
-                "data": {
-                    "identifier": '8c82d3f0-f60d-474e-add1-22441aa006e4'
-                }
+                "timestamp": "2021-08-08T17:33:27.512374",
+                "url": "http://localhost:5001/interactive_zread",
+                "identifier": "5de4506a-26a1-4a18-9ac1-5d88cf2d480e",
+                "size": 116
             }
         }
