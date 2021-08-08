@@ -47,18 +47,11 @@ def construct_response(handler: eval) -> eval:
 
     @wraps(handler)  # TODO figure out
     async def wrap(request: Request, *args, **kwargs):
-        results = await handler(request, *args, **kwargs)
+        response = await handler(request, *args, **kwargs)
 
-        response = {
-            'message': results['message'],
-            'method': request.method,
-            'status_code': results['status_code'],
-            'timestamp': datetime.now().isoformat(),
-            'url': request.url._url,
-        }
-
-        if 'data' in results:
-            response['data'] = results['data']
+        response['method'] = request.method
+        response['timestamp'] = datetime.now().isoformat()
+        response['url'] = request.url._url
 
         return response
 
