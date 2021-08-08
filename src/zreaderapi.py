@@ -77,9 +77,7 @@ async def all_parameters(request: Request) -> dict:
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'data': {
-            'artifacts': context['artifacts']
-        }
+        'artifacts': context['artifacts']
     }
 
     return response
@@ -95,9 +93,7 @@ async def parameters(request: Request, param: str) -> dict:
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'data': {
-            param: context['artifacts'].get(param, 'Not found')
-        }
+        param: context['artifacts'].get(param, 'Not found')
     }
 
     return response
