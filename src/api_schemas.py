@@ -141,3 +141,47 @@ class InteractiveResponse(BaseModel):
                 "size": 116
             }
         }
+
+
+class JobStatus(BaseModel):
+    message: str
+    method: str
+    status_code: int
+    timestamp: str
+    url: str
+    job_status: list
+
+    class Config:
+        """ JobStatus example for API documentation"""
+
+        schema_extra = {
+            'example': {
+                "message": "OK",
+                "method": "GET",
+                "status_code": 200,
+                "timestamp": "2021-08-08T17:43:35.726135",
+                "url": "http://localhost:5001/status/edc256a8-5c9d-4256-8c8e-acd3b69912ba",
+                "job_status": [
+                    [
+                        "aspeoplearoundthecountry",
+                        -1.9372545908522625
+                    ],
+                    [
+                        "aspeoplearoundthecountry",
+                        -2.5602809409524525
+                    ],
+                    [
+                        "aspeoplearoundthecountry",
+                        -2.9490952406658835
+                    ],
+                    [
+                        "aspeoplearoundthecountry",
+                        -3.245900469544722
+                    ],
+                    [
+                        "aspeoplearoundthecoastof",
+                        -3.591321390164012
+                    ]
+                ]
+            }
+        }

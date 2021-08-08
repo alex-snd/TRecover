@@ -12,7 +12,7 @@ from typer import Typer, Option
 
 import config
 import utils
-from api_schemas import PredictPayload, PredictResponse, InteractiveResponse
+from api_schemas import PredictPayload, PredictResponse, InteractiveResponse, JobStatus
 from model import ZReader
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
@@ -151,7 +151,7 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> dict:
     return response
 
 
-@api.get('/status/{identifier}', tags=['Prediction'])
+@api.get('/status/{identifier}', tags=['Prediction'], response_model=JobStatus)
 @construct_response
 async def status(request: Request, identifier: str) -> dict:
     global context
