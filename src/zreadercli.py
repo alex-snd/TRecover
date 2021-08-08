@@ -157,7 +157,7 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
         start_time = time()
 
         chains = utils.beam_search(src, z_reader, beam_width, device,
-                                   beam_loop=utils.interactive_loop(
+                                   beam_loop=utils.cli_interactive_loop(
                                        label=typer.style(f'Processing {file.name}', fg=typer.colors.BLUE, bold=True)))
 
         src_scale = src.size(0) * max(2 * len(delimiter), 1) + 1 * len(delimiter)

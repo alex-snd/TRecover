@@ -1,3 +1,5 @@
+import asyncio
+import uuid
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
@@ -10,25 +12,29 @@ from typer import Typer, Option
 
 import config
 import utils
-from api_schemas import PredictPayload, PredictResponse
+from api_schemas import PredictPayload, PredictResponse, InteractiveResponse
 from model import ZReader
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
 api = FastAPI(title='ZreaderAPI', description='Description will be here', version='0.1')
 
 model: ZReader  # declare model for further initialization on server startup
-artifacts: dict  # mlflow artifacts
+context: dict = {
+    'artifacts': {},  # mlflow artifacts
+    'jobs': {}  # interactive api-calls
+}
 device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
 
 @api.on_event('startup')
-async def load_model():
-    global model, artifacts, device
+async def load_model() -> None:
+    global model, context, device
 
     model_artifacts = config.INFERENCE_DIR / 'artifacts.json'
     weights_path = config.INFERENCE_DIR / 'weights'
 
     artifacts = utils.load_artifacts(model_artifacts)
+    context['artifacts'] = artifacts
 
     model = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
                             artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
@@ -36,7 +42,7 @@ async def load_model():
     model.eval()
 
 
-def construct_response(handler: eval) -> object:
+def construct_response(handler: eval) -> eval:
     """ Construct a JSON response for an endpoint's results. """
 
     @wraps(handler)  # TODO figure out
@@ -68,27 +74,45 @@ async def index(request: Request) -> dict:
     }
 
 
-@api.get('/params/{param}', tags=['Parameters'])
+@api.get('/params', tags=['Parameters'])
 @construct_response
-async def parameters(request: Request, param: str) -> dict:
+async def all_parameters(request: Request) -> dict:
     """ Get a specific parameter's value used for a run. """
 
-    global artifacts
+    global context
 
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
         'data': {
-            param: artifacts.get(param, 'Not found')
+            'artifacts': context['artifacts']
         }
     }
 
     return response
 
 
-@api.post("/zread", tags=["Prediction"], response_model=PredictResponse)
+@api.get('/params/{param}', tags=['Parameters'])
 @construct_response
-async def predict(request: Request, payload: PredictPayload) -> dict:
+async def parameters(request: Request, param: str) -> dict:
+    """ Get a specific parameter's value used for a run. """
+
+    global context
+
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status_code': HTTPStatus.OK,
+        'data': {
+            param: context['artifacts'].get(param, 'Not found')
+        }
+    }
+
+    return response
+
+
+@api.post('/zread', tags=['Prediction'], response_model=PredictResponse)
+@construct_response
+async def zread(request: Request, payload: PredictPayload) -> dict:
     global model, device
 
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
@@ -104,6 +128,59 @@ async def predict(request: Request, payload: PredictPayload) -> dict:
             'columns': utils.visualize_columns(src, payload.delimiter),
             'zread': chains[0],
             'chains': chains
+        }
+    }
+
+    return response
+
+
+@api.post('/interactive_zread', tags=['Prediction'], response_model=InteractiveResponse)
+@construct_response
+async def interactive_zread(request: Request, payload: PredictPayload) -> dict:
+    global context
+
+    identifier = str(uuid.uuid4())
+    job_queue = asyncio.Queue()
+    context['jobs'][identifier] = job_queue
+
+    columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
+    src = utils.columns_to_tensor(columns, device)
+
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(executor=None,
+                         func=lambda: utils.beam_search(src, model, payload.beam_width, device,
+                                                        utils.api_interactive_loop(job_queue, payload.delimiter)))
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status_code': HTTPStatus.OK,
+        'data': {
+            'identifier': identifier,
+            'size': len(columns)
+        }
+    }
+
+    return response
+
+
+@api.get('/status/{identifier}', tags=['Prediction'])
+@construct_response
+async def status(request: Request, identifier: str) -> dict:
+    global context
+
+    if identifier in context['jobs']:
+        job_status = await context['jobs'][identifier].get()
+
+        if job_status is None:
+            context['jobs'].pop(identifier)
+
+    else:
+        job_status = 'Not found'
+
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status_code': HTTPStatus.OK,
+        'data': {
+            identifier: job_status
         }
     }
 

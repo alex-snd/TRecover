@@ -116,3 +116,28 @@ class PredictResponse(BaseModel):
                 }
             }
         }
+
+
+class InteractiveResponse(BaseModel):
+    message: str
+    method: str
+    status_code: int
+    timestamp: str
+    url: str
+    data: dict
+
+    class Config:
+        """ InteractiveResponse example for API documentation"""
+
+        schema_extra = {
+            'example': {
+                "message": "OK",
+                "method": "POST",
+                "status_code": 200,
+                "timestamp": "2021-08-06T09:14:43.832328",
+                "url": "http://localhost:5001/zread",
+                "data": {
+                    "identifier": '8c82d3f0-f60d-474e-add1-22441aa006e4'
+                }
+            }
+        }

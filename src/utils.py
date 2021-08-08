@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from pathlib import Path
@@ -116,7 +117,7 @@ def get_real_direct_link(sharing_link: str) -> str:
     return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
 
 
-def extract_filename(direct_link: str) -> str:
+def extract_filename(direct_link: str) -> str or None:
     for chunk in direct_link.strip().split('&'):
         if chunk.startswith('filename='):
             return chunk.split('=')[1]
@@ -263,7 +264,26 @@ def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, wi
     return step_candidates[:width]
 
 
-def interactive_loop(label: str = 'Processing') -> eval:
+def api_interactive_loop(queue: asyncio.Queue, delimiter: str = '') -> eval:
+    def inner_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+        candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+        for _ in range(encoded_src.size(0)):
+            candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+
+            chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
+            chains = [(visualize_target(tgt, delimiter), prob) for tgt, prob in chains]
+
+            queue.put_nowait(chains)  # TODO add percent ?
+
+        queue.put_nowait(None)
+
+        return candidates
+
+    return inner_loop
+
+
+def cli_interactive_loop(label: str = 'Processing') -> eval:
     def inner_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
