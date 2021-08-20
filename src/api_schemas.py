@@ -1,5 +1,6 @@
 from pydantic import BaseModel, validator
 from data import Collate
+from typing import Union, Optional, List
 
 
 class PredictPayload(BaseModel):
@@ -142,7 +143,7 @@ class InteractiveResponse(BaseResponse):
 
 
 class JobStatus(BaseResponse):
-    job_status: list
+    job_status: Union[List, str]
 
     class Config:
         """ JobStatus example for API documentation"""

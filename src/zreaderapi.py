@@ -157,6 +157,7 @@ async def status(request: Request, identifier: str) -> dict:
 
         if job_status is None:
             context['jobs'].pop(identifier)
+            job_status = 'Job is completed'
 
     else:
         job_status = 'Not found'
