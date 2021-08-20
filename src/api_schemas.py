@@ -55,12 +55,15 @@ class PredictPayload(BaseModel):
         }
 
 
-class PredictResponse(BaseModel):
+class BaseResponse(BaseModel):
     message: str
     method: str
     status_code: int
     timestamp: str
     url: str
+
+
+class PredictResponse(BaseResponse):
     columns: str
     zread: list
     chains: list
@@ -118,12 +121,7 @@ class PredictResponse(BaseModel):
         }
 
 
-class InteractiveResponse(BaseModel):
-    message: str
-    method: str
-    status_code: int
-    timestamp: str
-    url: str
+class InteractiveResponse(BaseResponse):
     identifier: str
     size: int
 
@@ -143,12 +141,7 @@ class InteractiveResponse(BaseModel):
         }
 
 
-class JobStatus(BaseModel):
-    message: str
-    method: str
-    status_code: int
-    timestamp: str
-    url: str
+class JobStatus(BaseResponse):
     job_status: list
 
     class Config:
