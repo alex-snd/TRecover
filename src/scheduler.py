@@ -1,5 +1,19 @@
-class Scheduler(object):
-    def __init__(self, optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0, factor: float = 1.0):
+from abc import ABC, abstractmethod
+
+
+class BaseScheduler(ABC):
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+    @abstractmethod
+    def step(self) -> None:
+        pass
+
+
+class Scheduler(BaseScheduler):
+    def __init__(self, optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
+                 factor: float = 1.0) -> None:
         self.optimizer = optimizer
         self.d_model = d_model
         self.warmup = warmup
@@ -32,7 +46,7 @@ class Scheduler(object):
                                                             (step / self.step_size) * self.warmup ** (-1.5))
 
 
-class IdentityScheduler(object):
+class IdentityScheduler(BaseScheduler):
     def __str__(self) -> str:
         return '<IdentityScheduler()>'
 
