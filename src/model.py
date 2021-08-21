@@ -1,14 +1,16 @@
 import math
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 
 class PositionalEncoding(nn.Module):
 
-    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000) -> None:
         super(PositionalEncoding, self).__init__()
 
         self.dropout = nn.Dropout(p=dropout)
@@ -24,15 +26,22 @@ class PositionalEncoding(nn.Module):
 
         self.register_buffer('pe', pe)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x + self.pe[:x.size(0), :]
 
         return self.dropout(x)
 
 
 class ZReader(nn.Module):
-    def __init__(self, token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int,
-                 dropout: float):
+    def __init__(self,
+                 token_size: int,
+                 pe_max_len: int,
+                 num_layers: int,
+                 d_model: int,
+                 n_heads: int,
+                 d_ff: int,
+                 dropout: float
+                 ) -> None:
         assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
 
         super(ZReader, self).__init__()
@@ -72,7 +81,7 @@ class ZReader(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def encode(self, src: torch.tensor, src_pad_mask: torch.tensor) -> torch.tensor:
+    def encode(self, src: Tensor, src_pad_mask: Optional[Tensor]) -> Tensor:
         src = src.transpose(0, 1)
 
         src = F.relu(self.mapping(src)) * self.scale
@@ -80,8 +89,13 @@ class ZReader(nn.Module):
 
         return self.encoder(src=src, src_key_padding_mask=src_pad_mask)
 
-    def decode(self, tgt_inp: torch.tensor, encoded_src: torch.tensor, tgt_attn_mask: torch.tensor,
-               tgt_pad_mask: torch.tensor, src_pad_mask) -> torch.tensor:
+    def decode(self,
+               tgt_inp: Tensor,
+               encoded_src: Tensor,
+               tgt_attn_mask: Optional[Tensor],
+               tgt_pad_mask: Optional[Tensor],
+               src_pad_mask: Optional[Tensor]
+               ) -> Tensor:
         tgt_inp = tgt_inp.transpose(0, 1)
 
         tgt_inp = F.relu(self.mapping(tgt_inp)) * self.scale
@@ -90,14 +104,23 @@ class ZReader(nn.Module):
         return self.decoder(tgt=tgt_inp, memory=encoded_src, tgt_mask=tgt_attn_mask,
                             tgt_key_padding_mask=tgt_pad_mask, memory_key_padding_mask=src_pad_mask)
 
-    def predict(self, tgt_inp: torch.tensor, encoded_src: torch.tensor, tgt_attn_mask: torch.tensor,
-                tgt_pad_mask: torch.tensor, src_pad_mask) -> torch.tensor:
+    def predict(self,
+                tgt_inp: Tensor,
+                encoded_src: Tensor,
+                tgt_attn_mask: Optional[Tensor],
+                tgt_pad_mask: Optional[Tensor],
+                src_pad_mask: Optional[Tensor]
+                ) -> Tensor:
         decoded = self.decode(tgt_inp, encoded_src, tgt_attn_mask, tgt_pad_mask, src_pad_mask)
 
         return self.inv_mapping(decoded).transpose(0, 1)
 
-    def forward(self, src: torch.tensor, src_pad_mask: torch.tensor,
-                tgt_inp: torch.tensor, tgt_attn_mask: torch.tensor, tgt_pad_mask: torch.tensor) -> torch.tensor:
+    def forward(self, src: Tensor,
+                src_pad_mask: Optional[Tensor],
+                tgt_inp: Tensor,
+                tgt_attn_mask: Optional[Tensor],
+                tgt_pad_mask: Optional[Tensor]
+                ) -> Tensor:
         encoded_src = self.encode(src, src_pad_mask)
 
         return self.predict(tgt_inp, encoded_src, tgt_attn_mask, tgt_pad_mask, src_pad_mask)
@@ -110,4 +133,4 @@ class ZReader(nn.Module):
 
 
 if __name__ == "__main__":
-    pass
+    model = ZReader(token_size=26, pe_max_len=2048, num_layers=4, d_model=256, n_heads=8, d_ff=2048, dropout=0.1)

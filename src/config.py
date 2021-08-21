@@ -1,9 +1,10 @@
 from pathlib import Path
+
 import mlflow
 
 # Repository
 AUTHOR = "Alex-Snd"
-REPO = "Zreader"
+REPO = "ZReader"
 
 # Directories
 BASE_DIR = Path(__file__).parent.parent.absolute()

@@ -2,6 +2,7 @@ import math
 import os
 from pathlib import Path
 from time import time
+from typing import Optional
 from zipfile import ZipFile
 
 import requests
@@ -11,11 +12,14 @@ from typer import Typer, Argument, Option
 
 import utils
 
+# TODO implement commands for api testing
+
 cli = Typer(name='ZreaderAPI')
 
 
 def download_from_disk(sharing_link: str = Argument(..., help='Sharing link to the file on Yandex disk'),
-                       save_dir: str = Option('./', help='Path where to store downloaded file')) -> str or None:
+                       save_dir: str = Option('./', help='Path where to store downloaded file')
+                       ) -> Optional[Path]:
     """
         Download file from Yandex disk
 
@@ -30,7 +34,7 @@ def download_from_disk(sharing_link: str = Argument(..., help='Sharing link to t
 
         Returns
         -------
-        filepath: Path or None
+        filepath: Optional[Path]
             Path to the downloaded file. None if failed to download
 
     """
@@ -64,7 +68,8 @@ def download_from_disk(sharing_link: str = Argument(..., help='Sharing link to t
 
 @cli.command()
 def download_data(sharing_link: str = Argument(..., help='Sharing link to the train data on Yandex disk'),
-                  save_dir: str = Option('./', help='Path where to store downloaded data')) -> None:
+                  save_dir: str = Option('./', help='Path where to store downloaded data')
+                  ) -> None:
     """
         Download train data from Yandex disk
 
@@ -87,7 +92,8 @@ def download_data(sharing_link: str = Argument(..., help='Sharing link to the tr
 
 @cli.command()
 def download_weights(sharing_link: str = Argument(..., help='Sharing link to the model weights on Yandex disk'),
-                     save_dir: str = Option('./', help='Path where to save downloaded weights')) -> None:
+                     save_dir: str = Option('./', help='Path where to save downloaded weights')
+                     ) -> None:
     """
         Download model weights from Yandex disk
 
@@ -116,7 +122,8 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
           max_noise: int = Option(5, help='Max noise parameter. Maximum value is alphabet size'),
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
           console_width: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
-          delimiter: str = Option('', help='Delimiter for columns visualization')) -> None:
+          delimiter: str = Option('', help='Delimiter for columns visualization')
+          ) -> None:
     if min_noise >= max_noise:
         typer.secho('Maximum noise range must be grater than minimum noise range',
                     fg=typer.colors.BRIGHT_RED, bold=True)

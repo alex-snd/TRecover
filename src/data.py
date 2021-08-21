@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import List, Tuple
 
 import numpy as np
 import torch
+from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 import config
@@ -16,7 +18,7 @@ class Collate(object):
                        11: 'l', 12: 'm', 13: 'n', 14: 'o', 15: 'p', 16: 'q', 17: 'r', 18: 's', 19: 't', 20: 'v',
                        21: 'u', 22: 'w', 23: 'x', 24: 'y', 25: 'z'}
 
-    def __init__(self, min_noise: int, max_noise: int):
+    def __init__(self, min_noise: int, max_noise: int) -> None:
         assert 0 <= min_noise <= len(self.alphabet_to_num), \
             f'min_noise should be between 0 and {len(self.alphabet_to_num)} inclusive'
         assert min_noise <= max_noise <= len(self.alphabet_to_num), \
@@ -28,7 +30,7 @@ class Collate(object):
     def __str__(self) -> str:
         return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
 
-    def __call__(self, batch: list) -> torch.tensor:
+    def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(self.alphabet_to_num)
@@ -65,13 +67,13 @@ class Collate(object):
         return src, tgt_inp, tgt, padding_mask, padding_mask, subsequent_mask
 
     @staticmethod
-    def get_subsequent_mask(size: int) -> torch.tensor:
+    def get_subsequent_mask(size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float), diagonal=1) == 1
 
 
 class WikiDataset(Dataset):
 
-    def __init__(self, datafiles: list, min_threshold: int, max_threshold: int, dataset_size: int):
+    def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int) -> None:
         assert self.__exists(datafiles)
         assert min_threshold > 0, 'min_threshold should be grater than 0'
         assert max_threshold >= min_threshold, f'max_threshold should be grater or equal than {min_threshold}'
@@ -105,7 +107,7 @@ class WikiDataset(Dataset):
                f' dataset_size={self.dataset_size})>'
 
     @staticmethod
-    def __exists(datafiles: list) -> bool:
+    def __exists(datafiles: List[Path]) -> bool:
         for file in datafiles:
             if not file.exists():
                 print(f'{file} doesnt exist')
@@ -118,8 +120,12 @@ class WikiDataset(Dataset):
 
         return powered / np.sum(powered)
 
-    def create_dataloader(self, batch_size: int, min_noise: int, max_noise: int, num_workers: int = 0,
-                          pin_memory: bool = True) -> DataLoader:
+    def create_dataloader(self, batch_size: int,
+                          min_noise: int,
+                          max_noise: int,
+                          num_workers: int = 0,
+                          pin_memory: bool = True
+                          ) -> DataLoader:
 
         assert batch_size > 0, 'batch_size should be grater than 0'
         assert num_workers >= 0, 'num_workers should be grater or equal than 0'

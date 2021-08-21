@@ -2,16 +2,21 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from typing import Optional, Dict, List, Union, Tuple, Callable
 
 import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
 import typer
+from torch import Tensor
 
 import config
 from data import Collate
 from model import ZReader
+
+
+# -------------------------------------Train data cleaning & preparation utils------------------------------------------
 
 
 def clean_wiki_text(filename: Path, drop_threshold: float = 0.62) -> None:
@@ -110,6 +115,9 @@ def clean_blogs(blogs_folder: Path) -> None:
     print(f'Result size: {result_size}')
 
 
+# ----------------------------------------Downloading from Yandex disk utils--------------------------------------------
+
+
 def get_real_direct_link(sharing_link: str) -> str:
     pk_request = requests.get(
         f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
@@ -117,12 +125,15 @@ def get_real_direct_link(sharing_link: str) -> str:
     return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
 
 
-def extract_filename(direct_link: str) -> str or None:
+def extract_filename(direct_link: str) -> Optional[str]:
     for chunk in direct_link.strip().split('&'):
         if chunk.startswith('filename='):
             return chunk.split('=')[1]
 
     return None
+
+
+# --------------------------------------------------Trainer utils-------------------------------------------------------
 
 
 def set_seeds(seed: int = 2531) -> None:
@@ -132,8 +143,16 @@ def set_seeds(seed: int = 2531) -> None:
     torch.cuda.manual_seed_all(seed)  # multi-GPU
 
 
-def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n_heads: int, d_ff: int, dropout: float,
-              device: torch.device = torch.device('cpu'), weights: Path = None) -> ZReader:
+def get_model(token_size: int,
+              pe_max_len: int,
+              num_layers: int,
+              d_model: int,
+              n_heads: int,
+              d_ff: int,
+              dropout: float,
+              device: torch.device = torch.device('cpu'),
+              weights: Optional[Path] = None
+              ) -> ZReader:
     model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
     if weights and weights.exists() and weights.is_file():
@@ -142,17 +161,20 @@ def get_model(token_size: int, pe_max_len: int, num_layers: int, d_model: int, n
     return model
 
 
-def load_artifacts(model_artifacts: Path) -> dict:
+def load_artifacts(model_artifacts: Path) -> Dict[str, Union[str, int, float]]:
     # TODO load mlflow artifacts
     return json.load(model_artifacts.open())
 
 
-def save_parameters(data: dict, filepath: Path, sort=False) -> None:
+def save_parameters(data: Dict, filepath: Path, sort=False) -> None:
     with open(filepath, 'w') as f:
         json.dumps(data, indent=2, fp=f, sort_keys=sort)
 
 
-def visualize_columns(grid: torch.tensor, delimiter: str = '') -> str:
+# ------------------------------------------------Visualization utils---------------------------------------------------
+
+
+def visualize_columns(grid: Tensor, delimiter: str = '') -> str:
     columns = list()
     max_depth = 0
     visualization = str()
@@ -169,13 +191,16 @@ def visualize_columns(grid: torch.tensor, delimiter: str = '') -> str:
     return visualization
 
 
-def visualize_target(tgt: torch.tensor, delimiter: str = '') -> str:
+def visualize_target(tgt: Tensor, delimiter: str = '') -> str:
     tgt = [Collate.num_to_alphabet[ch_id] for ch_id in tgt.tolist()]
 
     return f'{delimiter}{delimiter.join(tgt)}{delimiter}'
 
 
-def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> list:
+# ---------------------------------Plain inference data cleaning & preparation utils------------------------------------
+
+
+def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
     np.random.seed(None)
     columns = list()
 
@@ -190,7 +215,11 @@ def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> list:
     return columns
 
 
-def create_files_noisy_columns(files: list, min_noise: int, max_noise: int, n_to_show: int = 0) -> list:
+def create_files_noisy_columns(files: List[Union[str, Path]],
+                               min_noise: int,
+                               max_noise: int,
+                               n_to_show: int = 0
+                               ) -> List[List[str]]:
     files_columns = list()
 
     for file in files:
@@ -207,14 +236,17 @@ def create_files_noisy_columns(files: list, min_noise: int, max_noise: int, n_to
     return files_columns
 
 
-def data_to_columns(data: str, separator: str = ' ') -> list:
+# --------------------------------Noised inference data cleaning & preparation utils-----------------------------------
+
+
+def data_to_columns(data: str, separator: str = ' ') -> List[str]:
     data = re.sub(separator, ' ', data)
     cleaned_data = re.sub(r'[^A-Za-z ]', '', data).lower()
 
     return cleaned_data.split(' ')
 
 
-def read_files_columns(files: list, separator: str, n_to_show: int = 0) -> list:
+def read_files_columns(files: List[Union[str, Path]], separator: str, n_to_show: int = 0) -> List[List[str]]:
     files_columns = list()
 
     for file in files:
@@ -231,7 +263,10 @@ def read_files_columns(files: list, separator: str, n_to_show: int = 0) -> list:
     return files_columns
 
 
-def columns_to_tensor(columns: list, device: torch.device = torch.device('cpu')) -> torch.tensor:
+# ---------------------------------------------Columns preparation utils-----------------------------------------------
+
+
+def columns_to_tensor(columns: List[str], device: torch.device = torch.device('cpu')) -> Tensor:
     tensor = torch.zeros((len(columns), len(Collate.alphabet_to_num)), dtype=torch.float, device=device)
 
     for col in range(len(columns)):
@@ -241,11 +276,20 @@ def columns_to_tensor(columns: list, device: torch.device = torch.device('cpu'))
     return tensor
 
 
-def files_columns_to_tensors(files_columns: list, device: torch.device = torch.device('cpu')) -> list:
+def files_columns_to_tensors(files_columns: List[List[str]],
+                             device: torch.device = torch.device('cpu')
+                             ) -> List[Tensor]:
     return [columns_to_tensor(columns, device) for columns in files_columns]
 
 
-def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+# ----------------------------------------------------Beam Search-------------------------------------------------------
+
+
+def beam_step(candidates: List[Tuple[Tensor, float]],
+              encoded_src: Tensor,
+              z_reader: ZReader,
+              width: int, device: torch.device
+              ) -> List[Tuple[Tensor, float]]:
     step_candidates = list()
 
     for tgt_inp, score in candidates:
@@ -264,8 +308,14 @@ def beam_step(candidates: list, encoded_src: torch.tensor, z_reader: ZReader, wi
     return step_candidates[:width]
 
 
-def api_interactive_loop(queue: asyncio.Queue, delimiter: str = '') -> eval:
-    def inner_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+def api_interactive_loop(queue: asyncio.Queue,
+                         delimiter: str = ''
+                         ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
+    def inner_loop(encoded_src: Tensor,
+                   z_reader: ZReader,
+                   width: int,
+                   device: torch.device
+                   ) -> List[Tuple[Tensor, float]]:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
         for _ in range(encoded_src.size(0)):
@@ -283,8 +333,13 @@ def api_interactive_loop(queue: asyncio.Queue, delimiter: str = '') -> eval:
     return inner_loop
 
 
-def cli_interactive_loop(label: str = 'Processing') -> eval:
-    def inner_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+def cli_interactive_loop(label: str = 'Processing'
+                         ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
+    def inner_loop(encoded_src: Tensor,
+                   z_reader: ZReader,
+                   width: int,
+                   device: torch.device
+                   ) -> List[Tuple[Tensor, float]]:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
         with typer.progressbar(length=encoded_src.size(0), label=label, show_pos=True) as progress:
@@ -296,7 +351,11 @@ def cli_interactive_loop(label: str = 'Processing') -> eval:
     return inner_loop
 
 
-def standard_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, device: torch.device) -> list:
+def standard_loop(encoded_src: Tensor,
+                  z_reader: ZReader,
+                  width: int,
+                  device: torch.device
+                  ) -> List[Tuple[Tensor, float]]:
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
     for _ in range(encoded_src.size(0)):
@@ -305,8 +364,12 @@ def standard_loop(encoded_src: torch.tensor, z_reader: ZReader, width: int, devi
     return candidates
 
 
-def beam_search(src: torch.tensor, z_reader: ZReader, width: int, device: torch.device,
-                beam_loop: eval = standard_loop) -> list:
+def beam_search(src: Tensor,
+                z_reader: ZReader,
+                width: int,
+                device: torch.device,
+                beam_loop: Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]] = standard_loop
+                ) -> List[Tuple[Tensor, float]]:
     src = src.unsqueeze(dim=0)
 
     encoded_src = z_reader.encode(src, src_pad_mask=None)

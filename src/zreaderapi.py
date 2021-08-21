@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
+from typing import Dict, Callable, Awaitable
 
 import torch
 import uvicorn
@@ -19,7 +20,7 @@ cli = Typer(name='ZreaderAPI', epilog='Description will be here')
 api = FastAPI(title='ZreaderAPI', description='Description will be here', version='0.1')
 
 model: ZReader  # declare model for further initialization on server startup
-context: dict = {
+context = {
     'artifacts': {},  # mlflow artifacts
     'jobs': {}  # interactive api-calls
 }
@@ -42,11 +43,11 @@ async def load_model() -> None:
     model.eval()
 
 
-def construct_response(handler: eval) -> eval:
+def construct_response(handler: Callable[..., Awaitable[Dict]]) -> Callable[..., Awaitable[Dict]]:
     """ Construct a JSON response for an endpoint's results. """
 
     @wraps(handler)  # TODO figure out
-    async def wrap(request: Request, *args, **kwargs):
+    async def wrap(request: Request, *args, **kwargs) -> Dict:
         response = await handler(request, *args, **kwargs)
 
         response['method'] = request.method
@@ -60,7 +61,7 @@ def construct_response(handler: eval) -> eval:
 
 @api.get('/', tags=['General'])
 @construct_response
-async def index(request: Request) -> dict:
+async def index(request: Request) -> Dict:
     return {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK
@@ -69,7 +70,7 @@ async def index(request: Request) -> dict:
 
 @api.get('/params', tags=['Parameters'])
 @construct_response
-async def all_parameters(request: Request) -> dict:
+async def all_parameters(request: Request) -> Dict:
     """ Get a specific parameter's value used for a run. """
 
     global context
@@ -85,7 +86,7 @@ async def all_parameters(request: Request) -> dict:
 
 @api.get('/params/{param}', tags=['Parameters'])
 @construct_response
-async def parameters(request: Request, param: str) -> dict:
+async def parameters(request: Request, param: str) -> Dict:
     """ Get a specific parameter's value used for a run. """
 
     global context
@@ -101,7 +102,7 @@ async def parameters(request: Request, param: str) -> dict:
 
 @api.post('/zread', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
-async def zread(request: Request, payload: PredictPayload) -> dict:
+async def zread(request: Request, payload: PredictPayload) -> Dict:
     global model, device
 
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
@@ -123,7 +124,7 @@ async def zread(request: Request, payload: PredictPayload) -> dict:
 
 @api.post('/interactive_zread', tags=['Prediction'], response_model=InteractiveResponse)
 @construct_response
-async def interactive_zread(request: Request, payload: PredictPayload) -> dict:
+async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
     global context
 
     identifier = str(uuid.uuid4())
@@ -149,7 +150,7 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> dict:
 
 @api.get('/status/{identifier}', tags=['Prediction'], response_model=JobStatus)
 @construct_response
-async def status(request: Request, identifier: str) -> dict:
+async def status(request: Request, identifier: str) -> Dict:
     global context
 
     if identifier in context['jobs']:
@@ -176,7 +177,8 @@ def run(host: str = Option('localhost', help='Bind socket to this host'),
         port: int = Option(5001, help='Bind socket to this port'),
         log_level: str = Option('info', help='Log level'),
         reload: bool = Option(False, help='Enable auto-reload'),
-        workers: int = Option(1, help='Number of worker processes')) -> None:
+        workers: int = Option(1, help='Number of worker processes')
+        ) -> None:
     """ Run uvicorn server """
 
     uvicorn.run('zreaderapi:api', host=host, port=port, log_level=log_level, reload=reload, workers=workers)

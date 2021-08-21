@@ -1,6 +1,8 @@
+from typing import Union, Optional, List, Dict, Tuple
+
 from pydantic import BaseModel, validator
+
 from data import Collate
-from typing import Union, Optional, List
 
 
 class PredictPayload(BaseModel):
@@ -11,21 +13,21 @@ class PredictPayload(BaseModel):
     delimiter: str = ''
 
     @validator('data')
-    def data_validator(cls, data: str) -> str or None:
+    def data_validator(cls, data: str) -> Optional[str]:
         if not data:
             ValueError(f'Data for zread must contain at least one character')
 
         return data
 
     @validator('min_noise')
-    def min_noise_validator(cls, min_noise: int) -> int or None:
+    def min_noise_validator(cls, min_noise: int) -> Optional[int]:
         if not 0 <= min_noise <= len(Collate.num_to_alphabet):
             raise ValueError(f'Minimum noise range must be in between 0 and {len(Collate.num_to_alphabet)}')
 
         return min_noise
 
     @validator('max_noise')
-    def max_noise_validator(cls, max_noise: int, values: dict) -> int or None:
+    def max_noise_validator(cls, max_noise: int, values: Dict[str, Union[str, int]]) -> Optional[int]:
         if not 0 <= max_noise <= len(Collate.num_to_alphabet):
             raise ValueError(f'Maximum noise range must be in between 0 and {len(Collate.num_to_alphabet)}')
 
@@ -35,7 +37,7 @@ class PredictPayload(BaseModel):
         return max_noise
 
     @validator('beam_width')
-    def beam_width_validator(cls, beam_width: int) -> int or None:
+    def beam_width_validator(cls, beam_width: int) -> Optional[int]:
         if not 1 <= beam_width <= len(Collate.num_to_alphabet):
             raise ValueError(f'Beam width must be in between 1 and {len(Collate.num_to_alphabet)}')
 
@@ -66,8 +68,8 @@ class BaseResponse(BaseModel):
 
 class PredictResponse(BaseResponse):
     columns: str
-    zread: list
-    chains: list
+    zread: Tuple[str, float]
+    chains: List[Tuple[str, float]]
 
     class Config:
         """ PredictPayload example for API documentation"""
@@ -143,7 +145,7 @@ class InteractiveResponse(BaseResponse):
 
 
 class JobStatus(BaseResponse):
-    job_status: Union[List, str]
+    job_status: Union[List[Tuple[str, float]], str]
 
     class Config:
         """ JobStatus example for API documentation"""

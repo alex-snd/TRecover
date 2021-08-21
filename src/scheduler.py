@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from torch.optim import Optimizer
+
 
 class BaseScheduler(ABC):
     @abstractmethod
@@ -12,7 +14,7 @@ class BaseScheduler(ABC):
 
 
 class Scheduler(BaseScheduler):
-    def __init__(self, optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
+    def __init__(self, optimizer: Optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
                  factor: float = 1.0) -> None:
         self.optimizer = optimizer
         self.d_model = d_model

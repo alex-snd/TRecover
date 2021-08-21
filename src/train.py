@@ -5,22 +5,37 @@ from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 from time import time
+from typing import Callable, Optional, Tuple
 
 import mlflow
 import torch
+from torch import Tensor
 from torch.nn import CrossEntropyLoss
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import config
 from data import WikiDataset, Collate
-from scheduler import Scheduler, IdentityScheduler
+from scheduler import BaseScheduler, Scheduler, IdentityScheduler
 from utils import set_seeds, get_model, visualize_columns, visualize_target
 
 
+# TODO cover all project with tests
+
+
 class Trainer(object):
-    def __init__(self, model: torch.nn.Module, criterion: eval, optimizer, working_dir: Path, scheduler=None,
-                 device: torch.device = None, verbose: bool = True, log_interval: int = 1, console_width: int = None,
-                 delimiter: str = ''):
+    def __init__(self,
+                 model: torch.nn.Module,
+                 criterion: Callable[[Tensor, Tensor], Tensor],
+                 optimizer: Optimizer,
+                 working_dir: Path,
+                 scheduler: Optional[BaseScheduler] = None,
+                 device: Optional[torch.device] = None,
+                 verbose: bool = True,
+                 log_interval: int = 1,
+                 console_width: Optional[int] = None,
+                 delimiter: str = ''
+                 ) -> None:
         self.model = model
         self.criterion = criterion  # should return average on the batch
         self.optimizer = optimizer
@@ -168,9 +183,16 @@ class Trainer(object):
                     self.__log(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
                     self.__log('\n')
 
-    def train(self, n_epochs: int, train_loader: DataLoader, val_loader: DataLoader, vis_loader: DataLoader,
-              epoch_seek: int = 0, accumulation_step: int = 1, vis_interval: int = 1, saving_interval: int = 1) -> None:
-
+    def train(self,
+              n_epochs: int,
+              train_loader: DataLoader,
+              val_loader: DataLoader,
+              vis_loader: DataLoader,
+              epoch_seek: int = 0,
+              accumulation_step: int = 1,
+              vis_interval: int = 1,
+              saving_interval: int = 1
+              ) -> None:
         self.__log(f'Batch size: {train_loader.batch_size}')
         self.__log(f'Accumulation step: {accumulation_step}')
 
@@ -197,7 +219,7 @@ class Trainer(object):
         finally:
             self.save_model('last_saving')
 
-    def test(self, test_loader: DataLoader) -> (float, float):
+    def test(self, test_loader: DataLoader) -> Tuple[float, float]:
         self.model.eval()
 
         test_loss = 0
@@ -242,7 +264,7 @@ class Trainer(object):
         self.__log(f'Optimizer: {self.optimizer}'.replace('\n', ''))
         self.__log(f'Scheduler: {self.scheduler}')
 
-    def __log(self, info: str) -> None:
+    def __log(self, info: str) -> None:  # TODO add standard logging declared in config.py
         with self.log_file.open(mode='a') as log_file:
             log_file.write(f'{info}\n')
 
@@ -307,7 +329,7 @@ def train(params: Namespace) -> None:
 
 
 def main() -> None:
-    params = Namespace(
+    params = Namespace(  # TODO implement this using argparse
         # ---------------------------------------------DATA PARAMETERS--------------------------------------------------
         seed=2531,
         train_files=[Path(config.TRAIN_DATA, file) for file in config.TRAIN_DATA.iterdir()],
