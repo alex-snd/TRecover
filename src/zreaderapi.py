@@ -100,6 +100,7 @@ async def parameters(request: Request, param: str) -> Dict:
     return response
 
 
+# TODO noised data
 @api.post('/zread', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
 async def zread(request: Request, payload: PredictPayload) -> Dict:
@@ -115,7 +116,6 @@ async def zread(request: Request, payload: PredictPayload) -> Dict:
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
         'columns': utils.visualize_columns(src, payload.delimiter),
-        'zread': chains[0],
         'chains': chains
     }
 

@@ -68,7 +68,6 @@ class BaseResponse(BaseModel):
 
 class PredictResponse(BaseResponse):
     columns: str
-    zread: Tuple[str, float]
     chains: List[Tuple[str, float]]
 
     class Config:
@@ -88,11 +87,6 @@ class PredictResponse(BaseResponse):
                            " utz ys   qz  y   s  ot w  rrow  q  fs w  x yv j w w tywzul  n owst   x sts  wy   quqts rur"
                            "   z v n qr rr \n      s    x        x          qz      rx  v  px       w q     y    s  x s"
                            "        x         x   u v w       u s  xx \n",
-                "zread": [
-                    "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedupthe"
-                    "irwindowsonceagain",
-                    -6.104937998053401
-                ],
                 "chains": [
                     [
                         "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedu"
