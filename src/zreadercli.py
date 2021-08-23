@@ -160,12 +160,13 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
 
     files_src = utils.files_columns_to_tensors(files_columns, device)
 
-    for file, src in zip(files, files_src):
+    for file_id, (file, src) in enumerate(zip(files, files_src), start=1):
         start_time = time()
 
+        loop_label = typer.style(f'[{file_id}/{len(files_src)}] Processing {file.name}',
+                                 fg=typer.colors.BLUE, bold=True)
         chains = utils.beam_search(src, z_reader, beam_width, device,
-                                   beam_loop=utils.cli_interactive_loop(
-                                       label=typer.style(f'Processing {file.name}', fg=typer.colors.BLUE, bold=True)))
+                                   beam_loop=utils.cli_interactive_loop(label=loop_label))
 
         src_scale = src.size(0) * max(2 * len(delimiter), 1) + 1 * len(delimiter)
         printing_scale = console_width if 0 < console_width < src_scale else src_scale
