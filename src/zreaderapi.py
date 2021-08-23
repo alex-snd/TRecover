@@ -108,7 +108,7 @@ async def zread(request: Request, payload: PredictPayload) -> Dict:
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
     src = utils.columns_to_tensor(columns, device)
 
-    chains = utils.beam_search(src, model, payload.beam_width, device)
+    chains = await utils.async_beam_search(src, model, payload.beam_width, device)
     chains = [(utils.visualize_target(tgt, payload.delimiter), prob) for tgt, prob in chains]
 
     response = {
@@ -134,10 +134,8 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
     columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
     src = utils.columns_to_tensor(columns, device)
 
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(executor=None,
-                         func=lambda: utils.beam_search(src, model, payload.beam_width, device,
-                                                        utils.api_interactive_loop(job_queue, payload.delimiter)))
+    asyncio.create_task(utils.async_beam_search(src, model, payload.beam_width, device,
+                                                utils.api_interactive_loop(job_queue, payload.delimiter)))
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,

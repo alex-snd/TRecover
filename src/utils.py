@@ -2,7 +2,7 @@ import asyncio
 import json
 import re
 from pathlib import Path
-from typing import Optional, Dict, List, Union, Tuple, Callable
+from typing import Optional, Dict, List, Union, Tuple, Callable, Awaitable
 
 import numpy as np
 import requests
@@ -282,7 +282,7 @@ def files_columns_to_tensors(files_columns: List[List[str]],
     return [columns_to_tensor(columns, device) for columns in files_columns]
 
 
-# ----------------------------------------------------Beam Search-------------------------------------------------------
+# ----------------------------------------------Synchronous Beam Search-------------------------------------------------
 
 
 def beam_step(candidates: List[Tuple[Tensor, float]],
@@ -303,34 +303,7 @@ def beam_step(candidates: List[Tuple[Tensor, float]],
 
             step_candidates.append((torch.cat([tgt_inp, new_token], dim=1), score + float(prob)))
 
-        step_candidates = sorted(step_candidates, key=lambda candidate: -candidate[1])
-
-    return step_candidates[:width]
-
-
-def api_interactive_loop(queue: asyncio.Queue,
-                         delimiter: str = ''
-                         ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
-    def inner_loop(encoded_src: Tensor,
-                   z_reader: ZReader,
-                   width: int,
-                   device: torch.device
-                   ) -> List[Tuple[Tensor, float]]:
-        candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
-
-        for _ in range(encoded_src.size(0)):
-            candidates = beam_step(candidates, encoded_src, z_reader, width, device)
-
-            chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
-            chains = [(visualize_target(tgt, delimiter), prob) for tgt, prob in chains]
-
-            queue.put_nowait(chains)  # TODO add percent ?
-
-        queue.put_nowait(None)
-
-        return candidates
-
-    return inner_loop
+    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
 
 
 def cli_interactive_loop(label: str = 'Processing'
@@ -377,6 +350,85 @@ def beam_search(src: Tensor,
     candidates = beam_loop(encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]  # first token is empty_token
+
+
+# ---------------------------------------------Asynchronous Beam Search-------------------------------------------------
+
+
+async def async_beam_step(candidates: List[Tuple[Tensor, float]],
+                          encoded_src: Tensor,
+                          z_reader: ZReader,
+                          width: int, device: torch.device
+                          ) -> List[Tuple[Tensor, float]]:
+    async def candidate_step(tgt_inp: Tensor, score: float) -> None:
+        prediction = z_reader.predict(tgt_inp, encoded_src, tgt_attn_mask=None, tgt_pad_mask=None, src_pad_mask=None)
+        probabilities = F.log_softmax(prediction[:, -1], dim=-1).squeeze()  # first is batch
+
+        values, indices = probabilities.topk(k=width, dim=-1)
+        for prob, pos in zip(values, indices):
+            new_token = torch.zeros(1, 1, z_reader.token_size, device=device)
+            new_token[0, 0, pos] = 1
+
+            step_candidates.append((torch.cat([tgt_inp, new_token], dim=1), score + float(prob)))
+
+    step_candidates = list()
+
+    for candidate_tgt_inp, candidate_score in candidates:
+        await candidate_step(candidate_tgt_inp, candidate_score)
+
+    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
+
+
+def api_interactive_loop(queue: asyncio.Queue,  # TODO use redis or something like that for multiprocessing
+                         delimiter: str = ''
+                         ) -> Callable[[Tensor, ZReader, int, torch.device], Awaitable]:
+    async def async_inner_loop(encoded_src: Tensor,
+                               z_reader: ZReader,
+                               width: int,
+                               device: torch.device
+                               ) -> None:
+        candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+        for _ in range(encoded_src.size(0)):
+            candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
+
+            chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
+            chains = [(visualize_target(tgt, delimiter), prob) for tgt, prob in chains]
+
+            await queue.put(chains)  # TODO add percent ?
+
+        await queue.put(None)
+
+    return async_inner_loop
+
+
+async def standard_async_loop(encoded_src: Tensor,
+                              z_reader: ZReader,
+                              width: int,
+                              device: torch.device
+                              ) -> List[Tuple[Tensor, float]]:
+    candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+    for _ in range(encoded_src.size(0)):
+        candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
+
+    return candidates
+
+
+async def async_beam_search(src: Tensor,
+                            z_reader: ZReader,
+                            width: int,
+                            device: torch.device,
+                            beam_loop: Callable[[Tensor, ZReader, int, torch.device],
+                                                Awaitable[Optional[List[Tuple[Tensor, float]]]]] = standard_async_loop
+                            ) -> Optional[List[Tuple[Tensor, float]]]:
+    src = src.unsqueeze(dim=0)
+
+    encoded_src = z_reader.encode(src, src_pad_mask=None)
+
+    candidates = await beam_loop(encoded_src, z_reader, width, device)
+
+    return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates] if candidates else None
 
 
 if __name__ == '__main__':
