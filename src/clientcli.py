@@ -34,7 +34,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
           console_width: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')) -> None:
-    inference_path = Path(inference_path)
+    inference_path = Path(inference_path).absolute()
 
     if not noisy and min_noise >= max_noise:
         typer.secho('Maximum noise range must be grater than minimum noise range',
@@ -55,8 +55,6 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
     for file_id, (file, file_columns) in enumerate(zip(files, files_columns), start=1):
         start_time = time()
-
-        # TODO visualize here
 
         payload['data'] = file_columns
         response = requests.post(url=f'{host}:{port}/zread', json=payload)
@@ -80,6 +78,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         printing_scale = console_width if 0 < console_width < src_scale else src_scale
 
         print('-' * printing_scale)
+        print(utils.visualize_columns(file_columns, delimiter))
         for chain, _ in chains:
             print('-' * printing_scale)
             print(chain)
