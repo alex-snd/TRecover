@@ -13,7 +13,7 @@ from typer import Typer, Option
 
 import config
 import utils
-from api_schemas import PredictPayload, PredictResponse, InteractiveResponse, JobStatus
+from api_schemas import PredictPayload, PredictResponse, JobResponse
 from model import ZReader
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
@@ -100,29 +100,7 @@ async def parameters(request: Request, param: str) -> Dict:
     return response
 
 
-# TODO noised data
-@api.post('/zread', tags=['Prediction'], response_model=PredictResponse)
-@construct_response
-async def zread(request: Request, payload: PredictPayload) -> Dict:
-    global model, device
-
-    columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
-    src = utils.columns_to_tensor(columns, device)
-
-    chains = await utils.async_beam_search(src, model, payload.beam_width, device)
-    chains = [(utils.visualize_target(tgt, payload.delimiter), prob) for tgt, prob in chains]
-
-    response = {
-        'message': HTTPStatus.OK.phrase,
-        'status_code': HTTPStatus.OK,
-        'columns': utils.visualize_columns(src, payload.delimiter),
-        'chains': chains
-    }
-
-    return response
-
-
-@api.post('/interactive_zread', tags=['Prediction'], response_model=InteractiveResponse)
+@api.post('/zread', tags=['Prediction'], response_model=JobResponse)
 @construct_response
 async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
     global context
@@ -131,8 +109,7 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
     job_queue = asyncio.Queue()
     context['jobs'][identifier] = job_queue
 
-    columns = utils.create_noisy_columns(payload.data, payload.min_noise, payload.max_noise)
-    src = utils.columns_to_tensor(columns, device)
+    src = utils.columns_to_tensor(payload.data, device)
 
     asyncio.create_task(utils.async_beam_search(src, model, payload.beam_width, device,
                                                 utils.api_interactive_loop(job_queue, payload.delimiter)))
@@ -140,31 +117,50 @@ async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
         'identifier': identifier,
-        'size': len(columns)
+        'size': len(payload.data)
     }
 
     return response
 
 
-@api.get('/status/{identifier}', tags=['Prediction'], response_model=JobStatus)
+@api.get('/status/{identifier}', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
 async def status(request: Request, identifier: str) -> Dict:
     global context
 
     if identifier in context['jobs']:
-        job_status = await context['jobs'][identifier].get()
+        chains = await context['jobs'][identifier].get()
 
-        if job_status is None:
+        if chains is None:
             context['jobs'].pop(identifier)
-            job_status = 'Job is completed'
+            chains = 'Job is completed'
 
     else:
-        job_status = 'Not found'
+        chains = 'Job is not found'
 
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'job_status': job_status
+        'chains': chains
+    }
+
+    return response
+
+
+@api.post('/test_zread', tags=['Prediction'], response_model=PredictResponse)
+@construct_response
+async def zread(request: Request, payload: PredictPayload) -> Dict:
+    global model, device
+
+    src = utils.columns_to_tensor(payload.data, device)
+
+    chains = await utils.async_beam_search(src, model, payload.beam_width, device)
+    chains = [(utils.visualize_target(tgt, payload.delimiter), prob) for tgt, prob in chains]
+
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status_code': HTTPStatus.OK,
+        'chains': chains
     }
 
     return response
