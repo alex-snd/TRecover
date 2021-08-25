@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 import re
 from pathlib import Path
 from typing import Optional, Dict, List, Union, Tuple, Callable, Awaitable
@@ -115,24 +116,6 @@ def clean_blogs(blogs_folder: Path) -> None:
     print(f'Result size: {result_size}')
 
 
-# ----------------------------------------Downloading from Yandex disk utils--------------------------------------------
-
-
-def get_real_direct_link(sharing_link: str) -> str:
-    pk_request = requests.get(
-        f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
-
-    return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
-
-
-def extract_filename(direct_link: str) -> Optional[str]:
-    for chunk in direct_link.strip().split('&'):
-        if chunk.startswith('filename='):
-            return chunk.split('=')[1]
-
-    return None
-
-
 # --------------------------------------------------Trainer utils-------------------------------------------------------
 
 
@@ -173,7 +156,7 @@ def save_parameters(data: Dict, filepath: Path, sort=False) -> None:
 
 # ------------------------------------------------Visualization utils---------------------------------------------------
 
-
+# TODO add here str columns
 def visualize_columns(grid: Tensor, delimiter: str = '') -> str:
     columns = list()
     max_depth = 0
@@ -255,7 +238,7 @@ def read_files_columns(files: List[Union[str, Path]], separator: str, n_to_show:
 
         columns = data_to_columns(data, separator)
 
-        if n_to_show:
+        if n_to_show > 0:
             columns = columns[:n_to_show]
 
         files_columns.append(columns)
@@ -315,7 +298,7 @@ def cli_interactive_loop(label: str = 'Processing'
                    ) -> List[Tuple[Tensor, float]]:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        with typer.progressbar(length=encoded_src.size(0), label=label, show_pos=True) as progress:
+        with typer.progressbar(length=encoded_src.size(0), label=label, show_pos=True, show_eta=False) as progress:
             for _ in progress:
                 candidates = beam_step(candidates, encoded_src, z_reader, width, device)
 
@@ -429,6 +412,50 @@ async def async_beam_search(src: Tensor,
     candidates = await beam_loop(encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates] if candidates else None
+
+
+# ---------------------------------------------------CLI utils----------------------------------------------------------
+
+
+def get_real_direct_link(sharing_link: str) -> str:
+    pk_request = requests.get(
+        f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
+
+    return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
+
+
+def extract_filename(direct_link: str) -> Optional[str]:
+    for chunk in direct_link.strip().split('&'):
+        if chunk.startswith('filename='):
+            return chunk.split('=')[1]
+
+    return None
+
+
+def get_files_columns(inference_path: Path,
+                      separator: str,
+                      noisy: bool,
+                      min_noise: int,
+                      max_noise: int,
+                      console_width: int,
+                      delimiter: str
+                      ) -> Tuple[List[Path], List[List[str]]]:
+    if inference_path.is_file():
+        files = [inference_path, ]
+    else:
+        files = [file for file in inference_path.iterdir()]
+
+    if console_width > 0:
+        n_columns_to_show = math.ceil(console_width / max(2 * len(delimiter), 1)) - 1 * len(delimiter)
+    else:
+        n_columns_to_show = 0
+
+    if noisy:
+        files_columns = read_files_columns(files, separator, n_columns_to_show)
+    else:
+        files_columns = create_files_noisy_columns(files, min_noise, max_noise, n_columns_to_show)
+
+    return files, files_columns
 
 
 if __name__ == '__main__':

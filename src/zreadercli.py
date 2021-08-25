@@ -12,14 +12,10 @@ from typer import Typer, Argument, Option
 
 import utils
 
-# TODO implement commands for api testing
-
 cli = Typer(name='ZreaderAPI')
 
 
-def download_from_disk(sharing_link: str = Argument(..., help='Sharing link to the file on Yandex disk'),
-                       save_dir: str = Option('./', help='Path where to store downloaded file')
-                       ) -> Optional[Path]:
+def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     """
         Download file from Yandex disk
 
@@ -111,9 +107,9 @@ def download_weights(sharing_link: str = Argument(..., help='Sharing link to the
 
 
 @cli.command()
-def zread(model_artifacts: str = Argument(..., help='Path to model artifacts json file'),
+def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
+          model_artifacts: str = Argument(..., help='Path to model artifacts json file'),
           weights_path: str = Argument(..., help='Path to model weights'),
-          inference_path: str = Argument(..., help='Path to file or dir for inference'),
           cuda: bool = Option(True, help='CUDA enabled'),
           gpu_id: int = Option(0, help='GPU id'),
           separator: str = Option(' ', help='Columns separator in the input files'),
@@ -124,40 +120,26 @@ def zread(model_artifacts: str = Argument(..., help='Path to model artifacts jso
           console_width: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
-    if min_noise >= max_noise:
+    inference_path = Path(inference_path)
+
+    if not noisy and min_noise >= max_noise:
         typer.secho('Maximum noise range must be grater than minimum noise range',
                     fg=typer.colors.BRIGHT_RED, bold=True)
         return
 
-    artifacts = utils.load_artifacts(Path(model_artifacts))
-
-    inference_path = Path(inference_path)
-
-    if inference_path.is_file():
-        files = [inference_path, ]
-    elif inference_path.is_dir():
-        files = [file for file in inference_path.iterdir()]
-    else:
+    if not any([inference_path.is_file(), inference_path.is_dir()]):
         typer.secho('Files for inference needed to be specified', fg=typer.colors.BRIGHT_RED, bold=True)
         return
 
+    artifacts = utils.load_artifacts(Path(model_artifacts))
     device = torch.device(f'cuda:{gpu_id}' if cuda and torch.cuda.is_available() else 'cpu')
-
     z_reader = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
                                artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
                                device, weights=Path(weights_path))
     z_reader.eval()
 
-    if console_width > 0:
-        n_columns_to_show = math.ceil(console_width / max(2 * len(delimiter), 1)) - 1 * len(delimiter)
-    else:
-        n_columns_to_show = 0
-
-    if noisy:
-        files_columns = utils.read_files_columns(files, separator, n_columns_to_show)
-    else:
-        files_columns = utils.create_files_noisy_columns(files, min_noise, max_noise, n_columns_to_show)
-
+    files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise,
+                                                   console_width, delimiter)
     files_src = utils.files_columns_to_tensors(files_columns, device)
 
     for file_id, (file, src) in enumerate(zip(files, files_src), start=1):
