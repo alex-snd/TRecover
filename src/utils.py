@@ -156,18 +156,21 @@ def save_parameters(data: Dict, filepath: Path, sort=False) -> None:
 
 # ------------------------------------------------Visualization utils---------------------------------------------------
 
-# TODO add here str columns
-def visualize_columns(grid: Tensor, delimiter: str = '') -> str:
+def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '') -> str:
     columns = list()
     max_depth = 0
     visualization = str()
 
-    for c in range(grid.size(0)):
-        columns.append([Collate.num_to_alphabet[pos] for pos in range(grid.size(1)) if grid[c, pos]])
-        max_depth = len(columns[c]) if len(columns[c]) > max_depth else max_depth
+    if isinstance(grid, Tensor):
+        for c in range(grid.size(0)):
+            columns.append([Collate.num_to_alphabet[pos] for pos in range(grid.size(1)) if grid[c, pos]])
+            max_depth = len(columns[c]) if len(columns[c]) > max_depth else max_depth
+    else:
+        columns = [list(column) for column in grid]
+        max_depth = max([len(column) for column in grid])
 
     for d in range(max_depth):
-        for c in range(grid.size(0)):
+        for c in range(len(columns)):
             visualization += f'{delimiter}{columns[c][d]}' if d < len(columns[c]) else f'{delimiter} '
         visualization += f'{delimiter}\n'
 
