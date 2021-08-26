@@ -20,7 +20,7 @@ def params(host: str = Option('http://127.0.0.1', help='API host'),
     else:
         response = requests.get(url=f'{host}:{port}/params')
 
-    print(json.dumps(response.json(), indent=4))
+    print(json.dumps(response.json(), indent=4))  # TODO use rich.print
 
 
 @cli.command()
@@ -79,9 +79,9 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
         print('-' * printing_scale)
         print(utils.visualize_columns(file_columns, delimiter))
+        print('-' * printing_scale, end='\n\n')
         for chain, _ in chains:
-            print('-' * printing_scale)
-            print(chain)
+            print(chain, end='\n\n')
 
         typer.secho(f'Elapsed: {time() - start_time:>7.3f}s\n', fg=typer.colors.BLUE, bold=True)
 
