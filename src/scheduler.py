@@ -4,6 +4,9 @@ from torch.optim import Optimizer
 
 
 class BaseScheduler(ABC):
+    def __repr__(self) -> str:
+        return self.__str__()
+
     @abstractmethod
     def __str__(self) -> str:
         pass
