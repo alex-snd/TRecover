@@ -72,6 +72,9 @@ class ZReader(nn.Module):
 
         self.init_weights()
 
+    def __repr__(self) -> str:
+        return self.__str__()  # but standard implementation is better
+
     def __str__(self) -> str:
         return f'ZReader(token_size={self.token_size}, pe_max_len={self.pe_max_len}, num_layers={self.num_layers}, ' \
                f'd_model={self.d_model}, n_heads={self.n_heads}, d_ff={self.d_ff}, dropout={self.dropout})'
