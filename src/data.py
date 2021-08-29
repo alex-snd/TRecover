@@ -106,8 +106,8 @@ class WikiDataset(Dataset):
         return self.__str__()
 
     def __str__(self) -> str:
-        return f'<WikiDataset(min_threshold={self.min_threshold}, max_threshold={self.max_threshold},' \
-               f' dataset_size={self.dataset_size})>'
+        return f'WikiDataset(min_threshold={self.min_threshold}, max_threshold={self.max_threshold},' \
+               f' dataset_size={self.dataset_size})'
 
     @staticmethod
     def __exists(datafiles: List[Path]) -> bool:
