@@ -102,6 +102,9 @@ class WikiDataset(Dataset):
     def __len__(self) -> int:
         return self.dataset_size
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def __str__(self) -> str:
         return f'<WikiDataset(min_threshold={self.min_threshold}, max_threshold={self.max_threshold},' \
                f' dataset_size={self.dataset_size})>'
