@@ -403,4 +403,8 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        config.project_logger.error(e)
+        config.project_logger.handlers[0].console.print_exception(show_locals=True)
