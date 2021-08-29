@@ -1,4 +1,3 @@
-import logging
 import math
 import shutil
 import tempfile
@@ -6,7 +5,8 @@ from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union, Type
+import traceback
 
 import mlflow
 import torch
@@ -39,6 +39,7 @@ class Trainer(object):
         self.model = model
         self.criterion = criterion  # should return average on the batch
         self.optimizer = optimizer
+        self.working_dir = working_dir
         self.scheduler = scheduler or IdentityScheduler()
         self.device = device or torch.device("cpu")
         self.log_interval = log_interval
@@ -53,16 +54,42 @@ class Trainer(object):
         date = datetime.now()
         self.experiment_mark = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}'
 
-        self.experiment_folder = Path(working_dir, self.experiment_mark)
+        self.experiment_folder = Path(self.working_dir, self.experiment_mark)
         self.weights_folder = Path(self.experiment_folder, 'weights')
 
         self.experiment_folder.mkdir(parents=True, exist_ok=True)
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-
         self.logger = config.train_logger
+
         self.__log_init_params()
+
+    def __enter__(self) -> None:
+        pass
+
+    def __exit__(self, exc_type: Union[None, Type[BaseException]],
+                 exc_val: Union[None, BaseException],
+                 exc_tb: traceback.TracebackException) -> None:
+        if exc_type is not None:
+            self.logger.handlers[0].console.print_exception(width=self.console_width, show_locals=True)
+
+        self.save_html()
+        self.save_model('last_saving')
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __str__(self) -> str:
+        return f'Trainer(model={self.model}, ' \
+               f'criterion={self.criterion}, ' \
+               f'optimizer={optimizer_to_str(self.optimizer)}), ' \
+               f'working_dir={self.working_dir}, ' \
+               f'scheduler={self.scheduler}, ' \
+               f'device={self.device}, ' \
+               f'log_interval={self.log_interval}, ' \
+               f'console_width={self.console_width}, ' \
+               f'delimiter={self.delimiter})'
 
     @property
     def lr(self) -> float:
@@ -203,6 +230,8 @@ class Trainer(object):
         self.logger.info(f'Max threshold: {train_loader.dataset.max_threshold}')
         self.logger.info(f'Accumulation step: {accumulation_step}')
 
+        a = 1 / 0
+
         if len(train_loader) % accumulation_step != 0:
             self.logger.warning('Train dataset size must be evenly divisible by batch_size * accumulation_step')
 
@@ -222,9 +251,6 @@ class Trainer(object):
 
         except KeyboardInterrupt:
             self.logger.info('Interrupted')
-
-        finally:
-            self.save_model('last_saving')
 
     @torch.no_grad()
     def test(self, test_loader: DataLoader) -> Tuple[float, float]:
@@ -307,12 +333,11 @@ def train(params: Namespace) -> None:
     mlflow.set_experiment(experiment_name='ZReader')
 
     with mlflow.start_run(run_name=f'l{params.num_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
-        trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek,
-                      params.accumulation_step, params.vis_interval, params.saving_interval)
+        with trainer:
+            trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek,
+                          params.accumulation_step, params.vis_interval, params.saving_interval)
 
-        test_loss, test_accuracy = trainer.test(test_loader=test_loader)
-
-        trainer.save_html()
+            test_loss, test_accuracy = trainer.test(test_loader=test_loader)
 
         mlflow.log_metrics({'Test loss': test_loss})
         mlflow.log_metrics({'Test accuracy': test_accuracy})
