@@ -133,4 +133,5 @@ mlruns
 data/
 weights/
 inference
+experiments
 src/streamlit_test.py
