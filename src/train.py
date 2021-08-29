@@ -59,23 +59,14 @@ class Trainer(object):
         self.experiment_folder.mkdir(parents=True, exist_ok=True)
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
-        self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.log')
-        self.html_log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
+        self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
 
         self.logger = config.train_logger
-        self.__define_file_handler()
         self.__log_init_params()
 
     @property
     def lr(self) -> float:
         return self.optimizer.param_groups[0]['lr']
-
-    def __define_file_handler(self) -> None:
-        fh = logging.FileHandler(self.log_file)
-        fh.setLevel(logging.INFO)
-        fh.setFormatter(config.minimal_formatter)
-
-        self.logger.addHandler(fh)
 
     def __log_init_params(self) -> None:
         self.logger.info(f'Date: {self.experiment_mark}')
@@ -208,6 +199,8 @@ class Trainer(object):
               saving_interval: int = 1
               ) -> None:
         self.logger.info(f'Batch size: {train_loader.batch_size}')
+        self.logger.info(f'Min threshold: {train_loader.dataset.min_threshold}')
+        self.logger.info(f'Max threshold: {train_loader.dataset.max_threshold}')
         self.logger.info(f'Accumulation step: {accumulation_step}')
 
         if len(train_loader) % accumulation_step != 0:
@@ -274,7 +267,7 @@ class Trainer(object):
         self.model.save(filename=Path(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
 
     def save_html(self) -> None:
-        self.logger.handlers[0].console.save_html(self.html_log_file)
+        self.logger.handlers[0].console.save_html(self.log_file)
 
 
 def train(params: Namespace) -> None:
