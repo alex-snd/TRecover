@@ -230,8 +230,6 @@ class Trainer(object):
         self.logger.info(f'Max threshold: {train_loader.dataset.max_threshold}')
         self.logger.info(f'Accumulation step: {accumulation_step}')
 
-        a = 1 / 0
-
         if len(train_loader) % accumulation_step != 0:
             self.logger.warning('Train dataset size must be evenly divisible by batch_size * accumulation_step')
 
