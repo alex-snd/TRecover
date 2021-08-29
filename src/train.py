@@ -1,3 +1,4 @@
+import logging
 import math
 import shutil
 import tempfile
@@ -17,7 +18,7 @@ from torch.utils.data import DataLoader
 import config
 from data import WikiDataset, Collate
 from scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from utils import set_seeds, get_model, visualize_columns, visualize_target
+from utils import set_seeds, get_model, visualize_columns, visualize_target, optimizer_to_str
 
 
 # TODO cover all project with tests
@@ -31,9 +32,8 @@ class Trainer(object):
                  working_dir: Path,
                  scheduler: Optional[BaseScheduler] = None,
                  device: Optional[torch.device] = None,
-                 verbose: bool = True,
                  log_interval: int = 1,
-                 console_width: Optional[int] = None,
+                 console_width: Optional[int] = 92,
                  delimiter: str = ''
                  ) -> None:
         self.model = model
@@ -41,9 +41,8 @@ class Trainer(object):
         self.optimizer = optimizer
         self.scheduler = scheduler or IdentityScheduler()
         self.device = device or torch.device("cpu")
-        self.verbose = verbose
         self.log_interval = log_interval
-        self.console_width = console_width
+        self.console_width = console_width if console_width >= 92 else 92
         self.delimiter = delimiter
 
         if self.console_width:
@@ -61,16 +60,33 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.log')
+        self.html_log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
+
+        self.logger = config.train_logger
+        self.__define_file_handler()
         self.__log_init_params()
 
     @property
     def lr(self) -> float:
         return self.optimizer.param_groups[0]['lr']
 
+    def __define_file_handler(self) -> None:
+        fh = logging.FileHandler(self.log_file)
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(config.minimal_formatter)
+
+        self.logger.addHandler(fh)
+
+    def __log_init_params(self) -> None:
+        self.logger.info(f'Date: {self.experiment_mark}')
+        self.logger.info(f'Model: {self.model}')
+        self.logger.info(f'Optimizer: {optimizer_to_str(self.optimizer)}')
+        self.logger.info(f'Scheduler: {self.scheduler}')
+
     def __train_step(self, offset: int, train_loader: DataLoader, accumulation_step: int = 1) -> None:
         self.model.train()
 
-        self.__log('*' * self.console_width)
+        self.logger.info('*' * self.console_width)
 
         train_loss = 0.0
 
@@ -101,87 +117,85 @@ class Trainer(object):
 
                 self.optimizer.zero_grad()
 
-                if self.verbose and (offset + batch_idx) % self.log_interval == 0:
+                if (offset + batch_idx) % self.log_interval == 0:
                     accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
                     train_loss /= accumulation_step
 
-                    self.__log(f'Train Batch:  {offset + batch_idx:^7} | '
-                               f'Loss: {train_loss:>10.6f} | Accuracy: {accuracy:>6.3f} | '
-                               f'Elapsed: {time() - start_time:>7.3f}s | LR {round(self.lr, 6):>8}')
+                    self.logger.info(f'Train Batch:  {offset + batch_idx:^7} | '
+                                     f'Loss: {train_loss:>10.6f} | Accuracy: {accuracy:>6.3f} | '
+                                     f'Elapsed: {time() - start_time:>7.3f} | LR {round(self.lr, 6):>8}')
 
                     mlflow.log_metrics({"Train loss": train_loss}, step=offset + batch_idx)
 
                     train_loss = 0.0
                     start_time = time()
 
+    @torch.no_grad()
     def __val_step(self, offset: int, val_loader: DataLoader) -> None:
         self.model.eval()
 
-        self.__log('-' * self.console_width)
+        self.logger.info('-' * self.console_width)
 
         val_loss = 0
         val_accuracy = 0
         start_time = time()
 
-        with torch.no_grad():
-            for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(val_loader,
-                                                                                                       start=1):
-                src = src.to(self.device)
-                tgt_inp = tgt_inp.to(self.device)
-                tgt = tgt.to(self.device)
-                src_pad_mask = src_pad_mask.to(self.device)
-                tgt_pad_mask = tgt_pad_mask.to(self.device)
-                tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(val_loader, start=1):
+            src = src.to(self.device)
+            tgt_inp = tgt_inp.to(self.device)
+            tgt = tgt.to(self.device)
+            src_pad_mask = src_pad_mask.to(self.device)
+            tgt_pad_mask = tgt_pad_mask.to(self.device)
+            tgt_attn_mask = tgt_attn_mask.to(self.device)
 
-                tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-                tgt_out = tgt_out.reshape(-1, self.model.token_size)
-                tgt = tgt.view(-1)
+            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
+            tgt_out = tgt_out.reshape(-1, self.model.token_size)
+            tgt = tgt.view(-1)
 
-                loss = self.criterion(tgt_out, tgt).item()
-                accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
+            loss = self.criterion(tgt_out, tgt).item()
+            accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
 
-                val_loss += loss
-                val_accuracy += accuracy
+            val_loss += loss
+            val_accuracy += accuracy
 
-                mlflow.log_metrics({"Val loss": loss}, step=offset + batch_idx)
-                mlflow.log_metrics({"Val accuracy": accuracy}, step=offset + batch_idx)
+            mlflow.log_metrics({"Val loss": loss}, step=offset + batch_idx)
+            mlflow.log_metrics({"Val accuracy": accuracy}, step=offset + batch_idx)
 
-                if self.verbose:
-                    self.__log(f'Val Batch:    {offset + batch_idx:^7} | Loss: {loss:>10.6f} | '
-                               f'Accuracy: {accuracy:>6.3f} | Elapsed: {time() - start_time:>7.3f}s')
+            self.logger.info(f'Val Batch:    {offset + batch_idx:^7} | Loss: {loss:>10.6f} | '
+                             f'Accuracy: {accuracy:>6.3f} | Elapsed: {time() - start_time:>7.3f}')
 
-                    start_time = time()
+            start_time = time()
 
-            val_loss /= len(val_loader)
-            val_accuracy /= len(val_loader)
+        val_loss /= len(val_loader)
+        val_accuracy /= len(val_loader)
 
-            self.__log(f'Val Average:          | Loss: {val_loss:>10.6f} | Accuracy: {val_accuracy:>6.3f} |')
+        self.logger.info(f'Val Average:          | Loss: {val_loss:>10.6f} | Accuracy: {val_accuracy:>6.3f} |')
 
+    @torch.no_grad()
     def __vis_step(self, vis_loader: DataLoader) -> None:
         self.model.eval()
 
-        with torch.no_grad():
-            for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(vis_loader,
-                                                                                                       start=1):
-                src = src.to(self.device)
-                tgt_inp = tgt_inp.to(self.device)
-                tgt = tgt.to(self.device)
-                src_pad_mask = src_pad_mask.to(self.device)
-                tgt_pad_mask = tgt_pad_mask.to(self.device)
-                tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(vis_loader, start=1):
+            src = src.to(self.device)
+            tgt_inp = tgt_inp.to(self.device)
+            tgt = tgt.to(self.device)
+            src_pad_mask = src_pad_mask.to(self.device)
+            tgt_pad_mask = tgt_pad_mask.to(self.device)
+            tgt_attn_mask = tgt_attn_mask.to(self.device)
 
-                tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-                tgt_out = tgt_out.reshape(-1, self.model.token_size)
-                prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
+            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
+            tgt_out = tgt_out.reshape(-1, self.model.token_size)
+            prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
-                for i in range(src.size(0)):
-                    self.__log('-' * self.console_width)
-                    self.__log(visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                    self.__log('-' * self.console_width)
-                    self.__log(visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                    self.__log('-' * self.console_width)
-                    self.__log(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                    self.__log('\n')
+            for i in range(src.size(0)):
+                self.logger.info('-' * self.console_width)
+                self.logger.info(visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter))
+                self.logger.info('-' * self.console_width)
+                self.logger.info(visualize_target(prediction[i, : self.n_columns_to_show],
+                                                  delimiter=self.delimiter))
+                self.logger.info('-' * self.console_width)
+                self.logger.info(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
+                self.logger.info('\n')  # TODO use here rich styles
 
     def train(self,
               n_epochs: int,
@@ -193,11 +207,11 @@ class Trainer(object):
               vis_interval: int = 1,
               saving_interval: int = 1
               ) -> None:
-        self.__log(f'Batch size: {train_loader.batch_size}')
-        self.__log(f'Accumulation step: {accumulation_step}')
+        self.logger.info(f'Batch size: {train_loader.batch_size}')
+        self.logger.info(f'Accumulation step: {accumulation_step}')
 
         if len(train_loader) % accumulation_step != 0:
-            self.__log('WARNING: Train dataset size must be evenly divisible by batch_size * accumulation_step')
+            self.logger.warning('Train dataset size must be evenly divisible by batch_size * accumulation_step')
 
         try:
             for epoch_idx in range(epoch_seek + 1, epoch_seek + n_epochs + 1):
@@ -214,62 +228,53 @@ class Trainer(object):
                     self.save_model(str(offset + len(train_loader)))
 
         except KeyboardInterrupt:
-            print('Interrupted')
+            self.logger.info('Interrupted')
 
         finally:
             self.save_model('last_saving')
 
+    @torch.no_grad()
     def test(self, test_loader: DataLoader) -> Tuple[float, float]:
         self.model.eval()
 
         test_loss = 0
         test_accuracy = 0
 
-        with torch.no_grad():
-            for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(test_loader,
-                                                                                                       start=1):
-                src = src.to(self.device)
-                tgt_inp = tgt_inp.to(self.device)
-                tgt = tgt.to(self.device)
-                src_pad_mask = src_pad_mask.to(self.device)
-                tgt_pad_mask = tgt_pad_mask.to(self.device)
-                tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(test_loader,
+                                                                                                   start=1):
+            src = src.to(self.device)
+            tgt_inp = tgt_inp.to(self.device)
+            tgt = tgt.to(self.device)
+            src_pad_mask = src_pad_mask.to(self.device)
+            tgt_pad_mask = tgt_pad_mask.to(self.device)
+            tgt_attn_mask = tgt_attn_mask.to(self.device)
 
-                tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-                tgt_out = tgt_out.reshape(-1, self.model.token_size)
-                tgt = tgt.view(-1)
+            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
+            tgt_out = tgt_out.reshape(-1, self.model.token_size)
+            tgt = tgt.view(-1)
 
-                loss = self.criterion(tgt_out, tgt).item()
-                accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
+            loss = self.criterion(tgt_out, tgt).item()
+            accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
 
-                test_loss += loss
-                test_accuracy += accuracy
+            test_loss += loss
+            test_accuracy += accuracy
 
-                mlflow.log_metrics({"Test loss": loss}, step=batch_idx)
-                mlflow.log_metrics({"Test accuracy": accuracy}, step=batch_idx)
+            mlflow.log_metrics({"Test loss": loss}, step=batch_idx)
+            mlflow.log_metrics({"Test accuracy": accuracy}, step=batch_idx)
 
-            test_loss /= len(test_loader)
-            test_accuracy /= len(test_loader)
+        test_loss /= len(test_loader)
+        test_accuracy /= len(test_loader)
 
-            self.__log(f'Test      :           | Loss: {test_loss:>10.6f} | Accuracy: {test_accuracy:>6.3f} |')
+        self.logger.info(f'Test Loss:    {test_loss:>10.6f}\n'
+                         f'Test Accuracy: {test_accuracy:>6.3f}')
 
-            return test_loss, test_accuracy
+        return test_loss, test_accuracy
 
     def save_model(self, weights_name: str) -> None:
         self.model.save(filename=Path(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
 
-    def __log_init_params(self) -> None:
-        self.__log(f'Date: {self.experiment_mark}')
-        self.__log(f'Model: {self.model}')
-        self.__log(f'Optimizer: {self.optimizer}'.replace('\n', ''))
-        self.__log(f'Scheduler: {self.scheduler}')
-
-    def __log(self, info: str) -> None:  # TODO add standard logging declared in config.py
-        with self.log_file.open(mode='a') as log_file:
-            log_file.write(f'{info}\n')
-
-        if self.verbose:
-            print(info)
+    def save_html(self) -> None:
+        self.logger.handlers[0].console.save_html(self.html_log_file)
 
 
 def train(params: Namespace) -> None:
@@ -303,29 +308,30 @@ def train(params: Namespace) -> None:
 
     trainer = Trainer(model=z_reader, criterion=params.criterion, optimizer=optimizer,
                       working_dir=config.EXPERIMENTS_DIR, scheduler=scheduler, device=params.device,
-                      verbose=params.verbose, log_interval=params.log_interval, console_width=params.console_width,
+                      log_interval=params.log_interval, console_width=params.console_width,
                       delimiter=params.delimiter)
 
     mlflow.set_experiment(experiment_name='ZReader')
 
     with mlflow.start_run(run_name=f'l{params.num_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
         trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek,
-                      params.accumulation_step,
-                      params.vis_interval, params.saving_interval)
+                      params.accumulation_step, params.vis_interval, params.saving_interval)
 
         test_loss, test_accuracy = trainer.test(test_loader=test_loader)
+
+        trainer.save_html()
 
         mlflow.log_metrics({'Test loss': test_loss})
         mlflow.log_metrics({'Test accuracy': test_accuracy})
 
         with tempfile.TemporaryDirectory() as dp:
-            # save_parameters(vars(params), Path(dp, "params.json"))
+            # save_parameters(vars(params), Path(dp, "params.json"))  # TODO convert for mlflow
             z_reader.save(Path(dp, "z_reader.pt"))
             shutil.copy(trainer.log_file, dp)
 
             mlflow.log_artifacts(dp)
 
-        # mlflow.log_params(vars(params))
+        # mlflow.log_params(vars(params))  # TODO convert for mlflow
 
 
 def main() -> None:
@@ -370,8 +376,7 @@ def main() -> None:
         saving_interval=1,
         log_interval=1,
         vis_interval=1,
-        verbose=True,
-        console_width=94,
+        console_width=100,
         delimiter='',
         # --------------------------------------------------------------------------------------------------------------
     )
