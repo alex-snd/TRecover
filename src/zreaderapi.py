@@ -102,7 +102,7 @@ async def parameters(request: Request, param: str) -> Dict:
 
 @api.post('/zread', tags=['Prediction'], response_model=JobResponse)
 @construct_response
-async def interactive_zread(request: Request, payload: PredictPayload) -> Dict:
+async def zread(request: Request, payload: PredictPayload) -> Dict:
     global context
 
     identifier = str(uuid.uuid4())
@@ -149,7 +149,7 @@ async def status(request: Request, identifier: str) -> Dict:
 
 @api.post('/test_zread', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
-async def zread(request: Request, payload: PredictPayload) -> Dict:
+async def test_zread(request: Request, payload: PredictPayload) -> Dict:
     global model, device
 
     src = utils.columns_to_tensor(payload.data, device)
