@@ -1,6 +1,7 @@
 import math
 import shutil
 import tempfile
+from rich.panel import Panel
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
@@ -33,7 +34,7 @@ class Trainer(object):
                  scheduler: Optional[BaseScheduler] = None,
                  device: Optional[torch.device] = None,
                  log_interval: int = 1,
-                 console_width: Optional[int] = 92,
+                 n_columns_to_show: Optional[int] = None,
                  delimiter: str = ''
                  ) -> None:
         self.model = model
@@ -43,13 +44,8 @@ class Trainer(object):
         self.scheduler = scheduler or IdentityScheduler()
         self.device = device or torch.device("cpu")
         self.log_interval = log_interval
-        self.console_width = console_width if console_width >= 92 else 92
+        self.n_columns_to_show = n_columns_to_show
         self.delimiter = delimiter
-
-        if self.console_width:
-            self.n_columns_to_show = math.ceil(self.console_width / max(2 * len(delimiter), 1)) - len(delimiter)
-        else:
-            self.n_columns_to_show = None
 
         date = datetime.now()
         self.experiment_mark = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}'
@@ -61,7 +57,8 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-        self.logger = config.train_logger
+        # self.logger = config.train_logger
+        self.console = config.train_console
 
         self.__log_init_params()
 
@@ -72,7 +69,7 @@ class Trainer(object):
                  exc_val: Union[None, BaseException],
                  exc_tb: traceback.TracebackException) -> None:
         if exc_type is not None:
-            self.logger.handlers[0].console.print_exception(width=self.console_width, show_locals=True)
+            self.console.print_exception(show_locals=True)
 
         self.save_html()
         self.save_model('last_saving')
@@ -88,7 +85,7 @@ class Trainer(object):
                f'scheduler={self.scheduler}, ' \
                f'device={self.device}, ' \
                f'log_interval={self.log_interval}, ' \
-               f'console_width={self.console_width}, ' \
+               f'n_columns_to_show={self.n_columns_to_show}, ' \
                f'delimiter={self.delimiter})'
 
     @property
@@ -96,15 +93,15 @@ class Trainer(object):
         return self.optimizer.param_groups[0]['lr']
 
     def __log_init_params(self) -> None:
-        self.logger.info(f'Date: {self.experiment_mark}')
-        self.logger.info(f'Model: {self.model}')
-        self.logger.info(f'Optimizer: {optimizer_to_str(self.optimizer)}')
-        self.logger.info(f'Scheduler: {self.scheduler}')
+        self.console.print(f'Date: {self.experiment_mark}')
+        self.console.print(f'Model: {self.model}')
+        self.console.print(f'Optimizer: {optimizer_to_str(self.optimizer)}')
+        self.console.print(f'Scheduler: {self.scheduler}')
 
     def __train_step(self, offset: int, train_loader: DataLoader, accumulation_step: int = 1) -> None:
         self.model.train()
 
-        self.logger.info('*' * self.console_width)
+        self.console.rule('Training step')
 
         train_loss = 0.0
 
@@ -139,9 +136,9 @@ class Trainer(object):
                     accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
                     train_loss /= accumulation_step
 
-                    self.logger.info(f'Train Batch:  {offset + batch_idx:^7} | '
-                                     f'Loss: {train_loss:>10.6f} | Accuracy: {accuracy:>6.3f} | '
-                                     f'Elapsed: {time() - start_time:>7.3f} | LR {round(self.lr, 6):>8}')
+                    self.console.print(f'Train Batch:  {offset + batch_idx:^7} | '
+                                       f'Loss: {train_loss:>10.6f} | Accuracy: {accuracy:>6.3f} | '
+                                       f'Elapsed: {time() - start_time:>7.3f} | LR {round(self.lr, 6):>8}')
 
                     mlflow.log_metrics({"Train loss": train_loss}, step=offset + batch_idx)
 
@@ -152,7 +149,7 @@ class Trainer(object):
     def __val_step(self, offset: int, val_loader: DataLoader) -> None:
         self.model.eval()
 
-        self.logger.info('-' * self.console_width)
+        self.console.rule('Validation step')
 
         val_loss = 0
         val_accuracy = 0
@@ -179,15 +176,15 @@ class Trainer(object):
             mlflow.log_metrics({"Val loss": loss}, step=offset + batch_idx)
             mlflow.log_metrics({"Val accuracy": accuracy}, step=offset + batch_idx)
 
-            self.logger.info(f'Val Batch:    {offset + batch_idx:^7} | Loss: {loss:>10.6f} | '
-                             f'Accuracy: {accuracy:>6.3f} | Elapsed: {time() - start_time:>7.3f}')
+            self.console.print(f'Val Batch:    {offset + batch_idx:^7} | Loss: {loss:>10.6f} | '
+                               f'Accuracy: {accuracy:>6.3f} | Elapsed: {time() - start_time:>7.3f}')
 
             start_time = time()
 
         val_loss /= len(val_loader)
         val_accuracy /= len(val_loader)
 
-        self.logger.info(f'Val Average:          | Loss: {val_loss:>10.6f} | Accuracy: {val_accuracy:>6.3f} |')
+        self.console.print(f'Val Average:          | Loss: {val_loss:>10.6f} | Accuracy: {val_accuracy:>6.3f} |')
 
     @torch.no_grad()
     def __vis_step(self, vis_loader: DataLoader) -> None:
@@ -206,14 +203,14 @@ class Trainer(object):
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
             for i in range(src.size(0)):
-                self.logger.info('-' * self.console_width)
-                self.logger.info(visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                self.logger.info('-' * self.console_width)
-                self.logger.info(visualize_target(prediction[i, : self.n_columns_to_show],
-                                                  delimiter=self.delimiter))
-                self.logger.info('-' * self.console_width)
-                self.logger.info(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                self.logger.info('\n')  # TODO use here rich styles
+                self.console.rule('Columns')
+                self.console.print(visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter))
+                self.console.rule('Predicted')
+                self.console.print(visualize_target(prediction[i, : self.n_columns_to_show],
+                                                    delimiter=self.delimiter))
+                self.console.rule('Original')
+                self.console.print(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
+                self.console.print('\n')  # TODO use here rich styles
 
     def train(self,
               n_epochs: int,
@@ -225,13 +222,13 @@ class Trainer(object):
               vis_interval: int = 1,
               saving_interval: int = 1
               ) -> None:
-        self.logger.info(f'Batch size: {train_loader.batch_size}')
-        self.logger.info(f'Min threshold: {train_loader.dataset.min_threshold}')
-        self.logger.info(f'Max threshold: {train_loader.dataset.max_threshold}')
-        self.logger.info(f'Accumulation step: {accumulation_step}')
+        self.console.print(f'Batch size: {train_loader.batch_size}')
+        self.console.print(f'Min threshold: {train_loader.dataset.min_threshold}')
+        self.console.print(f'Max threshold: {train_loader.dataset.max_threshold}')
+        self.console.print(f'Accumulation step: {accumulation_step}')
 
-        if len(train_loader) % accumulation_step != 0:
-            self.logger.warning('Train dataset size must be evenly divisible by batch_size * accumulation_step')
+        if len(train_loader) % accumulation_step != 0:  # TODO add style ehere
+            self.console.print('Train dataset size must be evenly divisible by batch_size * accumulation_step')
 
         try:
             for epoch_idx in range(epoch_seek + 1, epoch_seek + n_epochs + 1):
@@ -248,7 +245,7 @@ class Trainer(object):
                     self.save_model(str(offset + len(train_loader)))
 
         except KeyboardInterrupt:
-            self.logger.info('Interrupted')
+            self.console.print('Interrupted')
 
     @torch.no_grad()
     def test(self, test_loader: DataLoader) -> Tuple[float, float]:
@@ -282,8 +279,8 @@ class Trainer(object):
         test_loss /= len(test_loader)
         test_accuracy /= len(test_loader)
 
-        self.logger.info(f'Test Loss:    {test_loss:>10.6f}\n'
-                         f'Test Accuracy: {test_accuracy:>6.3f}')
+        self.console.print(Panel(f'Test Loss:    {test_loss:>10.6f} \nTest Accuracy: {test_accuracy:>6.3f}',
+                                 title='Testing', highlight=True))
 
         return test_loss, test_accuracy
 
@@ -291,7 +288,7 @@ class Trainer(object):
         self.model.save(filename=Path(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
 
     def save_html(self) -> None:
-        self.logger.handlers[0].console.save_html(self.log_file)
+        self.console.save_html(self.log_file)
 
 
 def train(params: Namespace) -> None:
@@ -325,7 +322,7 @@ def train(params: Namespace) -> None:
 
     trainer = Trainer(model=z_reader, criterion=params.criterion, optimizer=optimizer,
                       working_dir=config.EXPERIMENTS_DIR, scheduler=scheduler, device=params.device,
-                      log_interval=params.log_interval, console_width=params.console_width,
+                      log_interval=params.log_interval, n_columns_to_show=params.n_columns_to_show,
                       delimiter=params.delimiter)
 
     mlflow.set_experiment(experiment_name='ZReader')
@@ -392,7 +389,7 @@ def main() -> None:
         saving_interval=1,
         log_interval=1,
         vis_interval=1,
-        console_width=100,
+        n_columns_to_show=92,
         delimiter='',
         # --------------------------------------------------------------------------------------------------------------
     )
@@ -405,4 +402,4 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         config.project_logger.error(e)
-        config.project_logger.handlers[0].console.print_exception(show_locals=True)
+        config.error_console.print_exception(show_locals=True)
