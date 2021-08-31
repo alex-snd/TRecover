@@ -36,14 +36,14 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 # MLFlow model registry
 mlflow.set_tracking_uri(MODEL_REGISTRY_DIR.absolute().as_uri())
 
-# Create Trainer logger
-train_logger = logging.getLogger('trainer')
-train_logger.setLevel(logging.DEBUG)
-train_console = Console(record=True)
-train_console_handler = RichHandler(console=train_console, show_time=False, show_level=False, show_path=False,
-                                    markup=True, rich_tracebacks=True, tracebacks_show_locals=True)
-train_console_handler.setLevel(logging.DEBUG)
-train_logger.addHandler(hdlr=train_console_handler)
+# # Create Trainer logger
+# train_logger = logging.getLogger('trainer')
+# train_logger.setLevel(logging.DEBUG)
+# train_console = Console(record=True)
+# train_console_handler = RichHandler(console=train_console, show_time=False, show_level=False, show_path=False,
+#                                     markup=True, rich_tracebacks=True, tracebacks_show_locals=True)
+# train_console_handler.setLevel(logging.DEBUG)
+# train_logger.addHandler(hdlr=train_console_handler)
 
 # Create Project logger
 project_logger = logging.getLogger('project')  # TODO use it everywhere
