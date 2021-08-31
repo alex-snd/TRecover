@@ -1,16 +1,20 @@
-import math
 import shutil
 import tempfile
-from rich.panel import Panel
+import traceback
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import Callable, Optional, Tuple, Union, Type
-import traceback
 
 import mlflow
+import rich.progress
 import torch
+from rich.console import Group
+from rich.table import Column
+from rich.panel import Panel
+from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
+from rich.text import Text
 from torch import Tensor
 from torch.nn import CrossEntropyLoss
 from torch.optim import Optimizer
@@ -57,7 +61,6 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-        # self.logger = config.train_logger
         self.console = config.train_console
 
         self.__log_init_params()
@@ -101,7 +104,7 @@ class Trainer(object):
     def __train_step(self, offset: int, train_loader: DataLoader, accumulation_step: int = 1) -> None:
         self.model.train()
 
-        self.console.rule('Training step')
+        self.console.rule(Text('Training step', style='bold magenta'), style='magenta')
 
         train_loss = 0.0
 
@@ -149,7 +152,7 @@ class Trainer(object):
     def __val_step(self, offset: int, val_loader: DataLoader) -> None:
         self.model.eval()
 
-        self.console.rule('Validation step')
+        self.console.rule(Text('Validation step', style='bold magenta'), style='magenta')
 
         val_loss = 0
         val_accuracy = 0
@@ -184,11 +187,14 @@ class Trainer(object):
         val_loss /= len(val_loader)
         val_accuracy /= len(val_loader)
 
-        self.console.print(f'Val Average:          | Loss: {val_loss:>10.6f} | Accuracy: {val_accuracy:>6.3f} |')
+        self.console.print(Panel(f'Val Loss:    {val_loss:>10.6f} \nVal Accuracy: {val_accuracy:>6.3f}',
+                                 title='Validation average', highlight=True, border_style='magenta'))
 
     @torch.no_grad()
     def __vis_step(self, vis_loader: DataLoader) -> None:
         self.model.eval()
+
+        self.console.rule(Text('Visualization step', style='bold magenta'), style='magenta')
 
         for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(vis_loader, start=1):
             src = src.to(self.device)
@@ -203,14 +209,24 @@ class Trainer(object):
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
             for i in range(src.size(0)):
-                self.console.rule('Columns')
-                self.console.print(visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                self.console.rule('Predicted')
-                self.console.print(visualize_target(prediction[i, : self.n_columns_to_show],
-                                                    delimiter=self.delimiter))
-                self.console.rule('Original')
-                self.console.print(visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter))
-                self.console.print('\n')  # TODO use here rich styles
+                columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter)
+                predicted = visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter)
+                original = visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter)
+
+                panel_group = Group(
+                    Text('Columns', style='magenta', justify='center'),
+                    Text(columns, style='bright_blue', justify='center', overflow='ellipsis'),
+                    Text('Predicted', style='magenta', justify='center'),
+                    Text(predicted, style='cyan', justify='center', overflow='ellipsis'),
+                    Text('Original', style='magenta', justify='center'),
+                    Text(original, justify='center', overflow='ellipsis')
+                )
+
+                self.console.print(
+                    Panel(panel_group, title=f'Example {i + 1}', border_style='magenta'),
+                    justify='center'
+                )
+                self.console.print('\n')
 
     def train(self,
               n_epochs: int,
@@ -227,8 +243,9 @@ class Trainer(object):
         self.console.print(f'Max threshold: {train_loader.dataset.max_threshold}')
         self.console.print(f'Accumulation step: {accumulation_step}')
 
-        if len(train_loader) % accumulation_step != 0:  # TODO add style ehere
-            self.console.print('Train dataset size must be evenly divisible by batch_size * accumulation_step')
+        if len(train_loader) % accumulation_step != 0:
+            self.console.print('Train dataset size must be evenly divisible by batch_size * accumulation_step',
+                               style='bold red')
 
         try:
             for epoch_idx in range(epoch_seek + 1, epoch_seek + n_epochs + 1):
@@ -254,33 +271,47 @@ class Trainer(object):
         test_loss = 0
         test_accuracy = 0
 
-        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(test_loader,
-                                                                                                   start=1):
-            src = src.to(self.device)
-            tgt_inp = tgt_inp.to(self.device)
-            tgt = tgt.to(self.device)
-            src_pad_mask = src_pad_mask.to(self.device)
-            tgt_pad_mask = tgt_pad_mask.to(self.device)
-            tgt_attn_mask = tgt_attn_mask.to(self.device)
+        with Progress(
+                TextColumn('{task.description}', style='bright_blue'),
+                BarColumn(complete_style='bright_blue'),
+                TextColumn('{task.percentage:>3.0f}%', style='bright_blue'),
+                TextColumn('Remaining', style='bright_blue'),
+                TimeRemainingColumn(),
+                TextColumn('Elapsed', style='bright_blue'),
+                TimeElapsedColumn(),
+                transient=True,
+        ) as progress:
+            test_progress = progress.add_task('Testing', total=len(test_loader))
 
-            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-            tgt_out = tgt_out.reshape(-1, self.model.token_size)
-            tgt = tgt.view(-1)
+            for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(test_loader,
+                                                                                                       start=1):
+                src = src.to(self.device)
+                tgt_inp = tgt_inp.to(self.device)
+                tgt = tgt.to(self.device)
+                src_pad_mask = src_pad_mask.to(self.device)
+                tgt_pad_mask = tgt_pad_mask.to(self.device)
+                tgt_attn_mask = tgt_attn_mask.to(self.device)
 
-            loss = self.criterion(tgt_out, tgt).item()
-            accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
+                tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
+                tgt_out = tgt_out.reshape(-1, self.model.token_size)
+                tgt = tgt.view(-1)
 
-            test_loss += loss
-            test_accuracy += accuracy
+                loss = self.criterion(tgt_out, tgt).item()
+                accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
 
-            mlflow.log_metrics({"Test loss": loss}, step=batch_idx)
-            mlflow.log_metrics({"Test accuracy": accuracy}, step=batch_idx)
+                test_loss += loss
+                test_accuracy += accuracy
+
+                mlflow.log_metrics({"Test loss": loss}, step=batch_idx)
+                mlflow.log_metrics({"Test accuracy": accuracy}, step=batch_idx)
+
+                progress.update(test_progress, advance=1)
 
         test_loss /= len(test_loader)
         test_accuracy /= len(test_loader)
 
         self.console.print(Panel(f'Test Loss:    {test_loss:>10.6f} \nTest Accuracy: {test_accuracy:>6.3f}',
-                                 title='Testing', highlight=True))
+                                 title='Testing', highlight=True, border_style='magenta'))
 
         return test_loss, test_accuracy
 
