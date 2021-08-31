@@ -8,10 +8,9 @@ from time import time
 from typing import Callable, Optional, Tuple, Union, Type
 
 import mlflow
-import rich.progress
 import torch
+from rich.console import Console
 from rich.console import Group
-from rich.table import Column
 from rich.panel import Panel
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.text import Text
@@ -61,7 +60,7 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-        self.console = config.train_console
+        self.console = Console(record=True)
 
         self.__log_init_params()
 
