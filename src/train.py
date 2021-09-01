@@ -203,7 +203,7 @@ class Trainer(object):
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
-            for i in range(src.size(0)):
+            for i in range(src.size(0)):  # TODO visualize columns as rows
                 columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter)
                 predicted = visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter)
                 original = visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter)
@@ -318,6 +318,11 @@ class Trainer(object):
 
 
 def train(params: Namespace) -> None:
+    if params.n_columns_to_show > params.pe_max_len:
+        config.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
+                                    f'must be less than {params.pe_max_len}')
+        return
+
     set_seeds(seed=params.seed)
 
     train_dataset = WikiDataset(datafiles=params.train_files, min_threshold=params.min_threshold,
