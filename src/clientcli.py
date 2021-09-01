@@ -3,9 +3,13 @@ from pathlib import Path
 from time import time
 
 import requests
-import typer
+from rich.console import Group
+from rich.panel import Panel
+from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
+from rich.text import Text
 from typer import Typer, Argument, Option
 
+import config
 import utils
 
 cli = Typer(name='ZreaderAPI')
@@ -20,7 +24,7 @@ def params(host: str = Option('http://127.0.0.1', help='API host'),
     else:
         response = requests.get(url=f'{host}:{port}/params')
 
-    print(json.dumps(response.json(), indent=4))  # TODO use rich.print
+    config.project_console.print(json.dumps(response.json(), indent=4))
 
 
 @cli.command()
@@ -32,21 +36,19 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
           max_noise: int = Option(5, help='Max noise parameter. Maximum value is alphabet size'),
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
-          console_width: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
+          n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')) -> None:
     inference_path = Path(inference_path).absolute()
 
     if not noisy and min_noise >= max_noise:
-        typer.secho('Maximum noise range must be grater than minimum noise range',
-                    fg=typer.colors.BRIGHT_RED, bold=True)
+        config.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
         return
 
     if not any([inference_path.is_file(), inference_path.is_dir()]):
-        typer.secho('Files for inference needed to be specified', fg=typer.colors.BRIGHT_RED, bold=True)
+        config.project_logger.error('[red]Files for inference needed to be specified')
         return
 
-    files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise,
-                                                   console_width, delimiter)
+    files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
     payload = {
         'data': None,
         'beam_width': beam_width,
@@ -61,30 +63,54 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         job_data = response.json()
 
         chains = None
-        label = typer.style(f'[{file_id}/{len(files_columns)}] Processing {file.name}', fg=typer.colors.BLUE, bold=True)
+        label = f'{file_id}/{len(files_columns)} Processing {file.name}'
 
-        with typer.progressbar(length=job_data['size'], label=label, show_pos=True, show_eta=False) as progress:
+        with Progress(
+                TextColumn('{task.description}', style='bright_blue'),
+                BarColumn(complete_style='bright_blue'),
+                TextColumn('{task.percentage:>3.0f}%', style='bright_blue'),
+                TextColumn('Remaining', style='bright_blue'),
+                TimeRemainingColumn(),
+                TextColumn('Elapsed', style='bright_blue'),
+                TimeElapsedColumn(),
+                transient=True,
+        ) as progress:
+            request_progress = progress.add_task(label, total=job_data['size'])
+
             for _ in range(job_data['size']):
                 response = requests.get(url=f'{host}:{port}/status/{job_data["identifier"]}')
                 status_data = response.json()
 
                 chains = status_data['chains']
 
-                progress.update(1)
+                progress.update(request_progress, advance=1)
 
         requests.get(url=f'{host}:{port}/status/{job_data["identifier"]}')  # last request for job removing
 
-        src_scale = len(file_columns) * max(2 * len(delimiter), 1) + 1 * len(delimiter)
-        printing_scale = console_width if 0 < console_width < src_scale else src_scale
+        columns = utils.visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
+        columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
-        print('-' * printing_scale)
-        print(utils.visualize_columns(file_columns, delimiter))
-        print('-' * printing_scale, end='\n\n')
-        for chain, _ in chains:
-            print(chain, end='\n\n')
+        chains = [Text(chain, style='cyan', justify='center', overflow='ellipsis', end='\n\n') for (chain, _) in chains]
 
-        typer.secho(f'Elapsed: {time() - start_time:>7.3f}s\n', fg=typer.colors.BLUE, bold=True)
+        panel_group = Group(
+            Text('Columns', style='magenta', justify='center'),
+            *columns,
+            Text('Predicted', style='magenta', justify='center'),
+            *chains
+        )
+
+        config.project_console.print(
+            Panel(panel_group, title=file.name, border_style='magenta'),
+            justify='center'
+        )
+
+        config.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
 if __name__ == '__main__':
-    cli()
+    try:
+        cli()
+    except Exception as e:
+        config.project_logger.error(e)
+        config.project_console.print_exception(show_locals=True)
+        config.error_console.print_exception(show_locals=True)
