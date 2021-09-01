@@ -203,14 +203,15 @@ class Trainer(object):
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
-            for i in range(src.size(0)):  # TODO visualize columns as rows
-                columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter)
+            for i in range(src.size(0)):
+                columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter, as_rows=True)
+                columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
                 predicted = visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter)
                 original = visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter)
 
                 panel_group = Group(
                     Text('Columns', style='magenta', justify='center'),
-                    Text(columns, style='bright_blue', justify='center', overflow='ellipsis'),
+                    *columns,
                     Text('Predicted', style='magenta', justify='center'),
                     Text(predicted, style='cyan', justify='center', overflow='ellipsis'),
                     Text('Original', style='magenta', justify='center'),
@@ -394,7 +395,7 @@ def main() -> None:
         test_dataset_size=500,
         num_workers=3,
         min_noise=0,
-        max_noise=0,
+        max_noise=5,
         # --------------------------------------------MODEL PARAMETERS--------------------------------------------------
         token_size=len(Collate.alphabet_to_num),
         pe_max_len=1000,
