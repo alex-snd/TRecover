@@ -9,7 +9,6 @@ from typing import Callable, Optional, Tuple, Union, Type
 
 import mlflow
 import torch
-from rich.console import Console
 from rich.console import Group
 from rich.panel import Panel
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
@@ -60,7 +59,7 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-        self.console = Console(record=True)
+        self.console = config.project_console
 
         self.__log_init_params()
 
@@ -70,9 +69,6 @@ class Trainer(object):
     def __exit__(self, exc_type: Union[None, Type[BaseException]],
                  exc_val: Union[None, BaseException],
                  exc_tb: traceback.TracebackException) -> None:
-        if exc_type is not None:
-            self.console.print_exception(show_locals=True)
-
         self.save_html()
         self.save_model('last_saving')
 
@@ -432,4 +428,5 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         config.project_logger.error(e)
+        config.project_console.print_exception(show_locals=True)
         config.error_console.print_exception(show_locals=True)
