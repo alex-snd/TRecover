@@ -1,6 +1,5 @@
 import asyncio
 import json
-import math
 import re
 from pathlib import Path
 from typing import Optional, Dict, List, Union, Tuple, Callable, Awaitable
@@ -9,7 +8,7 @@ import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
-import typer
+from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
 from torch import Tensor
 from torch.optim import Optimizer
 
@@ -166,10 +165,10 @@ def save_parameters(data: Dict, filepath: Path, sort=False) -> None:
 
 # ------------------------------------------------Visualization utils---------------------------------------------------
 
-def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '') -> str:
+def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:
     columns = list()
     max_depth = 0
-    visualization = str()
+    rows = list()
 
     if isinstance(grid, Tensor):
         for c in range(grid.size(0)):
@@ -180,11 +179,14 @@ def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '') -> st
         max_depth = max([len(column) for column in grid])
 
     for d in range(max_depth):
-        for c in range(len(columns)):
-            visualization += f'{delimiter}{columns[c][d]}' if d < len(columns[c]) else f'{delimiter} '
-        visualization += f'{delimiter}\n'
 
-    return visualization
+        row = str()
+        for c in range(len(columns)):
+            row += f'{delimiter}{columns[c][d]}' if d < len(columns[c]) else f'{delimiter} '
+
+        rows.append(f'{row}{delimiter}')
+
+    return rows if as_rows else '\n'.join(rows)
 
 
 def visualize_target(tgt: Tensor, delimiter: str = '') -> str:
@@ -222,10 +224,10 @@ def create_files_noisy_columns(files: List[Union[str, Path]],
         with open(file) as f:
             data = f.read()
 
-        columns = create_noisy_columns(data, min_noise, max_noise)
+        if n_to_show > 0:
+            data = data[:n_to_show]
 
-        if n_to_show:
-            columns = columns[:n_to_show]
+        columns = create_noisy_columns(data, min_noise, max_noise)
 
         files_columns.append(columns)
 
@@ -311,9 +313,21 @@ def cli_interactive_loop(label: str = 'Processing'
                    ) -> List[Tuple[Tensor, float]]:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        with typer.progressbar(length=encoded_src.size(0), label=label, show_pos=True, show_eta=False) as progress:
-            for _ in progress:
+        with Progress(
+                TextColumn('{task.description}', style='bright_blue'),
+                BarColumn(complete_style='bright_blue'),
+                TextColumn('{task.percentage:>3.0f}%', style='bright_blue'),
+                TextColumn('Remaining', style='bright_blue'),
+                TimeRemainingColumn(),
+                TextColumn('Elapsed', style='bright_blue'),
+                TimeElapsedColumn(),
+                transient=True,
+        ) as progress:
+            beam_progress = progress.add_task(label, total=encoded_src.size(0))
+
+            for _ in range(encoded_src.size(0)):
                 candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+                progress.update(beam_progress, advance=1)
 
         return candidates
 
@@ -450,23 +464,17 @@ def get_files_columns(inference_path: Path,
                       noisy: bool,
                       min_noise: int,
                       max_noise: int,
-                      console_width: int,
-                      delimiter: str
+                      n_to_show: int,
                       ) -> Tuple[List[Path], List[List[str]]]:
     if inference_path.is_file():
         files = [inference_path, ]
     else:
         files = [file for file in inference_path.iterdir()]
 
-    if console_width > 0:
-        n_columns_to_show = math.ceil(console_width / max(2 * len(delimiter), 1)) - 1 * len(delimiter)
-    else:
-        n_columns_to_show = 0
-
     if noisy:
-        files_columns = read_files_columns(files, separator, n_columns_to_show)
+        files_columns = read_files_columns(files, separator, n_to_show)
     else:
-        files_columns = create_files_noisy_columns(files, min_noise, max_noise, n_columns_to_show)
+        files_columns = create_files_noisy_columns(files, min_noise, max_noise, n_to_show)
 
     return files, files_columns
 
