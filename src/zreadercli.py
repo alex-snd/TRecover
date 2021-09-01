@@ -131,6 +131,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
     inference_path = Path(inference_path)
+    artifacts = utils.load_artifacts(Path(model_artifacts))
 
     if not noisy and min_noise >= max_noise:
         config.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
@@ -140,19 +141,22 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         config.project_logger.error('[red]Files for inference needed to be specified')
         return
 
-    artifacts = utils.load_artifacts(Path(model_artifacts))
+    if artifacts['pe_max_len'] < n_to_show:
+        config.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {artifacts["pe_max_len"]}')
+        return
+    elif n_to_show == 0:
+        n_to_show = artifacts['pe_max_len']
+
     device = torch.device(f'cuda:{gpu_id}' if cuda and torch.cuda.is_available() else 'cpu')
-    z_reader = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                               artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
-                               device, weights=Path(weights_path))
+
+    with Progress(TextColumn('{task.description}', style='bright_blue'), transient=True) as progress:
+        progress.add_task('Model loading...')
+        z_reader = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
+                                   artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
+                                   device, weights=Path(weights_path))
     z_reader.eval()
 
-    if z_reader.pe_max_len < n_to_show:
-        config.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {z_reader.pe_max_len}')
-        return
-
-    elif n_to_show == 0:
-        n_to_show = z_reader.pe_max_len
+    config.project_console.print()
 
     files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
     files_src = utils.files_columns_to_tensors(files_columns, device)
