@@ -54,7 +54,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
         else:
             data_stream = response.iter_content(chunk_size=4096)
 
-            with Progress(  # TODO add columns
+            with Progress(
                     TextColumn('{task.description}', style='bright_blue'),
                     BarColumn(complete_style='bright_blue'),
                     DownloadColumn(),
@@ -166,8 +166,8 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         chains = [Text(utils.visualize_target(chain, delimiter=delimiter), style='cyan', justify='center',
                        overflow='ellipsis', end='\n\n') for (chain, _) in chains]
 
-        columns_as_rows = utils.visualize_columns(src, delimiter=delimiter, as_rows=True)
-        columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns_as_rows)
+        columns = utils.visualize_columns(src, delimiter=delimiter, as_rows=True)
+        columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
         panel_group = Group(
             Text('Columns', style='magenta', justify='center'),
