@@ -127,7 +127,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
           max_noise: int = Option(5, help='Max noise parameter. Maximum value is alphabet size'),
           beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
-          n_to_show: int = Option(0, help='Console width for visualization. Zero value means for no restrictions'),
+          n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
     inference_path = Path(inference_path)
