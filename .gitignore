@@ -135,3 +135,5 @@ weights/
 inference
 experiments
 src/streamlit_test.py
+src/celery_test.py
+run_celery.bat
