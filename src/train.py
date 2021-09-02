@@ -9,7 +9,7 @@ from typing import Callable, Optional, Tuple, Union, Type
 
 import mlflow
 import torch
-from rich.console import Group
+from rich.console import Group, Console
 from rich.panel import Panel
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.text import Text
@@ -37,7 +37,8 @@ class Trainer(object):
                  device: Optional[torch.device] = None,
                  log_interval: int = 1,
                  n_columns_to_show: Optional[int] = None,
-                 delimiter: str = ''
+                 delimiter: str = '',
+                 console: Console = config.project_console
                  ) -> None:
         self.model = model
         self.criterion = criterion  # should return average on the batch
@@ -59,7 +60,7 @@ class Trainer(object):
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
         self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
-        self.console = config.project_console
+        self.console = console
 
         self.__log_init_params()
 
