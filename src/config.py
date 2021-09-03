@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from celery.signals import after_setup_task_logger, after_setup_logger
 
 import mlflow
 from rich.logging import RichHandler
@@ -54,3 +55,16 @@ info_console = Console(file=Path(LOGS_DIR, 'info.log').open(mode='a'))
 info_handler = RichHandler(console=info_console, markup=True, rich_tracebacks=True, tracebacks_show_locals=True)
 info_handler.setLevel(logging.INFO)
 project_logger.addHandler(hdlr=info_handler)
+
+
+# Configure Celery logger
+@after_setup_task_logger.connect
+def setup_task_logger(logger, *args, **kwargs):
+    logger.addHandler(hdlr=error_handler)
+    logger.addHandler(hdlr=info_handler)
+
+
+@after_setup_logger.connect
+def setup_task_logger(logger, *args, **kwargs):
+    logger.addHandler(hdlr=error_handler)
+    logger.addHandler(hdlr=info_handler)
