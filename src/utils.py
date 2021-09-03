@@ -389,7 +389,7 @@ async def async_beam_step(candidates: List[Tuple[Tensor, float]],
     return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
 
 
-def api_interactive_loop(queue: asyncio.Queue,  # TODO use redis or something like that for multiprocessing
+def api_interactive_loop(queue: asyncio.Queue,
                          delimiter: str = ''
                          ) -> Callable[[Tensor, ZReader, int, torch.device], Awaitable]:
     async def async_inner_loop(encoded_src: Tensor,
@@ -405,7 +405,7 @@ def api_interactive_loop(queue: asyncio.Queue,  # TODO use redis or something li
             chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
             chains = [(visualize_target(tgt, delimiter), prob) for tgt, prob in chains]
 
-            await queue.put(chains)  # TODO add percent ?
+            await queue.put(chains)
 
         await queue.put(None)
 
