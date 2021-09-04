@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional, Dict, List, Union, Tuple, Callable, Awaitable
 
 import numpy as np
+import celery
 import requests
 import torch
 import torch.nn.functional as F
@@ -302,6 +303,24 @@ def beam_step(candidates: List[Tuple[Tensor, float]],
             step_candidates.append((torch.cat([tgt_inp, new_token], dim=1), score + float(prob)))
 
     return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
+
+
+def celery_task_loop(task: celery.Task
+                     ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
+    def inner_loop(encoded_src: Tensor,
+                   z_reader: ZReader,
+                   width: int,
+                   device: torch.device
+                   ) -> List[Tuple[Tensor, float]]:
+        candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+        for progress in range(encoded_src.size(0)):
+            candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+            task.update_state(meta={'progress': progress + 1})
+
+        return candidates
+
+    return inner_loop
 
 
 def cli_interactive_loop(label: str = 'Processing'
