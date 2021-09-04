@@ -1,4 +1,4 @@
-from typing import Union, Optional, List, Dict, Tuple
+from typing import Union, Optional, List, Tuple
 
 from pydantic import BaseModel, validator
 
@@ -65,28 +65,28 @@ class BaseResponse(BaseModel):
     url: str
 
 
-class JobResponse(BaseResponse):
-    identifier: str
-    size: int
+class TaskResponse(BaseResponse):
+    task_id: str
 
     class Config:
         """ InteractiveResponse example for API documentation"""
 
         schema_extra = {
             'example': {
-                "message": "OK",
+                "message": "Accepted",
                 "method": "POST",
-                "status_code": 200,
-                "timestamp": "2021-08-08T17:33:27.512374",
-                "url": "http://localhost:5001/interactive_zread",
-                "identifier": "5de4506a-26a1-4a18-9ac1-5d88cf2d480e",
-                "size": 116
+                "status_code": 202,
+                "timestamp": "2021-09-04T12:53:35.512412",
+                "url": "http://localhost:5001/zread",
+                "task_id": "909e4817-cca3-4dbf-a598-f7f83c5d60c9"
             }
         }
 
 
 class PredictResponse(BaseResponse):
-    chains: Union[List[Tuple[str, float]], str]
+    data: Optional[List[str]]
+    chains: Optional[List[Tuple[str, float]]]
+    progress: Optional[int]
 
     class Config:
         """ PredictPayload example for API documentation"""
@@ -94,36 +94,67 @@ class PredictResponse(BaseResponse):
         schema_extra = {
             'example': {
                 "message": "OK",
-                "method": "POST",
+                "method": "GET",
                 "status_code": 200,
-                "timestamp": "2021-08-08T17:34:42.390414",
-                "url": "http://localhost:5001/zread",
+                "timestamp": "2021-09-04T12:54:49.801614",
+                "url": "http://localhost:5001/status/909e4817-cca3-4dbf-a598-f7f83c5d60c9",
+                "data": [
+                    "adin", "scjz", "pzxz", "evft", "odev", "pkzc", "lipss", "eayh", "aepqc", "rvuqh", "ozldx", "ulgq",
+                    "nabhr", "dvvf", "tmil", "huiow", "euzq", "cdmh", "ompzv", "uguq", "ntvqi", "tctm", "rwgi", "yuonh",
+                    "wkvr", "efau", "nrele", "tbhxq", "iiqd", "nhwfy", "tymio", "onzpj", "turho", "hhgnd", "ehmof",
+                    "scpoi", "tyqbn", "roul", "exoe", "edwyc", "thid", "snqrp", "tmmh", "oejg", "cjbaw", "hgzmb",
+                    "ezlwj", "esxb", "rria", "taeo", "hpnln", "eeomf", "cvxr", "ofwy", "nuon", "vvex", "ikbd", "cmusb",
+                    "tdnkb", "iccd", "ocay", "nnxds", "slbgd", "oupap", "mhip", "ebtv", "bipta", "unazv", "sccol",
+                    "iovq", "nxzev", "ezaz", "sakm", "skls", "eipvd", "segz", "inrlo", "nzkug", "puau", "oolt", "recs",
+                    "tjot", "lwds", "assb", "ntyzf", "dpad", "byep", "owgol", "aiwbb", "ralk", "dffos", "ejfp", "dwyug",
+                    "uxucm", "ppch", "teznz", "hpfbv", "eaocf", "iist", "rdlyx", "wseu", "ivgg", "nabi", "dtuiw",
+                    "oxzje", "wderj", "sawm", "odpw", "noqs", "cimnf", "eukjx", "aszy", "ghmiq", "ajcsd", "ipwgf",
+                    "nhth", "tpvfp", "hnede", "aclb", "tteuq", "nbvi", "isgc", "gejbz", "hufnl", "tggvn", "aahfn",
+                    "skkxl", "mmwq", "anqgw", "lrvji", "lker", "gvqt", "rdcd", "obvt", "ussht", "piwb", "ozbn", "fyig",
+                    "aczx", "clak", "tgnxi", "iieyi", "vqyqo", "ijgp", "shfth", "tnbeg", "sbuzx", "wwnja", "eguhn",
+                    "aneai", "rpsl", "izut", "njixa", "grgh", "bkypw", "lliv", "azeob", "cojl", "kmqnd", "ahpq", "pckw",
+                    "phvpa", "rgqv", "opqby", "aiqsp", "clirf", "hlrp", "eztn", "dgek", "azubn", "gnskd", "rajo",
+                    "okgv", "ugcp", "pilf", "oxbx", "fwqq", "jsmf", "okgw", "uvjyg", "rfio", "nbtcy", "aryp", "ledgj",
+                    "inex", "sdqmm", "tcmtw", "soqh", "tquu", "hrfi", "rsddp", "ewfye", "aumxj", "tssui", "ecgd",
+                    "nunfp", "isfka", "ncvx", "gqxi", "typc", "okcdt", "sgcaq", "mbcwd", "angb", "svyl", "hjmk",
+                    "tlcgd", "hpka", "efule", "cbjou", "agjjr", "mziur", "emoqh", "rajte", "ahoz", "shaxe", "okeyj",
+                    "fgwnq", "twojw", "hcyfc", "ojehd", "soij", "ekhpc", "wbyq", "hdfi", "opyas", "rzba", "ediml",
+                    "mvwys", "avtmz", "ilvj", "nefy", "eycng", "dqdk", "oihcj", "nzuw", "srrye", "ccsi", "emhnz",
+                    "neosn", "ewzki"
+
+                ],
                 "chains": [
                     [
-                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedu"
-                        "ptheirwindowsonceagain",
-                        -6.104937998053401
+                        "aspeoplearoundthecountrywentintothestreetstoabeertheconvictionsametalineaspeonportsandboarded"
+                        "uptheirwindowsonceagainthatnightasmallgroupofactivistswearingbloodapproachedagroupoffourtales"
+                        "courseateningtoawalkthecametheonthesewisremainedourcesw",
+                        -33.01948561671179
                     ],
                     [
-                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofsbusinessesinportlandboardedu"
-                        "ptheirwindowsonceagain",
-                        -6.2104413745624925
+                        "aspeoplearoundthecountrywentintothestreetstoabeertheconvictionsametalineaspeonportsandboarded"
+                        "uptheirwindowsdoneagainthatnightasmallgroupofactivistswearingbloodapproachedagroupoffourtales"
+                        "courseateningtoawalkthecametheonthesewisremainedourcesw",
+                        -33.05044434355386
                     ],
                     [
-                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofsbusinessesinportsandboardedu"
-                        "ptheirwindowsonceagain",
-                        -6.6121470403370495
+                        "aspeoplearoundthecountrywentintothestreetstoabeertheconvictionsametalineaspeonportsandboarded"
+                        "uptheirwindowsdoneagainthatnightasmallgroupofactivistswearingbloodapproachedagroupoffourtales"
+                        "courseateningtoawalkthecametheonthesewisremainedourchew",
+                        -33.686079347001396
                     ],
                     [
-                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportsandboardedu"
-                        "ptheirwindowsonceagain",
-                        -6.840312714927222
+                        "aspeoplearoundthecountrywentintothestreetstoabeertheconvictionsametalineaspeonportsandboarded"
+                        "uptheirwindowsdoneagainthatnightasmallgroupofactivistswearingbloodapproachedagroupoffourtales"
+                        "coursexteningtoawalkthecametheonthesewisremainedourchew",
+                        -33.83420559252136
                     ],
                     [
-                        "aspeoplearoundthecountrywentintothestreetstoreallthecontictionsofebusinessesinportlandboardedu"
-                        "ptheirwindowconcergain",
-                        -7.29570330515071
+                        "aspeoplearoundthecountrywentintothestreetstoabeertheconvictionsametalineaspeonportsandboarded"
+                        "uptheirwindowsonceagainthatnightasmallgroupofactivistswearingbloodapproachedagroupoffourtales"
+                        "courseateningtoawalkthecametheonthesewisremainedourchew",
+                        -33.948646204201395
                     ]
-                ]
+                ],
+                "progress": None
             }
         }

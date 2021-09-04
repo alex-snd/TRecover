@@ -1,54 +1,43 @@
-import asyncio
-import uuid
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
-from pathlib import Path
-from typing import Dict, Callable, Awaitable
+from typing import Dict, Callable
 
-import torch
 import uvicorn
+from celery.result import AsyncResult
 from fastapi import FastAPI, Request
 from typer import Typer, Option
 
 import config
 import utils
-from api_schemas import PredictPayload, PredictResponse, JobResponse
-from model import ZReader
+from api_schemas import PredictPayload, PredictResponse, TaskResponse
+from celery_worker import worker_app, predict
 
 cli = Typer(name='ZreaderAPI', epilog='Description will be here')
-api = FastAPI(title='ZreaderAPI', description='Description will be here', version='0.1')
+api = FastAPI(title='ZreaderAPI', description='Description will be here')
 
-model: ZReader  # declare model for further initialization on server startup
 context = {
     'artifacts': {},  # mlflow artifacts
-    'jobs': {}  # interactive api-calls
+    'tasks': set()  # list of celery tasks identifiers
 }
-device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
 
 @api.on_event('startup')
-async def load_model() -> None:
-    global model, context, device
+def startup() -> None:
+    global context
 
-    model_artifacts = config.INFERENCE_DIR / 'artifacts.json'
-    weights_path = config.INFERENCE_DIR / 'weights'
-
-    artifacts = utils.load_artifacts(model_artifacts)
+    artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
     context['artifacts'] = artifacts
 
-    model = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                            artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
-                            device, weights=Path(weights_path))
-    model.eval()
+    config.project_logger.info('FatAPI launched')
 
 
-def construct_response(handler: Callable[..., Awaitable[Dict]]) -> Callable[..., Awaitable[Dict]]:
+def construct_response(handler: Callable[..., Dict]) -> Callable[..., Dict]:
     """ Construct a JSON response for an endpoint's results. """
 
     @wraps(handler)  # TODO figure out
-    async def wrap(request: Request, *args, **kwargs) -> Dict:
-        response = await handler(request, *args, **kwargs)
+    def wrap(request: Request, *args, **kwargs) -> Dict:
+        response = handler(request, *args, **kwargs)
 
         response['method'] = request.method
         response['timestamp'] = datetime.now().isoformat()
@@ -61,7 +50,7 @@ def construct_response(handler: Callable[..., Awaitable[Dict]]) -> Callable[...,
 
 @api.get('/', tags=['General'])
 @construct_response
-async def index(request: Request) -> Dict:
+def index(request: Request) -> Dict:
     return {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK
@@ -70,8 +59,8 @@ async def index(request: Request) -> Dict:
 
 @api.get('/params', tags=['Parameters'])
 @construct_response
-async def all_parameters(request: Request) -> Dict:
-    """ Get a specific parameter's value used for a run. """
+def all_parameters(request: Request) -> Dict:
+    """ Get model parameter's values used for inference. """
 
     global context
 
@@ -86,8 +75,8 @@ async def all_parameters(request: Request) -> Dict:
 
 @api.get('/params/{param}', tags=['Parameters'])
 @construct_response
-async def parameters(request: Request, param: str) -> Dict:
-    """ Get a specific parameter's value used for a run. """
+def parameters(request: Request, param: str) -> Dict:
+    """ Get a specific parameter's value used for inference. """
 
     global context
 
@@ -100,68 +89,81 @@ async def parameters(request: Request, param: str) -> Dict:
     return response
 
 
-@api.post('/zread', tags=['Prediction'], response_model=JobResponse)
+@api.post('/zread', tags=['Prediction'], response_model=TaskResponse)
 @construct_response
-async def zread(request: Request, payload: PredictPayload) -> Dict:
+def zread(request: Request, payload: PredictPayload) -> Dict:
     global context
 
-    identifier = str(uuid.uuid4())
-    job_queue = asyncio.Queue()
-    context['jobs'][identifier] = job_queue
+    task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
 
-    src = utils.columns_to_tensor(payload.data, device)
+    context['tasks'].add(task.id)
 
-    asyncio.create_task(utils.async_beam_search(src, model, payload.beam_width, device,
-                                                utils.api_interactive_loop(job_queue, payload.delimiter)))
     response = {
-        'message': HTTPStatus.OK.phrase,
-        'status_code': HTTPStatus.OK,
-        'identifier': identifier,
-        'size': len(payload.data)
+        'message': HTTPStatus.ACCEPTED.phrase,
+        'status_code': HTTPStatus.ACCEPTED,
+        'task_id': task.id
     }
 
     return response
 
 
-@api.get('/status/{identifier}', tags=['Prediction'], response_model=PredictResponse)
+@api.get('/status/{task_id}', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
-async def status(request: Request, identifier: str) -> Dict:
+def status(request: Request, task_id: str) -> Dict:
     global context
 
-    if identifier in context['jobs']:
-        chains = await context['jobs'][identifier].get()
+    if task_id in context['tasks']:
+        task = AsyncResult(task_id, app=worker_app)
 
-        if chains is None:
-            context['jobs'].pop(identifier)
-            chains = 'Job is completed'
+        if task.ready():
+            data, chains = task.get()
+
+            response = {
+                'message': HTTPStatus.OK.phrase,
+                'status_code': HTTPStatus.OK,
+                'data': data,
+                'chains': chains
+            }
+        else:
+            response = {
+                'message': HTTPStatus.PROCESSING.phrase,
+                'status_code': HTTPStatus.PROCESSING,
+                'progress': task.info.get('progress', None)
+            }
 
     else:
-        chains = 'Job is not found'
-
-    response = {
-        'message': HTTPStatus.OK.phrase,
-        'status_code': HTTPStatus.OK,
-        'chains': chains
-    }
+        response = {
+            'message': HTTPStatus.NOT_FOUND.phrase,
+            'status_code': HTTPStatus.NOT_FOUND,
+        }
 
     return response
 
 
-@api.post('/test_zread', tags=['Prediction'], response_model=PredictResponse)
+@api.delete('/status/{task_id}', tags=['Prediction'])
 @construct_response
-async def test_zread(request: Request, payload: PredictPayload) -> Dict:
-    global model, device
+def delete_prediction(request: Request, task_id: str) -> Dict:
+    global context
 
-    src = utils.columns_to_tensor(payload.data, device)
+    if task_id in context['tasks']:
+        task = AsyncResult(task_id, app=worker_app)
 
-    chains = await utils.async_beam_search(src, model, payload.beam_width, device)
-    chains = [(utils.visualize_target(tgt, payload.delimiter), prob) for tgt, prob in chains]
+        if task.ready():
+            task.forget()
+        else:
+            task.revoke()
 
-    response = {
-        'message': HTTPStatus.OK.phrase,
-        'status_code': HTTPStatus.OK,
-        'chains': chains
-    }
+        context['tasks'].remove(task_id)
+
+        response = {
+            'message': HTTPStatus.OK.phrase,
+            'status_code': HTTPStatus.OK
+        }
+    else:
+        response = {
+            'message': HTTPStatus.NOT_FOUND.phrase,
+            'status_code': HTTPStatus.NOT_FOUND
+        }
 
     return response
 
@@ -173,7 +175,9 @@ def run(host: str = Option('localhost', help='Bind socket to this host'),
         reload: bool = Option(False, help='Enable auto-reload'),
         workers: int = Option(1, help='Number of worker processes')
         ) -> None:
-    """ Run uvicorn server """
+    """ Run celery worker and uvicorn server """
+
+    # TODO start celery worker here
 
     uvicorn.run('zreaderapi:api', host=host, port=port, log_level=log_level, reload=reload, workers=workers)
 
