@@ -58,6 +58,8 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
     for file_id, (file, file_columns) in enumerate(zip(files, files_columns), start=1):
         start_time = time()
 
+        file_columns = [''.join(set(c)) for c in file_columns]
+
         payload['data'] = file_columns
         response = requests.post(url=f'{host}:{port}/zread', json=payload)
         task_data = response.json()
