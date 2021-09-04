@@ -131,10 +131,12 @@ def status(request: Request, task_id: str) -> Dict:
                 'chains': chains
             }
         else:
+            info = task.info
+
             response = {
                 'message': HTTPStatus.PROCESSING.phrase,
                 'status_code': HTTPStatus.PROCESSING,
-                'progress': task.info.get('progress', None) if isinstance(task.info, dict) else None
+                'progress': info.get('progress', None) if isinstance(info, dict) else None
             }
 
     else:
