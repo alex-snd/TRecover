@@ -207,9 +207,8 @@ def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]
 
     for symbol in data:
         noise_size = np.random.randint(low=min_noise, high=max_noise, size=1)[0]
-        noise_indexes = np.random.randint(low=0, high=len(Collate.num_to_alphabet), size=noise_size)
-
-        columns.append(f"{symbol}{''.join([Collate.num_to_alphabet[s_id] for s_id in noise_indexes])}")
+        noise_indexes = np.random.choice(list(Collate.alphabet.difference(symbol)), size=noise_size, replace=False)
+        columns.append(f"{symbol}{''.join(noise_indexes)}")
 
     return columns
 
