@@ -94,15 +94,21 @@ def parameters(request: Request, param: str) -> Dict:
 def zread(request: Request, payload: PredictPayload) -> Dict:
     global context
 
-    task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
+    if len(payload.data) > context['artifacts']['pe_max_len']:
+        response = {
+            'message': f'{HTTPStatus.REQUEST_ENTITY_TOO_LARGE.phrase}. Number of columns must be less than 1000.',
+            'status_code': HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+        }
+    else:
+        task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
 
-    context['tasks'].add(task.id)
+        context['tasks'].add(task.id)
 
-    response = {
-        'message': HTTPStatus.ACCEPTED.phrase,
-        'status_code': HTTPStatus.ACCEPTED,
-        'task_id': task.id
-    }
+        response = {
+            'message': HTTPStatus.ACCEPTED.phrase,
+            'status_code': HTTPStatus.ACCEPTED,
+            'task_id': task.id
+        }
 
     return response
 
@@ -128,7 +134,7 @@ def status(request: Request, task_id: str) -> Dict:
             response = {
                 'message': HTTPStatus.PROCESSING.phrase,
                 'status_code': HTTPStatus.PROCESSING,
-                'progress': task.info.get('progress', None)
+                'progress': task.info.get('progress', None) if isinstance(task.info, dict) else None
             }
 
     else:

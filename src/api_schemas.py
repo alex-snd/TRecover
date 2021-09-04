@@ -66,7 +66,7 @@ class BaseResponse(BaseModel):
 
 
 class TaskResponse(BaseResponse):
-    task_id: str
+    task_id: Optional[str]
 
     class Config:
         """ InteractiveResponse example for API documentation"""
