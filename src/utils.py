@@ -167,6 +167,9 @@ def save_parameters(data: Dict, filepath: Path, sort=False) -> None:
 # ------------------------------------------------Visualization utils---------------------------------------------------
 
 def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:
+    if len(grid) == 0:
+        return ''
+
     columns = list()
     max_depth = 0
     rows = list()
