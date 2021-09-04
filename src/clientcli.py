@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from time import time
+from time import time, sleep
 
 import requests
 from rich.console import Group
@@ -60,9 +60,16 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
         payload['data'] = file_columns
         response = requests.post(url=f'{host}:{port}/zread', json=payload)
-        job_data = response.json()
+        task_data = response.json()
 
-        chains = None
+        if not task_data['task_id']:
+            config.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
+                                        f'{task_data["message"]}')
+            continue
+
+        task_status = requests.get(url=f'{host}:{port}/status/{task_data["task_id"]}')
+        task_status = task_status.json()
+
         label = f'{file_id}/{len(files_columns)} Processing {file.name}'
 
         with Progress(
@@ -75,22 +82,23 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
                 TimeElapsedColumn(),
                 transient=True,
         ) as progress:
-            request_progress = progress.add_task(label, total=job_data['size'])
+            request_progress = progress.add_task(label, total=len(file_columns))
 
-            for _ in range(job_data['size']):
-                response = requests.get(url=f'{host}:{port}/status/{job_data["identifier"]}')
-                status_data = response.json()
+            while task_status['message'] == 'Processing':
+                progress.update(request_progress, completed=task_status['progress'])
 
-                chains = status_data['chains']
+                task_status = requests.get(url=f'{host}:{port}/status/{task_data["task_id"]}')
+                task_status = task_status.json()
 
-                progress.update(request_progress, advance=1)
+                sleep(0.5)
 
-        requests.get(url=f'{host}:{port}/status/{job_data["identifier"]}')  # last request for job removing
+        requests.delete(url=f'{host}:{port}/status/{task_data["task_id"]}')
 
         columns = utils.visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
-        chains = [Text(chain, style='cyan', justify='center', overflow='ellipsis', end='\n\n') for (chain, _) in chains]
+        chains = [Text(chain, style='cyan', justify='center', overflow='ellipsis', end='\n\n')
+                  for (chain, _) in task_status['chains']]
 
         panel_group = Group(
             Text('Columns', style='magenta', justify='center'),
