@@ -13,7 +13,7 @@ import utils
 from api_schemas import PredictPayload, PredictResponse, TaskResponse
 from celery_worker import worker_app, predict
 
-cli = Typer(name='ZreaderAPI', epilog='Description will be here')
+cli = Typer(name='Zreader-api', epilog='Description will be here')
 api = FastAPI(title='ZreaderAPI', description='Description will be here')
 
 context = {

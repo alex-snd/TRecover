@@ -15,7 +15,7 @@ from typer import Typer, Argument, Option
 import config
 import utils
 
-cli = Typer(name='ZreaderAPI')
+cli = Typer(name='Zreader-cli')
 
 
 def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:

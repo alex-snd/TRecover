@@ -12,7 +12,7 @@ from typer import Typer, Argument, Option
 import config
 import utils
 
-cli = Typer(name='ZreaderAPI')
+cli = Typer(name='Client-cli')
 
 
 @cli.command()
@@ -87,10 +87,10 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
             request_progress = progress.add_task(label, total=len(file_columns))
 
             while task_status['message'] == 'Processing':
-                progress.update(request_progress, completed=task_status['progress'])
-
                 task_status = requests.get(url=f'{host}:{port}/status/{task_info["task_id"]}')
                 task_status = task_status.json()
+
+                progress.update(request_progress, completed=task_status['progress'])
 
                 sleep(0.5)
 
