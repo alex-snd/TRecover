@@ -61,15 +61,15 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         file_columns = [''.join(set(c)) for c in file_columns]
 
         payload['data'] = file_columns
-        response = requests.post(url=f'{host}:{port}/zread', json=payload)
-        task_data = response.json()
+        task_info = requests.post(url=f'{host}:{port}/zread', json=payload)
+        task_info = task_info.json()
 
-        if not task_data['task_id']:
+        if not task_info['task_id']:
             config.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
-                                        f'{task_data["message"]}')
+                                        f'{task_info["message"]}')
             continue
 
-        task_status = requests.get(url=f'{host}:{port}/status/{task_data["task_id"]}')
+        task_status = requests.get(url=f'{host}:{port}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
         label = f'{file_id}/{len(files_columns)} Processing {file.name}'
@@ -89,12 +89,12 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
             while task_status['message'] == 'Processing':
                 progress.update(request_progress, completed=task_status['progress'])
 
-                task_status = requests.get(url=f'{host}:{port}/status/{task_data["task_id"]}')
+                task_status = requests.get(url=f'{host}:{port}/status/{task_info["task_id"]}')
                 task_status = task_status.json()
 
                 sleep(0.5)
 
-        requests.delete(url=f'{host}:{port}/status/{task_data["task_id"]}')
+        requests.delete(url=f'{host}:{port}/status/{task_info["task_id"]}')
 
         columns = utils.visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
