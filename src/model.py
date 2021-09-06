@@ -70,6 +70,8 @@ class ZReader(nn.Module):
 
         self.inv_mapping = nn.Linear(in_features=d_model, out_features=token_size)
 
+        self.params_count = sum(p.numel() for p in self.parameters() if p.requires_grad)
+
         self.init_weights()
 
     def __repr__(self) -> str:
@@ -136,4 +138,6 @@ class ZReader(nn.Module):
 
 
 if __name__ == "__main__":
-    model = ZReader(token_size=26, pe_max_len=2048, num_layers=4, d_model=256, n_heads=8, d_ff=2048, dropout=0.1)
+    model = ZReader(token_size=26, pe_max_len=1000, num_layers=6, d_model=1024, n_heads=16, d_ff=1024, dropout=0.1)
+
+    print(f'{model.params_count:,}')

@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 
 import config
 from data import WikiDataset, Collate
+from model import ZReader
 from scheduler import BaseScheduler, Scheduler, IdentityScheduler
 from utils import set_seeds, get_model, visualize_columns, visualize_target, optimizer_to_str
 
@@ -29,7 +30,7 @@ from utils import set_seeds, get_model, visualize_columns, visualize_target, opt
 
 class Trainer(object):
     def __init__(self,
-                 model: torch.nn.Module,
+                 model: ZReader,
                  criterion: Callable[[Tensor, Tensor], Tensor],
                  optimizer: Optimizer,
                  working_dir: Path,
@@ -94,6 +95,7 @@ class Trainer(object):
     def __log_init_params(self) -> None:
         self.console.print(f'Date: {self.experiment_mark}')
         self.console.print(f'Model: {self.model}')
+        self.console.print(f'Trainable parameters: {self.model.params_count:,}')
         self.console.print(f'Optimizer: {optimizer_to_str(self.optimizer)}')
         self.console.print(f'Scheduler: {self.scheduler}')
 
