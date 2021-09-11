@@ -136,6 +136,4 @@ inference
 experiments
 src/streamlit_test.py
 src/celery_test.py
-run_celery.bat
-start_containers.bat
-stop_containers.bat
+*.bat
