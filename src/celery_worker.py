@@ -45,8 +45,8 @@ class PredictTask(celery.Task):
 
 
 worker_app = Celery('ZReader',
-                    broker='pyamqp://guest@localhost//',
-                    backend='redis://localhost:6379/0'
+                    broker=config.CELERY_BROKER,
+                    backend=config.CELERY_BACKEND
                     )
 
 worker_app.conf.update({
@@ -68,6 +68,8 @@ def predict(self: PredictTask,
             beam_width: int,
             delimiter: str
             ) -> Tuple[List[str], List[Tuple[str, float]]]:
+    # TODO check max_pe_len
+
     src = utils.columns_to_tensor(data, self.device)
 
     chains = utils.beam_search(src, self.model, beam_width, self.device, beam_loop=utils.celery_task_loop(self))
