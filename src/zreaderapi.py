@@ -3,17 +3,14 @@ from functools import wraps
 from http import HTTPStatus
 from typing import Dict, Callable
 
-import uvicorn
 from celery.result import AsyncResult
 from fastapi import FastAPI, Request
-from typer import Typer, Option
 
 import config
 import utils
 from api_schemas import PredictPayload, PredictResponse, TaskResponse
 from celery_worker import worker_app, predict
 
-cli = Typer(name='Zreader-api', epilog='Description will be here')
 api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
 
 artifacts = {}  # mlflow artifacts TODO remove
@@ -144,17 +141,5 @@ def delete_prediction(request: Request, task_id: str) -> Dict:
     return response
 
 
-@cli.command()
-def run(host: str = Option(config.FASTAPI_HOST, help='Bind socket to this host'),
-        port: int = Option(config.FASTAPI_PORT, help='Bind socket to this port'),
-        log_level: str = Option('info', help='Log level'),
-        reload: bool = Option(False, help='Enable auto-reload'),
-        workers: int = Option(config.FASTAPI_WORKERS, help='Number of worker processes')
-        ) -> None:
-    """ Run uvicorn server """
-
-    uvicorn.run('zreaderapi:api', host=host, port=port, log_level=log_level, reload=reload, workers=workers)
-
-
 if __name__ == '__main__':
-    cli()
+    pass
