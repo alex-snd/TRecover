@@ -1,7 +1,8 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict
 
 import celery
 import torch
+from celery.exceptions import Ignore
 
 import config
 import utils
@@ -18,6 +19,20 @@ class Celery(celery.Celery):
             module = module[4:]
 
         return super().gen_task_name(name, module)
+
+
+class ArtifactsTask(celery.Task):
+    def __init__(self):
+        super(ArtifactsTask, self).__init__()
+
+        self.artifacts: Optional[dict] = None
+
+    def __call__(self, *args, **kwargs):
+        if not self.artifacts:
+            self.artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
+            self.artifacts['cuda'] = torch.cuda.is_available()
+
+        return self.run(*args, **kwargs)
 
 
 class PredictTask(celery.Task):
@@ -62,13 +77,18 @@ worker_app.conf.update({
 
 # --------------------------------------------------Celery Tasks--------------------------------------------------------
 
+@worker_app.task(bind=True, base=ArtifactsTask)
+def get_artifacts(self: ArtifactsTask) -> Dict:
+    return self.artifacts
+
+
 @worker_app.task(bind=True, base=PredictTask)
 def predict(self: PredictTask,
             data: List[str],
             beam_width: int,
             delimiter: str
             ) -> Tuple[List[str], List[Tuple[str, float]]]:
-    # TODO check max_pe_len
+    assert len(data) <= self.model.pe_max_len, f'Number of columns must be less than {self.model.pe_max_len}.'
 
     src = utils.columns_to_tensor(data, self.device)
 
