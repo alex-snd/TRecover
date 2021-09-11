@@ -1,4 +1,5 @@
 import json
+from http import HTTPStatus
 from pathlib import Path
 from time import time, sleep
 
@@ -16,21 +17,19 @@ cli = Typer(name='Client-cli')
 
 
 @cli.command()
-def params(host: str = Option(config.FASTAPI_HOST, help='API host'),
-           port: int = Option(config.FASTAPI_PORT, help='API port'),
+def params(url: str = Option(config.FASTAPI_URL, help='API url'),
            param: str = Option(None, help='Param name to receive')):
     if param:
-        response = requests.get(url=f'{host}:{port}/params/{param}')
+        response = requests.get(url=f'{url}/params/{param}')
     else:
-        response = requests.get(url=f'{host}:{port}/params')
+        response = requests.get(url=f'{url}/params')
 
     config.project_console.print(json.dumps(response.json(), indent=4))
 
 
 @cli.command()
 def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
-          host: str = Option(config.FASTAPI_HOST, help='API host'),
-          port: int = Option(config.FASTAPI_PORT, help='API port'),
+          url: str = Option(config.FASTAPI_URL, help='API url'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
@@ -61,7 +60,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         file_columns = [''.join(set(c)) for c in file_columns]
 
         payload['data'] = file_columns
-        task_info = requests.post(url=f'{host}:{port}/zread', json=payload)
+        task_info = requests.post(url=f'{url}/zread', json=payload)
         task_info = task_info.json()
 
         if not task_info['task_id']:
@@ -69,7 +68,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
                                         f'{task_info["message"]}')
             continue
 
-        task_status = requests.get(url=f'{host}:{port}/status/{task_info["task_id"]}')
+        task_status = requests.get(url=f'{url}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
         label = f'{file_id}/{len(files_columns)} Processing {file.name}'
@@ -86,15 +85,20 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         ) as progress:
             request_progress = progress.add_task(label, total=len(file_columns))
 
-            while task_status['message'] == 'Processing':
-                task_status = requests.get(url=f'{host}:{port}/status/{task_info["task_id"]}')
+            while task_status['status_code'] == HTTPStatus.PROCESSING:
+                task_status = requests.get(url=f'{url}/status/{task_info["task_id"]}')
                 task_status = task_status.json()
 
                 progress.update(request_progress, completed=task_status['progress'])
 
                 sleep(0.5)
 
-        requests.delete(url=f'{host}:{port}/status/{task_info["task_id"]}')
+        requests.delete(url=f'{url}/status/{task_info["task_id"]}')
+
+        if task_status['status_code'] != HTTPStatus.OK:
+            config.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
+                                        f'{task_status["message"]}')
+            continue
 
         columns = utils.visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
