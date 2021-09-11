@@ -1,4 +1,5 @@
 import time
+from http import HTTPStatus
 from typing import Tuple, List
 
 import requests
@@ -83,7 +84,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
     progress_bar = st.progress(0)
 
-    while task_status['message'] == 'Processing':
+    while task_status['status_code'] == HTTPStatus.PROCESSING:
         task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
@@ -93,6 +94,10 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
         time.sleep(0.3)
 
     requests.delete(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+
+    if task_status['status_code'] != HTTPStatus.OK:
+        st.error(task_status['message'])
+        st.stop()
 
     return task_status['chains']
 
