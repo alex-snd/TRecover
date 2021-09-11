@@ -7,20 +7,14 @@ from celery.result import AsyncResult
 from fastapi import FastAPI, Request, Path
 
 import config
-import utils
 from api_schemas import PredictPayload, PredictResponse, TaskResponse
-from celery_worker import worker_app, predict
+from celery_worker import worker_app, predict, get_artifacts
 
 api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
-
-artifacts = {}  # mlflow artifacts TODO remove
 
 
 @api.on_event('startup')
 def startup() -> None:
-    global artifacts
-    artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
-
     config.project_logger.info('FatAPI launched')
 
 
@@ -53,6 +47,8 @@ def index(request: Request) -> Dict:
 @construct_response
 def all_parameters(request: Request) -> Dict:
     """ Get model parameter's values used for inference. """
+    task = get_artifacts.delay()
+    artifacts = task.get()
 
     response = {
         'message': HTTPStatus.OK.phrase,
@@ -68,6 +64,9 @@ def all_parameters(request: Request) -> Dict:
 def parameters(request: Request, param: str) -> Dict:
     """ Get a specific parameter's value used for inference. """
 
+    task = get_artifacts.delay()
+    artifacts = task.get()
+
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
@@ -80,19 +79,13 @@ def parameters(request: Request, param: str) -> Dict:
 @api.post('/zread', tags=['Prediction'], response_model=TaskResponse)
 @construct_response
 def zread(request: Request, payload: PredictPayload) -> Dict:
-    if len(payload.data) > artifacts['pe_max_len']:  # TODO use .get or remove artifacts
-        response = {
-            'message': f'{HTTPStatus.REQUEST_ENTITY_TOO_LARGE.phrase}. Number of columns must be less than 1000.',
-            'status_code': HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-        }
-    else:
-        task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
+    task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
 
-        response = {
-            'message': HTTPStatus.ACCEPTED.phrase,
-            'status_code': HTTPStatus.ACCEPTED,
-            'task_id': task.id
-        }
+    response = {
+        'message': HTTPStatus.ACCEPTED.phrase,
+        'status_code': HTTPStatus.ACCEPTED,
+        'task_id': task.id
+    }
 
     return response
 
@@ -105,7 +98,13 @@ def status(request: Request,
            ) -> Dict:
     task = AsyncResult(task_id, app=worker_app)
 
-    if task.ready():
+    if task.failed():
+        response = {
+            'message': str(task.info),
+            'status_code': HTTPStatus.CONFLICT
+        }
+
+    elif task.ready():
         data, chains = task.get()
 
         response = {
