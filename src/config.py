@@ -1,14 +1,24 @@
 import logging
+import os
 from pathlib import Path
-from celery.signals import after_setup_task_logger, after_setup_logger
 
 import mlflow
-from rich.logging import RichHandler
+from celery.signals import after_setup_task_logger, after_setup_logger
 from rich.console import Console
+from rich.logging import RichHandler
 
 # Repository
 AUTHOR = "Alex-Snd"
 REPO = "ZReader"
+
+# Environment variables
+CELERY_BROKER = os.getenv('CELERY_BROKER') or 'pyamqp://guest@localhost'
+CELERY_BACKEND = os.getenv('CELERY_BACKEND') or 'redis://localhost:6379'
+FASTAPI_HOST = os.getenv('FASTAPI_HOST') or 'localhost'
+FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 5001
+CUDA = False if os.getenv('CUDA') == 'False' else True
+
+FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 
 # Directories
 BASE_DIR = Path(__file__).parent.parent.absolute()
