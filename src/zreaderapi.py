@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Dict, Callable
 
 from celery.result import AsyncResult
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Path
 
 import config
 import utils
@@ -99,7 +99,10 @@ def zread(request: Request, payload: PredictPayload) -> Dict:
 
 @api.get('/status/{task_id}', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
-def status(request: Request, task_id: str) -> Dict:
+def status(request: Request,
+           task_id: str = Path(..., title='The ID of the task to get status',
+                               regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
+           ) -> Dict:
     task = AsyncResult(task_id, app=worker_app)
 
     if task.ready():
@@ -109,7 +112,8 @@ def status(request: Request, task_id: str) -> Dict:
             'message': HTTPStatus.OK.phrase,
             'status_code': HTTPStatus.OK,
             'data': data,
-            'chains': chains
+            'chains': chains,
+            'progress': len(data)
         }
     else:
         info = task.info
@@ -125,7 +129,10 @@ def status(request: Request, task_id: str) -> Dict:
 
 @api.delete('/status/{task_id}', tags=['Prediction'])
 @construct_response
-def delete_prediction(request: Request, task_id: str) -> Dict:
+def delete_prediction(request: Request,
+                      task_id: str = Path(..., title='The ID of the task to get status',
+                                          regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
+                      ) -> Dict:
     task = AsyncResult(task_id, app=worker_app)
 
     if task.ready():
