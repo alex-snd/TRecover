@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 from typing import Optional, Dict, List, Union, Tuple, Callable, Awaitable
 
-import numpy as np
 import celery
+import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
@@ -152,6 +152,11 @@ def get_model(token_size: int,
         model.load_parameters(weights, device=device)
 
     return model
+
+
+# TODO for mlflow
+def simplify_artifacts(artifacts: Dict) -> Dict:
+    pass
 
 
 def load_artifacts(model_artifacts: Path) -> Dict[str, Union[str, int, float]]:
