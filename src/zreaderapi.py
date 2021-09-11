@@ -93,7 +93,8 @@ def zread(request: Request, payload: PredictPayload) -> Dict:
 @api.get('/status/{task_id}', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
 def status(request: Request,
-           task_id: str = Path(..., title='The ID of the task to get status',
+           task_id: str = Path(...,
+                               title='The ID of the task to get status',
                                regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
            ) -> Dict:
     task = AsyncResult(task_id, app=worker_app)
@@ -129,7 +130,8 @@ def status(request: Request,
 @api.delete('/status/{task_id}', tags=['Prediction'])
 @construct_response
 def delete_prediction(request: Request,
-                      task_id: str = Path(..., title='The ID of the task to get status',
+                      task_id: str = Path(...,
+                                          title='The ID of the task to get status',
                                           regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
                       ) -> Dict:
     task = AsyncResult(task_id, app=worker_app)
