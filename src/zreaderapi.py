@@ -14,20 +14,15 @@ from api_schemas import PredictPayload, PredictResponse, TaskResponse
 from celery_worker import worker_app, predict
 
 cli = Typer(name='Zreader-api', epilog='Description will be here')
-api = FastAPI(title='ZreaderAPI', description='Description will be here')
+api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
 
-context = {
-    'artifacts': {},  # mlflow artifacts
-    'tasks': set()  # list of celery tasks identifiers
-}
+artifacts = {}  # mlflow artifacts TODO remove
 
 
 @api.on_event('startup')
 def startup() -> None:
-    global context
-
+    global artifacts
     artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
-    context['artifacts'] = artifacts
 
     config.project_logger.info('FatAPI launched')
 
@@ -62,12 +57,10 @@ def index(request: Request) -> Dict:
 def all_parameters(request: Request) -> Dict:
     """ Get model parameter's values used for inference. """
 
-    global context
-
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'artifacts': context['artifacts']
+        'artifacts': artifacts
     }
 
     return response
@@ -78,12 +71,10 @@ def all_parameters(request: Request) -> Dict:
 def parameters(request: Request, param: str) -> Dict:
     """ Get a specific parameter's value used for inference. """
 
-    global context
-
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        param: context['artifacts'].get(param, 'Not found')
+        param: artifacts.get(param, 'Not found')
     }
 
     return response
@@ -92,17 +83,13 @@ def parameters(request: Request, param: str) -> Dict:
 @api.post('/zread', tags=['Prediction'], response_model=TaskResponse)
 @construct_response
 def zread(request: Request, payload: PredictPayload) -> Dict:
-    global context
-
-    if len(payload.data) > context['artifacts']['pe_max_len']:
+    if len(payload.data) > artifacts['pe_max_len']:  # TODO use .get or remove artifacts
         response = {
             'message': f'{HTTPStatus.REQUEST_ENTITY_TOO_LARGE.phrase}. Number of columns must be less than 1000.',
             'status_code': HTTPStatus.REQUEST_ENTITY_TOO_LARGE
         }
     else:
         task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
-
-        context['tasks'].add(task.id)
 
         response = {
             'message': HTTPStatus.ACCEPTED.phrase,
@@ -116,33 +103,24 @@ def zread(request: Request, payload: PredictPayload) -> Dict:
 @api.get('/status/{task_id}', tags=['Prediction'], response_model=PredictResponse)
 @construct_response
 def status(request: Request, task_id: str) -> Dict:
-    global context
+    task = AsyncResult(task_id, app=worker_app)
 
-    if task_id in context['tasks']:
-        task = AsyncResult(task_id, app=worker_app)
+    if task.ready():
+        data, chains = task.get()
 
-        if task.ready():
-            data, chains = task.get()
-
-            response = {
-                'message': HTTPStatus.OK.phrase,
-                'status_code': HTTPStatus.OK,
-                'data': data,
-                'chains': chains
-            }
-        else:
-            info = task.info
-
-            response = {
-                'message': HTTPStatus.PROCESSING.phrase,
-                'status_code': HTTPStatus.PROCESSING,
-                'progress': info.get('progress', None) if isinstance(info, dict) else None
-            }
-
-    else:
         response = {
-            'message': HTTPStatus.NOT_FOUND.phrase,
-            'status_code': HTTPStatus.NOT_FOUND,
+            'message': HTTPStatus.OK.phrase,
+            'status_code': HTTPStatus.OK,
+            'data': data,
+            'chains': chains
+        }
+    else:
+        info = task.info
+
+        response = {
+            'message': HTTPStatus.PROCESSING.phrase,
+            'status_code': HTTPStatus.PROCESSING,
+            'progress': info.get('progress') if isinstance(info, dict) else None
         }
 
     return response
@@ -151,41 +129,29 @@ def status(request: Request, task_id: str) -> Dict:
 @api.delete('/status/{task_id}', tags=['Prediction'])
 @construct_response
 def delete_prediction(request: Request, task_id: str) -> Dict:
-    global context
+    task = AsyncResult(task_id, app=worker_app)
 
-    if task_id in context['tasks']:
-        task = AsyncResult(task_id, app=worker_app)
-
-        if task.ready():
-            task.forget()
-        else:
-            task.revoke()
-
-        context['tasks'].remove(task_id)
-
-        response = {
-            'message': HTTPStatus.OK.phrase,
-            'status_code': HTTPStatus.OK
-        }
+    if task.ready():
+        task.forget()
     else:
-        response = {
-            'message': HTTPStatus.NOT_FOUND.phrase,
-            'status_code': HTTPStatus.NOT_FOUND
-        }
+        task.revoke()
+
+    response = {
+        'message': HTTPStatus.OK.phrase,
+        'status_code': HTTPStatus.OK
+    }
 
     return response
 
 
 @cli.command()
-def run(host: str = Option('localhost', help='Bind socket to this host'),
-        port: int = Option(5001, help='Bind socket to this port'),
+def run(host: str = Option(config.FASTAPI_HOST, help='Bind socket to this host'),
+        port: int = Option(config.FASTAPI_PORT, help='Bind socket to this port'),
         log_level: str = Option('info', help='Log level'),
         reload: bool = Option(False, help='Enable auto-reload'),
-        workers: int = Option(1, help='Number of worker processes')
+        workers: int = Option(config.FASTAPI_WORKERS, help='Number of worker processes')
         ) -> None:
-    """ Run celery worker and uvicorn server """
-
-    # TODO start celery worker here
+    """ Run uvicorn server """
 
     uvicorn.run('zreaderapi:api', host=host, port=port, log_level=log_level, reload=reload, workers=workers)
 
