@@ -16,8 +16,8 @@ cli = Typer(name='Client-cli')
 
 
 @cli.command()
-def params(host: str = Option('http://127.0.0.1', help='API host'),
-           port: int = Option(5001, help='API port'),
+def params(host: str = Option(config.FASTAPI_HOST, help='API host'),
+           port: int = Option(config.FASTAPI_PORT, help='API port'),
            param: str = Option(None, help='Param name to receive')):
     if param:
         response = requests.get(url=f'{host}:{port}/params/{param}')
@@ -29,8 +29,8 @@ def params(host: str = Option('http://127.0.0.1', help='API host'),
 
 @cli.command()
 def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
-          host: str = Option('http://127.0.0.1', help='API host'),
-          port: int = Option(5001, help='API port'),
+          host: str = Option(config.FASTAPI_HOST, help='API host'),
+          port: int = Option(config.FASTAPI_PORT, help='API port'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),

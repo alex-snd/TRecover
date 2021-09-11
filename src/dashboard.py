@@ -15,8 +15,6 @@ def main() -> None:
         layout='wide',
         initial_sidebar_state='expanded')
 
-    st.session_state.url = st.get_option('s3.url')  # ZreaderAPI url
-
     sidebar()
 
 
@@ -67,26 +65,26 @@ def about_page() -> None:
 
 
 @st.cache(max_entries=26, show_spinner=False)
-def get_chains(columns: List[str], bw: int) -> List[Tuple[str, float]]:
+def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
     payload = {
         'data': columns,
         'beam_width': bw
     }
 
-    task_info = requests.post(url=f'{st.session_state.url}/zread', json=payload)
+    task_info = requests.post(url=f'{config.FASTAPI_URL}/zread', json=payload)
     task_info = task_info.json()
 
     if not task_info['task_id']:
         st.error(task_info['message'])
         st.stop()
 
-    task_status = requests.get(url=f'{st.session_state.url}/status/{task_info["task_id"]}')
+    task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
     task_status = task_status.json()
 
     progress_bar = st.progress(0)
 
     while task_status['message'] == 'Processing':
-        task_status = requests.get(url=f'{st.session_state.url}/status/{task_info["task_id"]}')
+        task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
         completed = task_status['progress'] or 0
@@ -94,7 +92,7 @@ def get_chains(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
         time.sleep(0.3)
 
-    requests.delete(url=f'{st.session_state.url}/status/{task_info["task_id"]}')
+    requests.delete(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
 
     return task_status['chains']
 
@@ -130,7 +128,7 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
 
     if columns and placeholder.button('Zread'):
         with placeholder:
-            chains = get_chains(columns, bw)
+            chains = predict(columns, bw)
 
         with placeholder.beta_container():
             st.subheader('\nPrediction')
