@@ -14,7 +14,8 @@ class Celery(celery.Celery):
 
 celery_app = Celery('ZReader',
                     broker=config.CELERY_BROKER,
-                    backend=config.CELERY_BACKEND
+                    backend=config.CELERY_BACKEND,
+                    include=['app.api.backend.tasks']
                     )
 
 celery_app.conf.update({
