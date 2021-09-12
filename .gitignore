@@ -134,6 +134,6 @@ data/
 weights/
 inference
 experiments
-src/streamlit_test.py
-src/celery_test.py
+ml/streamlit_test.py
+ml/celery_test.py
 *.bat

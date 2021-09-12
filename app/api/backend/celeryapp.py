@@ -6,7 +6,7 @@ import config
 class Celery(celery.Celery):
 
     def gen_task_name(self, name: str, module: str) -> str:
-        if module.startswith('src.'):
+        if module.startswith('ml.'):
             module = module[4:]
 
         return super().gen_task_name(name, module)

@@ -2,7 +2,7 @@ from typing import Tuple, List, Dict
 
 from app.api.backend.celeryapp import celery_app
 from app.api.backend.tasksbase import ArtifactsTask, PredictTask
-from src import utils
+from ml import utils
 
 
 @celery_app.task(bind=True, base=ArtifactsTask)

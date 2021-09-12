@@ -13,7 +13,7 @@ from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-from src import utils
+from ml import utils
 
 cli = Typer(name='Zreader-cli')
 

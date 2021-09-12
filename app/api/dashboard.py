@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 
 import config
-from src import utils
+from ml import utils
 
 
 def main() -> None:
