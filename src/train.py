@@ -19,10 +19,10 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import config
-from data import WikiDataset, Collate
-from model import ZReader
-from scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from utils import set_seeds, get_model, visualize_columns, visualize_target, optimizer_to_str
+from src.data import WikiDataset, Collate
+from src.model import ZReader
+from src.scheduler import BaseScheduler, Scheduler, IdentityScheduler
+from src.utils import set_seeds, get_model, visualize_columns, visualize_target, optimizer_to_str
 
 
 # TODO cover all project with tests

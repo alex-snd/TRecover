@@ -11,7 +11,7 @@ from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-import utils
+from src import utils
 
 cli = Typer(name='Client-cli')
 

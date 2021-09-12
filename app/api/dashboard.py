@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 
 import config
-import utils
+from src import utils
 
 
 def main() -> None:
@@ -106,7 +106,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
     columns = utils.create_noisy_columns(data, min_noise, max_noise)
 
-    return [''.join(set(c)) for c in columns]  # shuffle columns
+    return [''.join(set(c)) for c in columns]  # kinda shuffle columns
 
 
 def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> None:

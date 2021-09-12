@@ -1,8 +1,8 @@
-from typing import Union, Optional, List, Tuple
+from typing import Optional, List, Tuple
 
 from pydantic import BaseModel, validator
 
-from data import Collate
+from src.data import Collate
 
 
 class PredictPayload(BaseModel):
