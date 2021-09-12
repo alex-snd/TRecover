@@ -135,7 +135,7 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
         with placeholder:
             chains = predict(columns, bw)
 
-        with placeholder.beta_container():
+        with placeholder.container():
             st.subheader('\nPrediction')
             st.text('\n\n'.join(chain for chain, _ in chains))
             st.button('Clear')
