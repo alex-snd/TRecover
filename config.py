@@ -21,7 +21,7 @@ CUDA = False if os.getenv('CUDA') == 'False' else True
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 
 # Directories
-BASE_DIR = Path(__file__).parent.parent.absolute()
+BASE_DIR = Path(__file__).parent.absolute()
 INFERENCE_DIR = Path(BASE_DIR, 'inference')  # for inference zreaderapi params
 DATA_DIR = Path(BASE_DIR, 'data')
 TRAIN_DATA = Path(DATA_DIR, 'train')
