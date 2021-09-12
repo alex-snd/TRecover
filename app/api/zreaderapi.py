@@ -7,8 +7,9 @@ from celery.result import AsyncResult
 from fastapi import FastAPI, Request, Path
 
 import config
-from api_schemas import PredictPayload, PredictResponse, TaskResponse
-from celery_worker import worker_app, predict, get_artifacts
+from app.api.backend.celeryapp import celery_app
+from app.api.backend.tasks import predict, get_artifacts
+from app.api.schemas import PredictPayload, PredictResponse, TaskResponse
 
 api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
 
@@ -97,7 +98,7 @@ def status(request: Request,
                                title='The ID of the task to get status',
                                regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
            ) -> Dict:
-    task = AsyncResult(task_id, app=worker_app)
+    task = AsyncResult(task_id, app=celery_app)
 
     if task.failed():
         response = {
@@ -134,7 +135,7 @@ def delete_prediction(request: Request,
                                           title='The ID of the task to get status',
                                           regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
                       ) -> Dict:
-    task = AsyncResult(task_id, app=worker_app)
+    task = AsyncResult(task_id, app=celery_app)
 
     if task.ready():
         task.forget()
@@ -147,7 +148,3 @@ def delete_prediction(request: Request,
     }
 
     return response
-
-
-if __name__ == '__main__':
-    pass

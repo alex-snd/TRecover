@@ -14,8 +14,8 @@ from torch import Tensor
 from torch.optim import Optimizer
 
 import config
-from data import Collate
-from model import ZReader
+from src.data import Collate
+from src.model import ZReader
 
 
 # -------------------------------------Train data cleaning & preparation utils------------------------------------------
