@@ -1,0 +1,16 @@
+__pycache__
+*/__pycache__
+.idea
+data
+examples
+experiments
+logs
+venv
+weights
+.gitignore
+Dockerfile
+docker-compose.yml
+LICENSE
+*/*.bat
+*.bat
+*.md
