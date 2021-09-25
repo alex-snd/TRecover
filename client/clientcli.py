@@ -11,7 +11,8 @@ from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-from ml import utils
+from utils.cli import get_files_columns
+from utils.visualization import visualize_columns
 
 cli = Typer(name='Client-cli')
 
@@ -47,7 +48,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         config.project_logger.error('[red]Files for inference needed to be specified')
         return
 
-    files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
+    files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
     payload = {
         'data': None,
         'beam_width': beam_width,
@@ -100,7 +101,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
                                         f'{task_status["message"]}')
             continue
 
-        columns = utils.visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
+        columns = visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
         chains = [Text(chain, style='cyan', justify='center', overflow='ellipsis', end='\n\n')

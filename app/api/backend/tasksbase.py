@@ -4,8 +4,8 @@ import celery
 import torch
 
 import config
-from ml import utils
 from ml.model import ZReader
+from utils.model import get_model, load_artifacts
 
 
 class ArtifactsTask(celery.Task):
@@ -16,7 +16,7 @@ class ArtifactsTask(celery.Task):
 
     def __call__(self, *args, **kwargs):
         if not self.artifacts:
-            self.artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
+            self.artifacts = load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
             self.artifacts['cuda'] = config.CUDA and torch.cuda.is_available()
 
         return self.run(*args, **kwargs)
@@ -37,10 +37,10 @@ class PredictTask(celery.Task):
         """
 
         if not self.model:
-            artifacts = utils.load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
-            self.model = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                                         artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'],
-                                         artifacts['dropout'], self.device, weights=config.INFERENCE_DIR / 'weights')
+            artifacts = load_artifacts(config.INFERENCE_DIR / 'artifacts.json')
+            self.model = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
+                                   artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'],
+                                   artifacts['dropout'], self.device, weights=config.INFERENCE_DIR / 'weights')
             self.model.eval()
 
         return self.run(*args, **kwargs)

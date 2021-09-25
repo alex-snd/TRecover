@@ -22,7 +22,9 @@ import config
 from ml.data import WikiDataset, Collate
 from ml.model import ZReader
 from ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from ml.utils import set_seeds, get_model, visualize_columns, visualize_target, optimizer_to_str
+from utils.model import get_model
+from utils.train import set_seeds, optimizer_to_str
+from utils.visualization import visualize_columns, visualize_target
 
 
 # TODO cover all project with tests
@@ -373,7 +375,7 @@ def train(params: Namespace) -> None:
         mlflow.log_metrics({'Test accuracy': test_accuracy})
 
         with tempfile.TemporaryDirectory() as dp:
-            # save_parameters(vars(params), Path(dp, "params.json"))  # TODO convert for mlflow
+            # save_artifacts(vars(params), Path(dp, "params.json"))  # TODO convert for mlflow
             z_reader.save(Path(dp, "z_reader.pt"))
             shutil.copy(trainer.log_file, dp)
 

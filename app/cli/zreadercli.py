@@ -1,75 +1,23 @@
 import os
 from pathlib import Path
 from time import time
-from typing import Optional
 from zipfile import ZipFile
 
-import requests
 import torch
 from rich.console import Group
 from rich.panel import Panel
-from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
+from rich.progress import Progress, TextColumn
 from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-from ml import utils
+from utils.beam_search import beam_search, cli_interactive_loop
+from utils.cli import download_from_disk, get_files_columns
+from utils.data import files_columns_to_tensors
+from utils.model import get_model, load_artifacts
+from utils.visualization import visualize_columns, visualize_target
 
 cli = Typer(name='Zreader-cli')
-
-
-def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
-    """
-        Download file from Yandex disk
-
-        Notes
-        -----
-        sharing_link: str
-            Sharing link to the file on Yandex disk
-
-        save_dir: str
-            Path where to store downloaded file
-
-
-        Returns
-        -------
-        filepath: Optional[Path]
-            Path to the downloaded file. None if failed to download
-
-    """
-
-    if not (direct_link := utils.get_real_direct_link(sharing_link)):
-        config.project_logger.error(f'[red]Failed to download data from [/][bright_blue] {sharing_link}')
-        return None
-
-    filename = utils.extract_filename(direct_link) or 'downloaded_data'  # Try to recover the filename from the link
-    filepath = Path(save_dir, filename)
-
-    with filepath.open(mode='wb') as fw:
-        response = requests.get(direct_link, stream=True)
-        total_length = response.headers.get('content-length')
-
-        if total_length is None:  # no content length header
-            fw.write(response.content)
-        else:
-            data_stream = response.iter_content(chunk_size=4096)
-
-            with Progress(
-                    TextColumn('{task.description}', style='bright_blue'),
-                    BarColumn(complete_style='bright_blue'),
-                    DownloadColumn(),
-                    TransferSpeedColumn(),
-                    transient=True,
-            ) as progress:
-                download_progress = progress.add_task('Downloading', total=int(total_length))
-
-                for data in data_stream:
-                    fw.write(data)
-                    progress.update(download_progress, advance=4096)
-
-    config.project_logger.info(f'[green]Downloaded "{filename}" to {Path(save_dir, filename).absolute()}')
-
-    return filepath
 
 
 @cli.command()
@@ -131,7 +79,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
     inference_path = Path(inference_path)
-    artifacts = utils.load_artifacts(Path(model_artifacts))
+    artifacts = load_artifacts(Path(model_artifacts))
 
     if not noisy and min_noise >= max_noise:
         config.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
@@ -151,26 +99,26 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
     with Progress(TextColumn('{task.description}', style='bright_blue'), transient=True) as progress:
         progress.add_task('Model loading...')
-        z_reader = utils.get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                                   artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
-                                   device, weights=Path(weights_path))
+        z_reader = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
+                             artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
+                             device, weights=Path(weights_path))
     z_reader.eval()
 
     config.project_console.print()
 
-    files, files_columns = utils.get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
-    files_src = utils.files_columns_to_tensors(files_columns, device)
+    files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
+    files_src = files_columns_to_tensors(files_columns, device)
 
     for file_id, (file, src) in enumerate(zip(files, files_src), start=1):
         start_time = time()
 
         loop_label = f'{file_id}/{len(files_src)} Processing {file.name}'
-        chains = utils.beam_search(src, z_reader, beam_width, device,
-                                   beam_loop=utils.cli_interactive_loop(label=loop_label))
-        chains = [Text(utils.visualize_target(chain, delimiter=delimiter), style='cyan', justify='center',
+        chains = beam_search(src, z_reader, beam_width, device,
+                             beam_loop=cli_interactive_loop(label=loop_label))
+        chains = [Text(visualize_target(chain, delimiter=delimiter), style='cyan', justify='center',
                        overflow='ellipsis', end='\n\n') for (chain, _) in chains]
 
-        columns = utils.visualize_columns(src, delimiter=delimiter, as_rows=True)
+        columns = visualize_columns(src, delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
         panel_group = Group(

@@ -6,7 +6,8 @@ import requests
 import streamlit as st
 
 import config
-from ml import utils
+from utils.data import data_to_columns, create_noisy_columns
+from utils.visualization import visualize_columns
 
 
 def main() -> None:
@@ -104,7 +105,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
 @st.cache(max_entries=1)
 def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
-    columns = utils.create_noisy_columns(data, min_noise, max_noise)
+    columns = create_noisy_columns(data, min_noise, max_noise)
 
     return [''.join(set(c)) for c in columns]  # kinda shuffle columns
 
@@ -120,10 +121,10 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     if is_plain:
         columns = get_noisy_columns(data, min_noise, max_noise)
     else:
-        columns = utils.data_to_columns(data, separator=' ')
+        columns = data_to_columns(data, separator=' ')
 
     st.subheader('\nColumns')
-    st.text(utils.visualize_columns(columns, delimiter=''))
+    st.text(visualize_columns(columns, delimiter=''))
     st.sidebar.text('\n')
 
     placeholder = st.empty()
