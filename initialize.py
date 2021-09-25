@@ -22,7 +22,7 @@ def initialize(deactivate: bool = Option(False, '-d', help='Deactivate flag')) -
 
     else:
         with pth_file.open(mode='w') as f:
-            f.write(str(Path(__file__).parent.absolute()))
+            f.write(f'{Path(__file__).parent.absolute()}\n')
 
         config.project_console.print('ZReader project was initialized', style='bright_blue')
 
