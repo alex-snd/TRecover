@@ -44,7 +44,7 @@ def celery_task_loop(task: celery.Task
                    ) -> List[Tuple[Tensor, float]]:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        for progress in range(encoded_src.size(0)):
+        for progress in range(encoded_src.shape[0]):
             candidates = beam_step(candidates, encoded_src, z_reader, width, device)
             task.update_state(meta={'progress': progress + 1})
 
@@ -72,9 +72,9 @@ def cli_interactive_loop(label: str = 'Processing'
                 TimeElapsedColumn(),
                 transient=True,
         ) as progress:
-            beam_progress = progress.add_task(label, total=encoded_src.size(0))
+            beam_progress = progress.add_task(label, total=encoded_src.shape[0])
 
-            for _ in range(encoded_src.size(0)):
+            for _ in range(encoded_src.shape[0]):
                 candidates = beam_step(candidates, encoded_src, z_reader, width, device)
                 progress.update(beam_progress, advance=1)
 
@@ -90,7 +90,7 @@ def standard_loop(encoded_src: Tensor,
                   ) -> List[Tuple[Tensor, float]]:
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-    for _ in range(encoded_src.size(0)):
+    for _ in range(encoded_src.shape[0]):
         candidates = beam_step(candidates, encoded_src, z_reader, width, device)
 
     return candidates
@@ -148,7 +148,7 @@ def api_interactive_loop(queue: asyncio.Queue,
                                ) -> None:
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        for _ in range(encoded_src.size(0)):
+        for _ in range(encoded_src.shape[0]):
             candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
 
             chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
@@ -168,7 +168,7 @@ async def standard_async_loop(encoded_src: Tensor,
                               ) -> List[Tuple[Tensor, float]]:
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-    for _ in range(encoded_src.size(0)):
+    for _ in range(encoded_src.shape[0]):
         candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
 
     return candidates

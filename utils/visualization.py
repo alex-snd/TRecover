@@ -14,8 +14,8 @@ def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_ro
     rows = list()
 
     if isinstance(grid, Tensor):
-        for c in range(grid.size(0)):
-            columns.append([Collate.num_to_alphabet[pos] for pos in range(grid.size(1)) if grid[c, pos]])
+        for c in range(grid.shape[0]):
+            columns.append([Collate.num_to_alphabet[pos] for pos in range(grid.shape[1]) if grid[c, pos]])
             max_depth = len(columns[c]) if len(columns[c]) > max_depth else max_depth
     else:
         columns = [list(column) for column in grid]
