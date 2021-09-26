@@ -2,88 +2,61 @@ version: "3.9"
 
 services:
 
-  dashboard:
-    container_name: dashboard
+  api-dashboard:
+    container_name: api-dashboard
     build:
-        context: .
-        dockerfile: ./docker/dashboard/Dockerfile
-        args:
-          STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
-          FASTAPI_HOST: ${FASTAPI_HOST:-api}
-          FASTAPI_PORT: ${FASTAPI_PORT:-8001}
-          
+      context: .
+      dockerfile: docker/api-dashboard/Dockerfile
+      args:
+        CUDA: ${CUDA:-"True"}
+        CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
+        CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
+        CELERY_WORKERS: ${CELERY_WORKERS:-1}
+        STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
+        FASTAPI_HOST: ${FASTAPI_HOST:-localhost}
+        FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+        FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
+
     ports:
       - "${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}"
-    
-    restart: on-failure
-      
-    depends_on:
-      - redis
-      - rabbitmq
-      - worker
-      - api
-
-
-  api:
-    container_name: api
-    build:
-        context: .
-        dockerfile: ./docker/api/Dockerfile
-        args:
-          CUDA: ${CUDA:-"True"}
-          CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
-          CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
-          CELERY_WORKERS: ${CELERY_WORKERS:-1}
-          FASTAPI_HOST: ${FASTAPI_HOST:-api}
-          FASTAPI_PORT: ${FASTAPI_PORT:-8001}
-          FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
-          
-    ports:
       - "${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}"
-      
+
     restart: on-failure
 
-      
     depends_on:
+      - worker
       - redis
       - rabbitmq
-      - worker
 
 
   worker:
     build:
-        context: .
-        dockerfile: ./docker/worker/Dockerfile
-        args:
-          CUDA: ${CUDA:-"True"}
-          CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
-          CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
-          CELERY_WORKERS: ${CELERY_WORKERS:-1}
-    
+      context: .
+      dockerfile: ./docker/worker/Dockerfile
+      args:
+        CUDA: ${CUDA:-"True"}
+        CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
+        CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
+        CELERY_WORKERS: ${CELERY_WORKERS:-1}
+
     restart: on-failure
-          
+
     depends_on:
       - redis
       - rabbitmq
-      
-      
+
+
   redis:
     container_name: redis
     image: redis
     restart: on-failure
     expose:
       - 6379
-    
-    
+
+
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:management
     restart: on-failure
     expose:
       - 5672
-      
-
-
-networks:
-  default:
-    driver: bridge
