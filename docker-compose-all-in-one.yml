@@ -5,24 +5,24 @@ services:
   standalone:
     container_name: standalone
     build:
-        context: .
-        dockerfile: ./docker/all-in-one/Dockerfile
-        args:
-          CUDA: ${CUDA:-"True"}
-          CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
-          CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
-          CELERY_WORKERS: ${CELERY_WORKERS:-1}
-          STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
-          FASTAPI_HOST: ${FASTAPI_HOST:-localhost}
-          FASTAPI_PORT: ${FASTAPI_PORT:-8001}
-          FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
-          
+      context: .
+      dockerfile: ./docker/all-in-one/Dockerfile
+      args:
+        CUDA: ${CUDA:-"True"}
+        CELERY_BROKER: ${CELERY_BROKER:-"pyamqp://guest@rabbitmq:5672"}
+        CELERY_BACKEND: ${CELERY_BACKEND:-"redis://redis:6379"}
+        CELERY_WORKERS: ${CELERY_WORKERS:-1}
+        STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
+        FASTAPI_HOST: ${FASTAPI_HOST:-localhost}
+        FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+        FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
+
     ports:
       - "${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}"
       - "${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}"
-    
+
     restart: on-failure
-      
+
     depends_on:
       - redis
       - rabbitmq
@@ -33,8 +33,8 @@ services:
     restart: on-failure
     expose:
       - 6379
-    
-    
+
+
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:management
