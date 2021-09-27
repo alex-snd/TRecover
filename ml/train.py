@@ -67,8 +67,8 @@ class Trainer(object):
 
         self.__log_init_params()
 
-    def __enter__(self) -> None:
-        pass
+    def __enter__(self):
+        return self
 
     def __exit__(self, exc_type: Union[None, Type[BaseException]],
                  exc_val: Union[None, BaseException],
