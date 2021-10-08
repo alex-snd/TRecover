@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+
+  api-dashboard:
+    container_name: api-dashboard
+    build:
+      context: ../..
+      dockerfile: ./docker/api-dashboard/Dockerfile
+
+    environment:
+      CUDA: ${CUDA:-True}
+      CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
+      CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
+      CELERY_WORKERS: ${CELERY_WORKERS:-1}
+      STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
+      FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+      FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
+
+    ports:
+      - ${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}
+      - ${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}
+
+    restart: always
+
+    depends_on:
+      - worker
+      - redis
+      - rabbitmq
+
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: ./docker/worker/Dockerfile
+    environment:
+      CUDA: ${CUDA:-True}
+      CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
+      CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
+      CELERY_WORKERS: ${CELERY_WORKERS:-1}
+
+    restart: always
+
+    depends_on:
+      - redis
+      - rabbitmq
+
+
+  redis:
+    container_name: redis
+    image: redis
+    restart: always
+    expose:
+      - 6379
+
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:management
+    restart: always
+    expose:
+      - 5672

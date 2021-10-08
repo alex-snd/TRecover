@@ -1,5 +1,4 @@
 __pycache__
-*/__pycache__
 .idea
 data
 examples
@@ -8,9 +7,5 @@ logs
 venv
 weights
 .gitignore
-Dockerfile
-docker-compose.yml
 LICENSE
-*/*.bat
-*.bat
 *.md
