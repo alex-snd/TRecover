@@ -6,7 +6,7 @@ services:
     container_name: api-dashboard
     build:
       context: ../..
-      dockerfile: ./docker/api-dashboard/Dockerfile
+      dockerfile: ./docker/file/api-dashboard
 
     environment:
       CUDA: ${CUDA:-True}
@@ -32,7 +32,7 @@ services:
   worker:
     build:
       context: ../..
-      dockerfile: ./docker/worker/Dockerfile
+      dockerfile: ./docker/file/worker
     environment:
       CUDA: ${CUDA:-True}
       CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}

@@ -6,7 +6,7 @@ services:
     container_name: standalone
     build:
       context: ../..
-      dockerfile: ./docker/all-in-one/Dockerfile
+      dockerfile: ./docker/file/standalone
 
     environment:
       CUDA: ${CUDA:-True}
