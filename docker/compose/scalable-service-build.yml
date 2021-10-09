@@ -1,18 +1,22 @@
 version: "3.9"
 
+x-common-env: &common-env
+  CUDA: ${CUDA:-True}
+  CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
+  CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
+
+
 services:
 
   api-dashboard:
     container_name: api-dashboard
+
     build:
       context: ../..
       dockerfile: ./docker/file/api-dashboard
 
     environment:
-      CUDA: ${CUDA:-True}
-      CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
-      CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
-      CELERY_WORKERS: ${CELERY_WORKERS:-1}
+      <<: *common-env
       STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
       FASTAPI_PORT: ${FASTAPI_PORT:-8001}
       FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
@@ -33,10 +37,9 @@ services:
     build:
       context: ../..
       dockerfile: ./docker/file/worker
+
     environment:
-      CUDA: ${CUDA:-True}
-      CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
-      CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
+      <<: *common-env
       CELERY_WORKERS: ${CELERY_WORKERS:-1}
 
     restart: always

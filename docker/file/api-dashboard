@@ -26,6 +26,7 @@ ENV CELERY_BACKEND ${CELERY_BACKEND:-redis://localhost:6379}
 ENV STREAMLIT_PORT ${STREAMLIT_PORT:-8000}
 ENV FASTAPI_HOST 0.0.0.0
 ENV FASTAPI_PORT ${FASTAPI_PORT:-8001}
+ENV FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
 
 COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
