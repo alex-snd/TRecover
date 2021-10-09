@@ -4,8 +4,8 @@ import celery
 import torch
 
 import config
-from ml.model import ZReader
-from utils.model import get_model, load_artifacts
+from src.ml.model import ZReader
+from src.utils.model import get_model, load_artifacts
 
 
 class ArtifactsTask(celery.Task):

@@ -19,15 +19,12 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import config
-from ml.data import WikiDataset, Collate
-from ml.model import ZReader
-from ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from utils.model import get_model
-from utils.train import set_seeds, optimizer_to_str
-from utils.visualization import visualize_columns, visualize_target
-
-
-# TODO cover all project with tests
+from src.ml.data import WikiDataset, Collate
+from src.ml.model import ZReader
+from src.ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
+from src.utils.model import get_model
+from src.utils.train import set_seeds, optimizer_to_str
+from src.utils.visualization import visualize_columns, visualize_target
 
 
 class Trainer(object):
@@ -381,7 +378,7 @@ def train(params: Namespace) -> None:
 
             mlflow.log_artifacts(dp)
 
-        # mlflow.log_params(vars(params))  # TODO convert for mlflow
+        # mlflow.log_params(vars(params))
 
 
 def main() -> None:

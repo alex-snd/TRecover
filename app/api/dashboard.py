@@ -6,8 +6,8 @@ import requests
 import streamlit as st
 
 import config
-from utils.data import data_to_columns, create_noisy_columns
-from utils.visualization import visualize_columns
+from src.utils.data import data_to_columns, create_noisy_columns
+from src.utils.visualization import visualize_columns
 
 
 def main() -> None:
@@ -130,7 +130,6 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     placeholder = st.empty()
 
     # TODO if max_noise grater than threshold print warning about bad performance
-    # TODO add history
 
     if columns and placeholder.button('Zread'):
         with placeholder:

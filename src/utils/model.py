@@ -5,7 +5,7 @@ from typing import Optional
 
 import torch
 
-from ml.model import ZReader
+from src.ml.model import ZReader
 
 
 def get_model(token_size: int,

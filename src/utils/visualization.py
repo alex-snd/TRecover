@@ -2,7 +2,7 @@ from typing import List, Union
 
 from torch import Tensor
 
-from ml.data import Collate
+from src.ml.data import Collate
 
 
 def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:

@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from ml.data import Collate
+from src.ml.data import Collate
 
 
 # ----------------------------------------Data cleaning & preparation utils---------------------------------------------

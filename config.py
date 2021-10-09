@@ -15,7 +15,7 @@ REPO = "ZReader"
 CELERY_BROKER = os.getenv('CELERY_BROKER') or 'pyamqp://guest@localhost'
 CELERY_BACKEND = os.getenv('CELERY_BACKEND') or 'redis://localhost:6379'
 FASTAPI_HOST = os.getenv('FASTAPI_HOST') or 'localhost'
-FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 5001
+FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 8001
 CUDA = False if os.getenv('CUDA') == 'False' else True
 
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
@@ -48,7 +48,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 mlflow.set_tracking_uri(MODEL_REGISTRY_DIR.absolute().as_uri())
 
 # Create Project logger
-project_logger = logging.getLogger('project')  # TODO use it everywhere
+project_logger = logging.getLogger('project')
 project_logger.setLevel(logging.DEBUG)
 
 project_console = Console(force_terminal=True, record=True)

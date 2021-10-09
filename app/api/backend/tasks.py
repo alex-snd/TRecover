@@ -2,9 +2,9 @@ from typing import Tuple, List, Dict
 
 from app.api.backend.celeryapp import celery_app
 from app.api.backend.tasksbase import ArtifactsTask, PredictTask
-from utils.beam_search import beam_search, celery_task_loop
-from utils.data import columns_to_tensor
-from utils.visualization import visualize_target
+from src.utils.beam_search import beam_search, celery_task_loop
+from src.utils.data import columns_to_tensor
+from src.utils.visualization import visualize_target
 
 
 @celery_app.task(bind=True, base=ArtifactsTask)

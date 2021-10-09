@@ -2,7 +2,7 @@ from typing import Optional, List, Tuple
 
 from pydantic import BaseModel, validator
 
-from ml.data import Collate
+from src.ml.data import Collate
 
 
 class PredictPayload(BaseModel):
