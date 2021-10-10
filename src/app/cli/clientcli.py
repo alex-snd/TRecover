@@ -11,8 +11,8 @@ from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-from src.utils.cli import get_files_columns
-from src.utils.visualization import visualize_columns
+from zreader.utils.cli import get_files_columns
+from zreader.utils.visualization import visualize_columns
 
 cli = Typer(name='Client-cli')
 

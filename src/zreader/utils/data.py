@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from src.ml.data import Collate
+from zreader.ml.data import Collate
 
 
 # ----------------------------------------Data cleaning & preparation utils---------------------------------------------

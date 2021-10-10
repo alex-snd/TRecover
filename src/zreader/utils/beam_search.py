@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
 from torch import Tensor
 
-from src.ml.model import ZReader
-from src.utils.visualization import visualize_target
+from zreader.ml.model import ZReader
+from zreader.utils.visualization import visualize_target
 
 
 # ----------------------------------------------Synchronous Beam Search-------------------------------------------------

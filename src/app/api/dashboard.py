@@ -6,8 +6,8 @@ import requests
 import streamlit as st
 
 import config
-from src.utils.data import data_to_columns, create_noisy_columns
-from src.utils.visualization import visualize_columns
+from zreader.utils.data import data_to_columns, create_noisy_columns
+from zreader.utils.visualization import visualize_columns
 
 
 def main() -> None:

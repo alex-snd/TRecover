@@ -5,7 +5,7 @@ import requests
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
 import config
-from src.utils.data import read_files_columns, create_files_noisy_columns
+from zreader.utils.data import read_files_columns, create_files_noisy_columns
 
 
 def get_real_direct_link(sharing_link: str) -> str:

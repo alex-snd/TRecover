@@ -77,7 +77,7 @@ class Collate(object):
 class WikiDataset(Dataset):
 
     def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int) -> None:
-        assert self.__exists(datafiles)
+        assert self.__exists(datafiles), 'datafiles do not exist'
         assert min_threshold > 0, 'min_threshold should be grater than 0'
         assert max_threshold >= min_threshold, f'max_threshold should be grater or equal than {min_threshold}'
         assert dataset_size > 0, 'dataset_size should be grater than 0'
@@ -119,7 +119,7 @@ class WikiDataset(Dataset):
                 print(f'{file} doesnt exist')
                 return False
 
-        return True
+        return True if len(datafiles) else False
 
     def __get_distribution(self) -> np.ndarray:
         powered = np.array(self.file_sizes)

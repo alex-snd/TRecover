@@ -11,11 +11,11 @@ from rich.text import Text
 from typer import Typer, Argument, Option
 
 import config
-from src.utils.beam_search import beam_search, cli_interactive_loop
-from src.utils.cli import download_from_disk, get_files_columns
-from src.utils.data import files_columns_to_tensors
-from src.utils.model import get_model, load_artifacts
-from src.utils.visualization import visualize_columns, visualize_target
+from zreader.utils.beam_search import beam_search, cli_interactive_loop
+from zreader.utils.cli import download_from_disk, get_files_columns
+from zreader.utils.data import files_columns_to_tensors
+from zreader.utils.model import get_model, load_artifacts
+from zreader.utils.visualization import visualize_columns, visualize_target
 
 cli = Typer(name='Zreader-cli')
 

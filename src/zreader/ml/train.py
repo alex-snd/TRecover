@@ -19,12 +19,12 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import config
-from src.ml.data import WikiDataset, Collate
-from src.ml.model import ZReader
-from src.ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from src.utils.model import get_model
-from src.utils.train import set_seeds, optimizer_to_str
-from src.utils.visualization import visualize_columns, visualize_target
+from zreader.ml.data import WikiDataset, Collate
+from zreader.ml.model import ZReader
+from zreader.ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
+from zreader.utils.model import get_model
+from zreader.utils.train import set_seeds, optimizer_to_str
+from zreader.utils.visualization import visualize_columns, visualize_target
 
 
 class Trainer(object):
@@ -317,7 +317,7 @@ class Trainer(object):
         self.model.save(filename=Path(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
 
     def save_html(self) -> None:
-        self.console.save_html(self.log_file)
+        self.console.save_html(str(self.log_file))
 
 
 def train(params: Namespace) -> None:
