@@ -2,21 +2,17 @@
 FROM python:3.8-slim AS builder
 
 # Copy necessary data
-COPY ./app /workspace/app
 COPY ./src /workspace/src
-COPY ./config.py /workspace/config.py
-COPY ./initialize.py /workspace/initialize.py
+COPY ./setup.py /workspace/setup.py
 COPY ./inference /workspace/inference
-COPY ./requirements/docker/standalone.txt /requirements.txt
+COPY ./requirements /workspace/requirements
 
 # Install packages
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
-	pip install --no-cache-dir -r /requirements.txt
+	pip install --no-cache-dir -r /workspace/requirements/docker/standalone.txt  && \
+    pip install -e /workspace
 
-# Initialize the project
-RUN python3.8 ./workspace/initialize.py
-	
 
 # Stage 2: Runtime
 FROM python:3.8-slim AS runtime
@@ -34,9 +30,9 @@ COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder ./workspace ./workspace
 
-CMD celery -A workspace.app.api.backend.celeryapp worker -l INFO -c ${CELERY_WORKERS} & \
-    uvicorn workspace.app.api.zreaderapi:api --host "0.0.0.0" --port ${FASTAPI_PORT} --workers ${FASTAPI_WORKERS} & \
-    streamlit run ./workspace/app/api/dashboard.py --server.address "0.0.0.0" --server.port ${STREAMLIT_PORT} \
+CMD celery -A workspace.src.app.api.backend.celeryapp worker -l INFO -c ${CELERY_WORKERS} & \
+    uvicorn workspace.src.app.api.zreaderapi:api --host "0.0.0.0" --port ${FASTAPI_PORT} --workers ${FASTAPI_WORKERS} & \
+    streamlit run /workspace/src/app/api/dashboard.py --server.address "0.0.0.0" --server.port ${STREAMLIT_PORT} \
     --theme.backgroundColor "#E7EAD9" --theme.secondaryBackgroundColor "#DFE3D0" \
     --theme.primaryColor "#FF8068" --theme.textColor "#157D96" & \
     wait
