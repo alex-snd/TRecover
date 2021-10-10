@@ -17,6 +17,7 @@ CELERY_BACKEND = os.getenv('CELERY_BACKEND') or 'redis://localhost:6379'
 FASTAPI_HOST = os.getenv('FASTAPI_HOST') or 'localhost'
 FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 8001
 CUDA = False if os.getenv('CUDA') == 'False' else True
+MAX_NOISE = 13
 
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 
