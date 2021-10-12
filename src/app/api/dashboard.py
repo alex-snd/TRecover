@@ -5,6 +5,8 @@ from typing import Tuple, List
 import requests
 import streamlit as st
 
+from requests.exceptions import ConnectionError
+
 import config
 from zreader.utils.data import data_to_columns, create_noisy_columns
 from zreader.utils.visualization import visualize_columns
@@ -93,39 +95,44 @@ def save_to_history(is_plain: bool,
 
 @st.cache(ttl=3600, show_spinner=False)
 def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
-    payload = {
-        'data': columns,
-        'beam_width': bw
-    }
+    try:
+        payload = {
+            'data': columns,
+            'beam_width': bw
+        }
 
-    task_info = requests.post(url=f'{config.FASTAPI_URL}/zread', json=payload)
-    task_info = task_info.json()
+        task_info = requests.post(url=f'{config.FASTAPI_URL}/zread', json=payload)
+        task_info = task_info.json()
 
-    if not task_info['task_id']:
-        st.error(task_info['message'])
-        st.stop()
+        if not task_info['task_id']:
+            st.error(task_info['message'])
+            st.stop()
 
-    task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
-    task_status = task_status.json()
-
-    progress_bar = st.progress(0)
-
-    while task_status['status_code'] == HTTPStatus.PROCESSING:
         task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
-        completed = task_status['progress'] or 0
-        progress_bar.progress(completed / len(columns))
+        progress_bar = st.progress(0)
 
-        time.sleep(0.3)
+        while task_status['status_code'] == HTTPStatus.PROCESSING:
+            task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+            task_status = task_status.json()
 
-    requests.delete(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+            completed = task_status['progress'] or 0
+            progress_bar.progress(completed / len(columns))
 
-    if task_status['status_code'] != HTTPStatus.OK:
-        st.error(task_status['message'])
+            time.sleep(0.3)
+
+        requests.delete(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+
+        if task_status['status_code'] != HTTPStatus.OK:
+            st.error(task_status['message'])
+            st.stop()
+
+        return task_status['chains']
+
+    except ConnectionError as err:
+        st.error(f'Failed to establish a {config.FASTAPI_URL} connection. \n\n{err}')
         st.stop()
-
-    return task_status['chains']
 
 
 @st.cache(ttl=3600, show_spinner=False)
