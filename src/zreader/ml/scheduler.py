@@ -16,7 +16,7 @@ class BaseScheduler(ABC):
         pass
 
 
-class Scheduler(BaseScheduler):
+class WarmupScheduler(BaseScheduler):
     def __init__(self, optimizer: Optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
                  factor: float = 1.0) -> None:
         self.optimizer = optimizer
@@ -29,7 +29,7 @@ class Scheduler(BaseScheduler):
         self.__update_rate()
 
     def __str__(self) -> str:
-        return f'Scheduler(warmup={self.warmup}, step_size={self.step_size}, factor={self.factor})'
+        return f'WarmupScheduler(warmup={self.warmup}, step_size={self.step_size}, factor={self.factor})'
 
     def step(self) -> None:
         self.__step += 1
