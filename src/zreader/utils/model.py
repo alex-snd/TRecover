@@ -5,6 +5,7 @@ from typing import Optional
 
 import torch
 
+import config
 from zreader.ml.model import ZReader
 
 
@@ -16,12 +17,17 @@ def get_model(token_size: int,
               d_ff: int,
               dropout: float,
               device: torch.device = torch.device('cpu'),
-              weights: Optional[Path] = None
+              weights: Optional[Path] = None,
+              verbose: bool = True
               ) -> ZReader:
     model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
     if weights and weights.exists() and weights.is_file():
         model.load_parameters(weights, device=device)
+    elif weights:
+        config.project_console.print(f'Failed to load model parameters: {str(weights)}', style='bold red')
+    elif verbose:
+        config.project_console.print(f'Model training from scratch', style='bright_blue')
 
     return model
 
