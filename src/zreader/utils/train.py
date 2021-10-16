@@ -1,6 +1,7 @@
 import re
 from argparse import Namespace
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any, Optional, Dict
 
 import numpy as np
 import torch
@@ -16,6 +17,22 @@ class ExperimentParams(dict):
 
     def __getitem__(self, key: Any) -> Any:
         return self.__dict__[key]
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def simplify(self) -> Dict:
+        simplified = dict()
+        simplified.update(self.__dict__)
+
+        for key, value in self.__dict__.items():
+            if isinstance(value, Path):
+                simplified[key] = str(value)
+
+        return simplified
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         self.__dict__.update(*args, **kwargs)
