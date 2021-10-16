@@ -45,9 +45,6 @@ EXAMPLES_DIR.mkdir(parents=True, exist_ok=True)
 EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-# MLFlow model registry
-mlflow.set_tracking_uri(MODEL_REGISTRY_DIR.absolute().as_uri())
-
 # Create Project logger
 project_logger = logging.getLogger('project')
 project_logger.setLevel(logging.DEBUG)
