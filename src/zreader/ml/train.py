@@ -369,7 +369,7 @@ def train(params: ExperimentParams) -> None:
     criterion = CrossEntropyLoss(ignore_index=-1)
     optimizer = torch.optim.Adam(z_reader.parameters(), lr=params.lr, betas=(0.9, 0.98), eps=1e-9)
 
-    scheduler = WarmupScheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.step_seek)
+    scheduler = WarmupScheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.lr_step_seek)
 
     trainer = Trainer(model=z_reader,
                       criterion=criterion,
@@ -475,7 +475,7 @@ def get_cmd_args_parser() -> ArgumentParser:
 
     parser.add_argument('--lr', default=0.00005, type=float,
                         help='Learning rate value. Fictive with defined scheduler')
-    parser.add_argument('--step-seek', default=0, type=int,
+    parser.add_argument('--lr-step-seek', default=0, type=int,
                         help='Number of steps for WarmupScheduler to seek')
     parser.add_argument('--warmup', default=4_000, type=int,
                         help='Warmup value for WarmupScheduler')
