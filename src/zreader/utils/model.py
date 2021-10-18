@@ -9,6 +9,29 @@ import config
 from zreader.ml.model import ZReader
 
 
+def get_recent_weights_path(exp_dir: Path,
+                            exp_mark: Optional[str] = None,
+                            weights_name: Optional[str] = None
+                            ) -> Optional[Path]:
+    if exp_mark and weights_name:
+        return exp_dir / exp_mark / weights_name
+
+    weights_path = exp_dir / exp_mark / 'weights'
+
+    if exp_mark and weights_path.exists():
+        recent_weights = None
+        most_recent_timestamp = 0
+
+        for weights in weights_path.iterdir():
+            if timestamp := weights.stat().st_ctime > most_recent_timestamp:
+                recent_weights = weights
+                most_recent_timestamp = timestamp
+
+        return recent_weights
+
+    return None
+
+
 def get_model(token_size: int,
               pe_max_len: int,
               num_layers: int,
@@ -39,16 +62,15 @@ def get_model(token_size: int,
         raise SystemExit()
 
 
-# TODO for mlflow
-def simplify_artifacts(artifacts: Dict) -> Dict:
-    pass
-
-
 def load_artifacts(model_artifacts: Path) -> Dict[str, Union[str, int, float]]:
     # TODO load mlflow artifacts
     return json.load(model_artifacts.open())
 
 
 def save_artifacts(data: Dict, filepath: Path, sort=False) -> None:
-    with open(filepath, 'w') as f:
-        json.dumps(data, indent=2, fp=f, sort_keys=sort)
+    with filepath.open('w') as f:
+        json.dump(data, indent=2, fp=f, sort_keys=sort)
+
+
+if __name__ == '__main__':
+    pass
