@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 import traceback
-from argparse import Namespace
+from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
 from time import time
@@ -21,9 +21,9 @@ from torch.utils.data import DataLoader
 import config
 from zreader.ml.data import WikiDataset, Collate
 from zreader.ml.model import ZReader
-from zreader.ml.scheduler import BaseScheduler, Scheduler, IdentityScheduler
-from zreader.utils.model import get_model
-from zreader.utils.train import set_seeds, optimizer_to_str
+from zreader.ml.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
+from zreader.utils.model import get_model, get_recent_weights_path, save_artifacts
+from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
 from zreader.utils.visualization import visualize_columns, visualize_target
 
 
@@ -32,34 +32,39 @@ class Trainer(object):
                  model: ZReader,
                  criterion: Callable[[Tensor, Tensor], Tensor],
                  optimizer: Optimizer,
-                 working_dir: Path,
+                 exp_dir: Path,
                  scheduler: Optional[BaseScheduler] = None,
                  device: Optional[torch.device] = None,
+                 accumulation_step: int = 1,
                  log_interval: int = 1,
+                 saving_interval: int = 1,
+                 vis_interval: int = 1,
                  n_columns_to_show: Optional[int] = None,
                  delimiter: str = '',
-                 console: Console = config.project_console
-                 ) -> None:
+                 console: Console = config.project_console):
         self.model = model
         self.criterion = criterion  # should return average on the batch
         self.optimizer = optimizer
-        self.working_dir = working_dir
+        self.exp_dir = exp_dir
         self.scheduler = scheduler or IdentityScheduler()
         self.device = device or torch.device("cpu")
+        self.accumulation_step = accumulation_step
         self.log_interval = log_interval
+        self.saving_interval = saving_interval
+        self.vis_interval = vis_interval
         self.n_columns_to_show = n_columns_to_show
         self.delimiter = delimiter
 
         date = datetime.now()
-        self.experiment_mark = f'{date.month:0>2}{date.day:0>2}_{date.hour:0>2}{date.minute:0>2}'
+        self.experiment_mark = f'{date.month:0>2}-{date.day:0>2}_{date.hour:0>2}-{date.minute:0>2}'
 
-        self.experiment_folder = Path(self.working_dir, self.experiment_mark)
-        self.weights_folder = Path(self.experiment_folder, 'weights')
+        self.experiment_folder = self.exp_dir / self.experiment_mark
+        self.weights_folder = self.experiment_folder / 'weights'
 
         self.experiment_folder.mkdir(parents=True, exist_ok=True)
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
-        self.log_file = Path(self.experiment_folder, f'{self.experiment_mark}.html')
+        self.log_file = self.experiment_folder / f'log_{self.experiment_mark}.html'
         self.console = console
 
         self.__log_init_params()
@@ -69,8 +74,9 @@ class Trainer(object):
 
     def __exit__(self, exc_type: Union[None, Type[BaseException]],
                  exc_val: Union[None, BaseException],
-                 exc_tb: traceback.TracebackException) -> None:
-        self.save_html()
+                 exc_tb: traceback.TracebackException
+                 ) -> None:
+        self.save_html_log()
         self.save_model('last_saving')
 
     def __repr__(self) -> str:
@@ -80,10 +86,13 @@ class Trainer(object):
         return f'Trainer(model={self.model}, ' \
                f'criterion={self.criterion}, ' \
                f'optimizer={optimizer_to_str(self.optimizer)}), ' \
-               f'working_dir={self.working_dir}, ' \
+               f'exp_dir={self.exp_dir}, ' \
                f'scheduler={self.scheduler}, ' \
                f'device={self.device}, ' \
+               f'accumulation_step={self.accumulation_step}, ' \
                f'log_interval={self.log_interval}, ' \
+               f'saving_interval={self.saving_interval}, ' \
+               f'vis_interval={self.vis_interval}, ' \
                f'n_columns_to_show={self.n_columns_to_show}, ' \
                f'delimiter={self.delimiter})'
 
@@ -96,6 +105,7 @@ class Trainer(object):
         self.console.print(f'Model: {self.model}')
         self.console.print(f'Trainable parameters: {self.model.params_count:,}')
         self.console.print(f'Optimizer: {optimizer_to_str(self.optimizer)}')
+        self.console.print(f'Accumulation step: {self.accumulation_step}')
         self.console.print(f'Scheduler: {self.scheduler}')
 
     def __train_step(self, offset: int, train_loader: DataLoader, accumulation_step: int = 1) -> None:
@@ -227,21 +237,17 @@ class Trainer(object):
                 self.console.print('\n')
 
     def train(self,
-              n_epochs: int,
               train_loader: DataLoader,
               val_loader: DataLoader,
               vis_loader: DataLoader,
-              epoch_seek: int = 0,
-              accumulation_step: int = 1,
-              vis_interval: int = 1,
-              saving_interval: int = 1
+              n_epochs: int,
+              epoch_seek: int = 0
               ) -> None:
         self.console.print(f'Batch size: {train_loader.batch_size}')
         self.console.print(f'Min threshold: {train_loader.dataset.min_threshold}')
         self.console.print(f'Max threshold: {train_loader.dataset.max_threshold}')
-        self.console.print(f'Accumulation step: {accumulation_step}')
 
-        if len(train_loader) % accumulation_step != 0:
+        if len(train_loader) % self.accumulation_step != 0:
             self.console.print('Train dataset size must be evenly divisible by batch_size * accumulation_step',
                                style='bold red')
 
@@ -249,14 +255,15 @@ class Trainer(object):
             for epoch_idx in range(epoch_seek + 1, epoch_seek + n_epochs + 1):
                 offset = len(train_loader) * (epoch_idx - 1)
 
-                self.__train_step(offset, train_loader, accumulation_step)
+                self.__train_step(offset, train_loader, self.accumulation_step)
 
                 self.__val_step(offset, val_loader)
 
-                if epoch_idx % vis_interval == 0:
+                if epoch_idx % self.vis_interval == 0:
                     self.__vis_step(vis_loader)
 
-                if epoch_idx % saving_interval == 0:
+                if epoch_idx % self.saving_interval == 0:
+                    self.save_html_log()
                     self.save_model(str(offset + len(train_loader)))
 
         except KeyboardInterrupt:
@@ -314,13 +321,13 @@ class Trainer(object):
         return test_loss, test_accuracy
 
     def save_model(self, weights_name: str) -> None:
-        self.model.save(filename=Path(self.weights_folder, f'{self.experiment_mark}_{weights_name}'))
+        self.model.save(filename=self.weights_folder / f'{self.experiment_mark}_{weights_name}.pt')
 
-    def save_html(self) -> None:
-        self.console.save_html(str(self.log_file))
+    def save_html_log(self) -> None:
+        self.console.save_html(str(self.log_file), clear=False)
 
 
-def train(params: Namespace) -> None:
+def train(params: ExperimentParams) -> None:
     if params.n_columns_to_show > params.pe_max_len:
         config.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
                                     f'must be less than {params.pe_max_len}')
@@ -328,113 +335,186 @@ def train(params: Namespace) -> None:
 
     set_seeds(seed=params.seed)
 
-    train_dataset = WikiDataset(datafiles=params.train_files, min_threshold=params.min_threshold,
+    train_files = [Path(params.train_files, file) for file in Path(params.train_files).iterdir()]
+    val_files = [Path(params.val_files, file) for file in Path(params.val_files).iterdir()]
+    vis_files = [Path(params.vis_files, file) for file in Path(params.vis_files).iterdir()]
+    test_files = [Path(params.test_files, file) for file in Path(params.test_files).iterdir()]
+
+    train_dataset = WikiDataset(datafiles=train_files, min_threshold=params.min_threshold,
                                 max_threshold=params.max_threshold, dataset_size=params.train_dataset_size)
-    val_dataset = WikiDataset(datafiles=params.val_files, min_threshold=params.min_threshold,
+    val_dataset = WikiDataset(datafiles=val_files, min_threshold=params.min_threshold,
                               max_threshold=params.max_threshold, dataset_size=params.val_dataset_size)
-    vis_dataset = WikiDataset(datafiles=params.vis_files, min_threshold=params.min_threshold,
+    vis_dataset = WikiDataset(datafiles=vis_files, min_threshold=params.min_threshold,
                               max_threshold=params.max_threshold, dataset_size=params.vis_dataset_size)
-    test_dataset = WikiDataset(datafiles=params.test_files, min_threshold=params.min_threshold,
+    test_dataset = WikiDataset(datafiles=test_files, min_threshold=params.min_threshold,
                                max_threshold=params.max_threshold, dataset_size=params.test_dataset_size)
 
     train_loader = train_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                   max_noise=params.max_noise, num_workers=params.num_workers)
+                                                   max_noise=params.max_noise, num_workers=params.n_workers)
     val_loader = val_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.num_workers)
+                                               max_noise=params.max_noise, num_workers=params.n_workers)
     vis_loader = vis_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.num_workers)
+                                               max_noise=params.max_noise, num_workers=params.n_workers)
     test_loader = test_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                 max_noise=params.max_noise, num_workers=params.num_workers)
+                                                 max_noise=params.max_noise, num_workers=params.n_workers)
 
-    z_reader = get_model(params.token_size, params.pe_max_len, params.num_layers, params.d_model, params.n_heads,
-                         params.d_ff, params.dropout, params.device,
-                         weights=Path(params.weights_folder, params.weights_name))
+    device = torch.device('cuda' if torch.cuda.is_available() and not params.no_cuda else 'cpu')
+    weights_path = params.abs_weights_name or get_recent_weights_path(Path(params.exp_dir), params.exp_mark,
+                                                                      params.weights_name)
 
+    z_reader = get_model(params.token_size, params.pe_max_len, params.n_layers, params.d_model, params.n_heads,
+                         params.d_ff, params.dropout, device,
+                         weights=weights_path, prompt=True)
+
+    criterion = CrossEntropyLoss(ignore_index=-1)
     optimizer = torch.optim.Adam(z_reader.parameters(), lr=params.lr, betas=(0.9, 0.98), eps=1e-9)
 
-    scheduler = Scheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.step_seek)
+    scheduler = WarmupScheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.step_seek)
 
-    trainer = Trainer(model=z_reader, criterion=params.criterion, optimizer=optimizer,
-                      working_dir=config.EXPERIMENTS_DIR, scheduler=scheduler, device=params.device,
-                      log_interval=params.log_interval, n_columns_to_show=params.n_columns_to_show,
+    trainer = Trainer(model=z_reader,
+                      criterion=criterion,
+                      optimizer=optimizer,
+                      exp_dir=Path(params.exp_dir),
+                      scheduler=scheduler,
+                      device=device,
+                      accumulation_step=params.accumulation_step,
+                      log_interval=params.log_interval,
+                      saving_interval=params.saving_interval,
+                      vis_interval=params.vis_interval,
+                      n_columns_to_show=params.n_columns_to_show,
                       delimiter=params.delimiter)
 
+    mlflow.set_tracking_uri(config.MODEL_REGISTRY_DIR.absolute().as_uri())
     mlflow.set_experiment(experiment_name='ZReader')
 
-    with mlflow.start_run(run_name=f'l{params.num_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
+    with mlflow.start_run(run_name=f'l{params.n_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
         with trainer:
-            trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek,
-                          params.accumulation_step, params.vis_interval, params.saving_interval)
+            trainer.train(train_loader, val_loader, vis_loader, params.n_epochs, params.epoch_seek)
 
             test_loss, test_accuracy = trainer.test(test_loader=test_loader)
 
         mlflow.log_metrics({'Test loss': test_loss})
         mlflow.log_metrics({'Test accuracy': test_accuracy})
 
+        simplified_params = params.simplify()
+
         with tempfile.TemporaryDirectory() as dp:
-            # save_artifacts(vars(params), Path(dp, "params.json"))  # TODO convert for mlflow
+            save_artifacts(simplified_params, Path(dp, "artifacts.json"))  # TODO rename everywhere
             z_reader.save(Path(dp, "z_reader.pt"))
             shutil.copy(trainer.log_file, dp)
 
             mlflow.log_artifacts(dp)
 
-        # mlflow.log_params(vars(params))
+        mlflow.log_params(simplified_params)
 
 
-def main() -> None:
-    params = Namespace(  # TODO implement this using argparse
-        # ---------------------------------------------DATA PARAMETERS--------------------------------------------------
-        seed=2531,
-        train_files=[Path(config.TRAIN_DATA, file) for file in config.TRAIN_DATA.iterdir()],
-        val_files=[Path(config.VAL_DATA, file) for file in config.VAL_DATA.iterdir()],
-        vis_files=[Path(config.VIS_DATA, file) for file in config.VIS_DATA.iterdir()],
-        test_files=[Path(config.VIS_DATA, file) for file in config.VIS_DATA.iterdir()],
-        min_threshold=256,
-        max_threshold=256,
-        train_dataset_size=50,
-        val_dataset_size=50,
-        vis_dataset_size=5,
-        test_dataset_size=500,
-        num_workers=3,
-        min_noise=0,
-        max_noise=5,
-        # --------------------------------------------MODEL PARAMETERS--------------------------------------------------
-        token_size=len(Collate.alphabet_to_num),
-        pe_max_len=1000,
-        num_layers=6,
-        d_model=512,  # d_model % n_heads = 0
-        n_heads=16,
-        d_ff=2048,
-        dropout=0.1,
-        weights_folder='',
-        weights_name='',
-        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        # -----------------------------------------OPTIMIZATION PARAMETERS----------------------------------------------
-        criterion=CrossEntropyLoss(ignore_index=-1),
-        lr=0,  # fictive with Scheduler
-        step_seek=0,
-        warmup=4_000,
-        lr_step_size=1,
-        # ------------------------------------------TRAIN LOOP PARAMETERS-----------------------------------------------
-        n_epochs=1,
-        epoch_seek=0,
-        batch_size=5,
-        accumulation_step=1,  # train_dataset_size % (batch_size * accumulation_step) == 0
-        saving_interval=1,
-        log_interval=1,
-        vis_interval=1,
-        n_columns_to_show=92,
-        delimiter='',
-        # --------------------------------------------------------------------------------------------------------------
-    )
+def get_cmd_args_parser() -> ArgumentParser:
+    parser = ArgumentParser()
 
-    train(params)
+    # --------------------------------------------------DATA PARAMETERS-------------------------------------------------
+
+    parser.add_argument('--seed', default=2531, type=int,
+                        help='Reproducible seed number')
+    parser.add_argument('--train-files', default=config.TRAIN_DATA, type=str,
+                        help='Path to train files folder')
+    parser.add_argument('--val-files', default=config.VAL_DATA, type=str,
+                        help='Path to validation files folder')
+    parser.add_argument('--vis-files', default=config.VIS_DATA, type=str,
+                        help='Path to visualization files folder')
+    parser.add_argument('--test-files', default=config.VIS_DATA, type=str,
+                        help='Path to test files folder')
+    parser.add_argument('--min-threshold', default=256, type=int,
+                        help='Min sentence lengths')
+    parser.add_argument('--max-threshold', default=256, type=int,
+                        help='Max sentence lengths')
+    parser.add_argument('--train-dataset-size', default=20, type=int,
+                        help='Train dataset size')
+    parser.add_argument('--val-dataset-size', default=20, type=int,
+                        help='Validation dataset size')
+    parser.add_argument('--vis-dataset-size', default=5, type=int,
+                        help='Visualization dataset size')
+    parser.add_argument('--test-dataset-size', default=5, type=int,
+                        help='Test dataset size')
+    parser.add_argument('--batch-size', default=2, type=int,
+                        help='Batch size')
+    parser.add_argument('--n-workers', default=3, type=int,
+                        help='Number of processes for dataloaders')
+    parser.add_argument('--min-noise', default=0, type=int,
+                        help='Min noise range')
+    parser.add_argument('--max-noise', default=1, type=int,
+                        help='Max noise range')
+
+    # ----------------------------------------------MODEL PARAMETERS----------------------------------------------------
+
+    parser.add_argument('--token-size', default=len(Collate.alphabet_to_num), type=int,
+                        help='Token size')
+    parser.add_argument('--pe-max-len', default=256, type=int,
+                        help='Positional encoding max length')
+    parser.add_argument('--n-layers', default=12, type=int,
+                        help='Number of encoder and decoder blocks')
+    parser.add_argument('--d-model', default=768, type=int,
+                        help='Model dimension - number of expected features in the encoder (decoder) input')
+    parser.add_argument('--n-heads', default=12, type=int,
+                        help='Number of encoder and decoder attention heads')
+    parser.add_argument('--d-ff', default=768, type=int,
+                        help='Dimension of the feedforward layer')
+    parser.add_argument('--dropout', default=0.1, type=float,
+                        help='Dropout range')
+    parser.add_argument('--exp-dir', default=config.EXPERIMENTS_DIR, type=str,
+                        help='Experiments folder')
+    parser.add_argument('--abs-weights-name', type=str,
+                        help='Absolute weights path')
+    parser.add_argument('--exp-mark', type=str,
+                        help="Experiments folder mark placed in 'exp-dir'")
+    parser.add_argument('--weights-name', type=str,
+                        help="Weights name in specified using 'exp-mark' experiments folder")
+    parser.add_argument('--no-cuda', action='store_true',
+                        help='Disable cuda usage')
+
+    # --------------------------------------------OPTIMIZATION PARAMETERS-----------------------------------------------
+
+    parser.add_argument('--lr', default=0.00005, type=float,
+                        help='Learning rate value. Fictive with defined scheduler')
+    parser.add_argument('--step-seek', default=0, type=int,
+                        help='Number of steps for WarmupScheduler to seek')
+    parser.add_argument('--warmup', default=4_000, type=int,
+                        help='Warmup value for WarmupScheduler')
+    parser.add_argument('--lr-step-size', default=1, type=int,
+                        help='Step size foe learning rate updating')
+
+    # ---------------------------------------------TRAIN LOOP PARAMETERS------------------------------------------------
+
+    parser.add_argument('--n-epochs', default=1, type=int,
+                        help='Number of epochs for training')
+    parser.add_argument('--epoch-seek', default=0, type=int,
+                        help='Number of epochs to seek. necessary for correct weights naming'
+                             ' in case of an interrupted model training process')
+    parser.add_argument('--accumulation-step', default=5, type=int,
+                        help='Number of steps for gradients accumulation')
+    parser.add_argument('--saving-interval', default=1, type=int,
+                        help='Weights saving interval per epoch')
+    parser.add_argument('--log-interval', default=1, type=int,
+                        help='Metrics logging interval per batch-step')
+    parser.add_argument('--vis-interval', default=1, type=int,
+                        help='Visualization interval per epoch')
+    parser.add_argument('--n-columns-to-show', default=96, type=int,
+                        help='Number of visualization columns to show')
+    parser.add_argument('--delimiter', default='', type=str,
+                        help='Visualization columns delimiter')
+
+    return parser
+
+
+def get_experiment_params() -> ExperimentParams:
+    parser = get_cmd_args_parser()
+
+    return ExperimentParams(parser.parse_args())
 
 
 if __name__ == '__main__':
     try:
-        main()
+        train(get_experiment_params())
     except Exception as e:
         config.project_logger.error(e)
-        config.project_console.print_exception(show_locals=True)
+        config.project_console.print_exception()
         config.error_console.print_exception(show_locals=True)
