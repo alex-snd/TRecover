@@ -13,21 +13,22 @@ def get_recent_weights_path(exp_dir: Path,
                             exp_mark: Optional[str] = None,
                             weights_name: Optional[str] = None
                             ) -> Optional[Path]:
-    if exp_mark and weights_name:
-        return exp_dir / exp_mark / weights_name
+    if exp_mark:
+        if weights_name:
+            return exp_dir / exp_mark / weights_name
 
-    weights_path = exp_dir / exp_mark / 'weights'
+        weights_path = exp_dir / exp_mark / 'weights'
 
-    if exp_mark and weights_path.exists():
-        recent_weights = None
-        most_recent_timestamp = 0
+        if weights_path.exists():
+            recent_weights = None
+            most_recent_timestamp = 0
 
-        for weights in weights_path.iterdir():
-            if timestamp := weights.stat().st_ctime > most_recent_timestamp:
-                recent_weights = weights
-                most_recent_timestamp = timestamp
+            for weights in weights_path.iterdir():
+                if timestamp := weights.stat().st_ctime > most_recent_timestamp:
+                    recent_weights = weights
+                    most_recent_timestamp = timestamp
 
-        return recent_weights
+            return recent_weights
 
     return None
 
