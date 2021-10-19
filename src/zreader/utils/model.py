@@ -48,6 +48,7 @@ def get_model(token_size: int,
 
     if weights and weights.exists() and weights.is_file():
         model.load_parameters(weights, device=device)
+        config.project_console.print(f'The below model parameters have been loaded:\n{weights}', style='bright_green')
 
         return model
 
