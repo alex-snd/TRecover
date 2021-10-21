@@ -251,8 +251,10 @@ class Trainer(object):
         self.console.print(f'Max threshold: {train_loader.dataset.max_threshold}')
 
         if len(train_loader) % self.accumulation_step != 0:
-            self.console.print('Train dataset size must be evenly divisible by batch_size * accumulation_step',
+            self.console.print('WARNING: Train dataset size must be evenly divisible by batch_size * accumulation_step',
                                style='bold red')
+        if self.device == torch.device('cpu'):
+            self.console.print('WARNING: Training without GPU usage', style='bold red')
 
         try:
             for epoch_idx in range(epoch_seek + 1, epoch_seek + n_epochs + 1):
