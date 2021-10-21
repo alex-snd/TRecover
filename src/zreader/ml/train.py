@@ -233,7 +233,8 @@ class Trainer(object):
                 )
 
                 self.console.print(
-                    Panel(panel_group, title=f'Example {i + 1}', border_style='magenta'),
+                    Panel(panel_group, title=f'Example {(batch_idx - 1) * vis_loader.batch_size + i + 1}',
+                          border_style='magenta'),
                     justify='center'
                 )
                 self.console.print('\n')
