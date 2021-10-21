@@ -25,7 +25,7 @@ class CustomPenaltyLoss(torch.nn.Module):
     def forward(self, *tensors) -> Tensor:
         src, _, tgt, src_pad_mask, _, _, tgt_out = tensors
 
-        penalty_size = src_pad_mask.size(0) * src_pad_mask.size(1)
+        penalty_size = src_pad_mask.shape[0] * src_pad_mask.shape[1]
         penalty_tensor = -1.0 * torch.flatten(F.log_softmax(tgt_out, dim=-1) * ~src.bool())[:penalty_size]
 
         return self.criterion(tgt_out, tgt) + penalty_tensor.mean()
