@@ -14,12 +14,12 @@ from rich.panel import Panel
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.text import Text
 from torch import Tensor
-from torch.nn import CrossEntropyLoss
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 import config
 from zreader.ml.data import WikiDataset, Collate
+from zreader.ml.loss import CustomPenaltyLoss
 from zreader.ml.model import ZReader
 from zreader.ml.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
 from zreader.utils.model import get_model, get_recent_weights_path, save_artifacts
@@ -30,7 +30,7 @@ from zreader.utils.visualization import visualize_columns, visualize_target
 class Trainer(object):
     def __init__(self,
                  model: ZReader,
-                 criterion: Callable[[Tensor, Tensor], Tensor],
+                 criterion: Callable[..., Tensor],
                  optimizer: Optimizer,
                  exp_dir: Path,
                  scheduler: Optional[BaseScheduler] = None,
@@ -130,8 +130,9 @@ class Trainer(object):
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
             tgt = tgt.view(-1)
+            src = src.reshape(-1, self.model.token_size)
 
-            loss = self.criterion(tgt_out, tgt)
+            loss = self.criterion(src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out)
             loss.backward()
 
             train_loss += loss.item()
@@ -176,8 +177,9 @@ class Trainer(object):
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
             tgt = tgt.view(-1)
+            src = src.reshape(-1, self.model.token_size)
 
-            loss = self.criterion(tgt_out, tgt).item()
+            loss = self.criterion(src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out).item()
             accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
 
             val_loss += loss
@@ -300,8 +302,9 @@ class Trainer(object):
                 tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
                 tgt_out = tgt_out.reshape(-1, self.model.token_size)
                 tgt = tgt.view(-1)
+                src = src.reshape(-1, self.model.token_size)
 
-                loss = self.criterion(tgt_out, tgt).item()
+                loss = self.criterion(src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out).item()
                 accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
 
                 test_loss += loss
@@ -366,7 +369,8 @@ def train(params: ExperimentParams) -> None:
                          params.d_ff, params.dropout, device,
                          weights=weights_path, prompt=True)
 
-    criterion = CrossEntropyLoss(ignore_index=-1)
+    # criterion = CustomCrossEntropyLoss(ignore_index=-1)
+    criterion = CustomPenaltyLoss(ignore_index=-1)
     optimizer = torch.optim.Adam(z_reader.parameters(), lr=params.lr, betas=(0.9, 0.98), eps=1e-9)
 
     scheduler = WarmupScheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.lr_step_seek)
