@@ -12,42 +12,55 @@ from zreader.ml.model import ZReader
 from zreader.utils.visualization import visualize_target
 
 
+# ------------------------------------------Beam Search Auxiliary Functions---------------------------------------------
+
+
+def get_steps_params(src: Tensor) -> Tuple[Tensor, List[int]]:
+    return torch.full_like(src, fill_value=float('-inf')).masked_fill(src == 1, value=0.0), \
+           src.sum(dim=-1).int().tolist()
+
+
 # ----------------------------------------------Synchronous Beam Search-------------------------------------------------
 
 
 def beam_step(candidates: List[Tuple[Tensor, float]],
+              step_mask: Tensor,
+              step_width: int,
               encoded_src: Tensor,
               z_reader: ZReader,
-              width: int, device: torch.device
+              beam_width: int,
+              device: torch.device
               ) -> List[Tuple[Tensor, float]]:
     step_candidates = list()
 
     for tgt_inp, score in candidates:
         prediction = z_reader.predict(tgt_inp, encoded_src, tgt_attn_mask=None, tgt_pad_mask=None, src_pad_mask=None)
-        probabilities = F.log_softmax(prediction[:, -1], dim=-1).squeeze()  # first is batch
+        probabilities = F.log_softmax(prediction[0, -1], dim=-1) + step_mask
 
-        values, indices = probabilities.topk(k=width, dim=-1)
+        values, indices = probabilities.topk(k=min(beam_width, step_width))
         for prob, pos in zip(values, indices):
             new_token = torch.zeros(1, 1, z_reader.token_size, device=device)
             new_token[0, 0, pos] = 1
 
             step_candidates.append((torch.cat([tgt_inp, new_token], dim=1), score + float(prob)))
 
-    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
+    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:beam_width]
 
 
 def celery_task_loop(task: celery.Task
-                     ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
-    def inner_loop(encoded_src: Tensor,
+                     ) -> Callable[[Tensor, Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
+    def inner_loop(src: Tensor,
+                   encoded_src: Tensor,
                    z_reader: ZReader,
                    width: int,
                    device: torch.device
                    ) -> List[Tuple[Tensor, float]]:
+        step_masks, step_widths = get_steps_params(src)
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        for progress in range(encoded_src.shape[0]):
-            candidates = beam_step(candidates, encoded_src, z_reader, width, device)
-            task.update_state(meta={'progress': progress + 1})
+        for i in range(encoded_src.shape[0]):
+            candidates = beam_step(candidates, step_masks[i], step_widths[i], encoded_src, z_reader, width, device)
+            task.update_state(meta={'progress': i + 1})
 
         return candidates
 
@@ -55,12 +68,14 @@ def celery_task_loop(task: celery.Task
 
 
 def cli_interactive_loop(label: str = 'Processing'
-                         ) -> Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
-    def inner_loop(encoded_src: Tensor,
+                         ) -> Callable[[Tensor, Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]]:
+    def inner_loop(src: Tensor,
+                   encoded_src: Tensor,
                    z_reader: ZReader,
                    width: int,
                    device: torch.device
                    ) -> List[Tuple[Tensor, float]]:
+        step_masks, step_widths = get_steps_params(src)
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
         with Progress(
@@ -76,8 +91,8 @@ def cli_interactive_loop(label: str = 'Processing'
         ) as progress:
             beam_progress = progress.add_task(label, total=encoded_src.shape[0])
 
-            for _ in range(encoded_src.shape[0]):
-                candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+            for i in range(encoded_src.shape[0]):
+                candidates = beam_step(candidates, step_masks[i], step_widths[i], encoded_src, z_reader, width, device)
                 progress.update(beam_progress, advance=1)
 
         return candidates
@@ -85,15 +100,17 @@ def cli_interactive_loop(label: str = 'Processing'
     return inner_loop
 
 
-def standard_loop(encoded_src: Tensor,
+def standard_loop(src: Tensor,
+                  encoded_src: Tensor,
                   z_reader: ZReader,
                   width: int,
                   device: torch.device
                   ) -> List[Tuple[Tensor, float]]:
+    step_masks, step_widths = get_steps_params(src)
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-    for _ in range(encoded_src.shape[0]):
-        candidates = beam_step(candidates, encoded_src, z_reader, width, device)
+    for i in range(encoded_src.shape[0]):
+        candidates = beam_step(candidates, step_masks[i], step_widths[i], encoded_src, z_reader, width, device)
 
     return candidates
 
@@ -102,13 +119,12 @@ def beam_search(src: Tensor,
                 z_reader: ZReader,
                 width: int,
                 device: torch.device,
-                beam_loop: Callable[[Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]] = standard_loop
+                beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device],
+                                    List[Tuple[Tensor, float]]] = standard_loop
                 ) -> List[Tuple[Tensor, float]]:
-    src = src.unsqueeze(dim=0)
+    encoded_src = z_reader.encode(src.unsqueeze(dim=0), src_pad_mask=None)
 
-    encoded_src = z_reader.encode(src, src_pad_mask=None)
-
-    candidates = beam_loop(encoded_src, z_reader, width, device)
+    candidates = beam_loop(src, encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]  # first token is empty_token
 
@@ -190,3 +206,24 @@ async def async_beam_search(src: Tensor,
     candidates = await beam_loop(encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates] if candidates else None
+
+
+if __name__ == "__main__":
+    # Code for development purpose
+
+    from pathlib import Path
+    from zreader.ml.data import WikiDataset
+    from zreader.utils.model import get_model
+
+    train_files = [Path(config.TRAIN_DATA, file) for file in config.TRAIN_DATA.iterdir()]
+    dataset = WikiDataset(train_files, min_threshold=20, max_threshold=20, dataset_size=1)
+
+    loader = dataset.create_dataloader(batch_size=1, min_noise=0, max_noise=1)
+    _device = torch.device('cuda')
+
+    _z_reader = get_model(26, 256, 6, 768, 12, 768, 0.1, _device, silently=True)
+
+    for _src, _, _, _, _, _ in loader:
+        _src = _src.to(_device)
+
+        beam_search(_src.squeeze(), _z_reader, width=5, device=_device)
