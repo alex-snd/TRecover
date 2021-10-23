@@ -17,11 +17,11 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-import config
-from zreader.ml.data import WikiDataset, Collate
-from zreader.ml.loss import CustomPenaltyLoss
-from zreader.ml.model import ZReader
-from zreader.ml.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
+from config import vars, log, train as train_config
+from zreader.data import WikiDataset
+from zreader.loss import CustomPenaltyLoss
+from zreader.model import ZReader
+from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
 from zreader.utils.model import get_model, get_recent_weights_path, save_artifacts
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
 from zreader.utils.visualization import visualize_columns, visualize_target
@@ -41,7 +41,7 @@ class Trainer(object):
                  vis_interval: int = 1,
                  n_columns_to_show: Optional[int] = None,
                  delimiter: str = '',
-                 console: Console = config.project_console):
+                 console: Console = log.project_console):
         self.model = model
         self.criterion = criterion  # should return average on the batch
         self.optimizer = optimizer
@@ -335,8 +335,8 @@ class Trainer(object):
 
 def train(params: ExperimentParams) -> None:
     if params.n_columns_to_show > params.pe_max_len:
-        config.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
-                                    f'must be less than {params.pe_max_len}')
+        log.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
+                                 f'must be less than {params.pe_max_len}')
         return
 
     set_seeds(seed=params.seed)
@@ -391,7 +391,7 @@ def train(params: ExperimentParams) -> None:
                       n_columns_to_show=params.n_columns_to_show,
                       delimiter=params.delimiter)
 
-    mlflow.set_tracking_uri(config.MODEL_REGISTRY_DIR.absolute().as_uri())
+    mlflow.set_tracking_uri(train_config.MODEL_REGISTRY_DIR.absolute().as_uri())
     mlflow.set_experiment(experiment_name='ZReader')
 
     with mlflow.start_run(run_name=f'l{params.n_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
@@ -422,13 +422,13 @@ def get_cmd_args_parser() -> ArgumentParser:
 
     parser.add_argument('--seed', default=2531, type=int,
                         help='Reproducible seed number')
-    parser.add_argument('--train-files', default=config.TRAIN_DATA, type=str,
+    parser.add_argument('--train-files', default=train_config.TRAIN_DATA, type=str,
                         help='Path to train files folder')
-    parser.add_argument('--val-files', default=config.VAL_DATA, type=str,
+    parser.add_argument('--val-files', default=train_config.VAL_DATA, type=str,
                         help='Path to validation files folder')
-    parser.add_argument('--vis-files', default=config.VIS_DATA, type=str,
+    parser.add_argument('--vis-files', default=train_config.VIS_DATA, type=str,
                         help='Path to visualization files folder')
-    parser.add_argument('--test-files', default=config.VIS_DATA, type=str,
+    parser.add_argument('--test-files', default=train_config.VIS_DATA, type=str,
                         help='Path to test files folder')
     parser.add_argument('--min-threshold', default=256, type=int,
                         help='Min sentence lengths')
@@ -453,7 +453,7 @@ def get_cmd_args_parser() -> ArgumentParser:
 
     # ----------------------------------------------MODEL PARAMETERS----------------------------------------------------
 
-    parser.add_argument('--token-size', default=len(Collate.alphabet_to_num), type=int,
+    parser.add_argument('--token-size', default=len(vars.ALPHABET), type=int,
                         help='Token size')
     parser.add_argument('--pe-max-len', default=256, type=int,
                         help='Positional encoding max length')
@@ -467,7 +467,7 @@ def get_cmd_args_parser() -> ArgumentParser:
                         help='Dimension of the feedforward layer')
     parser.add_argument('--dropout', default=0.1, type=float,
                         help='Dropout range')
-    parser.add_argument('--exp-dir', default=config.EXPERIMENTS_DIR, type=str,
+    parser.add_argument('--exp-dir', default=train_config.EXPERIMENTS_DIR, type=str,
                         help='Experiments folder')
     parser.add_argument('--abs-weights-name', type=str,
                         help='Absolute weights path')
@@ -522,6 +522,6 @@ if __name__ == '__main__':
     try:
         train(get_experiment_params())
     except Exception as e:
-        config.project_logger.error(e)
-        config.project_console.print_exception()
-        config.error_console.print_exception(show_locals=True)
+        log.project_logger.error(e)
+        log.project_console.print_exception()
+        log.error_console.print_exception(show_locals=True)
