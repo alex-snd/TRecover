@@ -97,14 +97,15 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
     device = torch.device(f'cuda:{gpu_id}' if cuda and torch.cuda.is_available() else 'cpu')
 
-    with Progress(TextColumn('{task.description}', style='bright_blue'), transient=True) as progress:
+    with Progress(TextColumn('{task.description}', style='bright_blue'),
+                  transient=True,
+                  console=config.project_console
+                  ) as progress:
         progress.add_task('Model loading...')
         z_reader = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
                              artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
                              device, weights=Path(weights_path))
     z_reader.eval()
-
-    config.project_console.print()
 
     files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
     files_src = files_columns_to_tensors(files_columns, device)
