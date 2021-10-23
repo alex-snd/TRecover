@@ -5,8 +5,8 @@ from typing import Dict, Union, Optional
 import torch
 from rich.prompt import Confirm
 
-import config
-from zreader.ml.model import ZReader
+from config import log
+from zreader.model import ZReader
 
 
 def get_recent_weights_path(exp_dir: Path,
@@ -50,17 +50,17 @@ def get_model(token_size: int,
         model.load_parameters(weights, device=device)
 
         if not silently:
-            config.project_console.print(f'The below model parameters have been loaded:\n{weights}',
-                                         style='bright_green')
+            log.project_console.print(f'The below model parameters have been loaded:\n{weights}',
+                                      style='bright_green')
         return model
 
     if weights:
-        config.project_console.print(f'Failed to load model parameters: {str(weights)}', style='bold red')
+        log.project_console.print(f'Failed to load model parameters: {str(weights)}', style='bold red')
     else:
-        config.project_console.print("Model parameters aren't specified", style='bright_blue')
+        log.project_console.print("Model parameters aren't specified", style='bright_blue')
 
     if silently or Confirm.ask(prompt='[bright_blue]Continue training from scratch?', default=True,
-                                 console=config.project_console):
+                               console=log.project_console):
         return model
     else:
         raise SystemExit()
@@ -74,7 +74,3 @@ def load_artifacts(model_artifacts: Path) -> Dict[str, Union[str, int, float]]:
 def save_artifacts(data: Dict, filepath: Path, sort=False) -> None:
     with filepath.open('w') as f:
         json.dump(data, indent=2, fp=f, sort_keys=sort)
-
-
-if __name__ == '__main__':
-    pass

@@ -2,7 +2,7 @@ from typing import Optional, List, Tuple
 
 from pydantic import BaseModel, validator
 
-from zreader.ml.data import Collate
+from config import vars
 
 
 class PredictPayload(BaseModel):
@@ -19,8 +19,8 @@ class PredictPayload(BaseModel):
 
     @validator('beam_width')
     def beam_width_validator(cls, beam_width: int) -> Optional[int]:
-        if not 1 <= beam_width <= len(Collate.num_to_alphabet):
-            raise ValueError(f'Beam width must be in between 1 and {len(Collate.num_to_alphabet)}')
+        if not 1 <= beam_width <= len(vars.ALPHABET):
+            raise ValueError(f'Beam width must be in between 1 and {len(vars.ALPHABET)}')
 
         return beam_width
 

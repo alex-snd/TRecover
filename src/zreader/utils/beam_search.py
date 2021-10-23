@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
 from torch import Tensor
 
-import config
-from zreader.ml.model import ZReader
+from config import log
+from zreader.model import ZReader
 from zreader.utils.visualization import visualize_target
 
 
@@ -87,7 +87,7 @@ def cli_interactive_loop(label: str = 'Processing'
                 TextColumn('Elapsed', style='bright_blue'),
                 TimeElapsedColumn(),
                 transient=True,
-                console=config.project_console
+                console=log.project_console
         ) as progress:
             beam_progress = progress.add_task(label, total=encoded_src.shape[0])
 
@@ -206,24 +206,3 @@ async def async_beam_search(src: Tensor,
     candidates = await beam_loop(encoded_src, z_reader, width, device)
 
     return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates] if candidates else None
-
-
-if __name__ == "__main__":
-    # Code for development purpose
-
-    from pathlib import Path
-    from zreader.ml.data import WikiDataset
-    from zreader.utils.model import get_model
-
-    train_files = [Path(config.TRAIN_DATA, file) for file in config.TRAIN_DATA.iterdir()]
-    dataset = WikiDataset(train_files, min_threshold=20, max_threshold=20, dataset_size=1)
-
-    loader = dataset.create_dataloader(batch_size=1, min_noise=0, max_noise=1)
-    _device = torch.device('cuda')
-
-    _z_reader = get_model(26, 256, 6, 768, 12, 768, 0.1, _device, silently=True)
-
-    for _src, _, _, _, _, _ in loader:
-        _src = _src.to(_device)
-
-        beam_search(_src.squeeze(), _z_reader, width=5, device=_device)

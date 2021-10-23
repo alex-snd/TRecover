@@ -10,7 +10,7 @@ from rich.progress import Progress, TextColumn
 from rich.text import Text
 from typer import Typer, Argument, Option
 
-import config
+from config import log
 from zreader.utils.beam_search import beam_search, cli_interactive_loop
 from zreader.utils.cli import download_from_disk, get_files_columns
 from zreader.utils.data import files_columns_to_tensors
@@ -82,15 +82,15 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
     artifacts = load_artifacts(Path(model_artifacts))
 
     if not noisy and min_noise >= max_noise:
-        config.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
+        log.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
         return
 
     if not any([inference_path.is_file(), inference_path.is_dir()]):
-        config.project_logger.error('[red]Files for inference needed to be specified')
+        log.project_logger.error('[red]Files for inference needed to be specified')
         return
 
     if artifacts['pe_max_len'] < n_to_show:
-        config.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {artifacts["pe_max_len"]}')
+        log.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {artifacts["pe_max_len"]}')
         return
     elif n_to_show == 0:
         n_to_show = artifacts['pe_max_len']
@@ -99,7 +99,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
 
     with Progress(TextColumn('{task.description}', style='bright_blue'),
                   transient=True,
-                  console=config.project_console
+                  console=log.project_console
                   ) as progress:
         progress.add_task('Model loading...')
         z_reader = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
@@ -129,18 +129,18 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
             *chains
         )
 
-        config.project_console.print(
+        log.project_console.print(
             Panel(panel_group, title=file.name, border_style='magenta'),
             justify='center'
         )
 
-        config.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
+        log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
 if __name__ == '__main__':
     try:
         cli()
     except Exception as e:
-        config.project_logger.error(e)
-        config.project_console.print_exception(show_locals=True)
-        config.error_console.print_exception(show_locals=True)
+        log.project_logger.error(e)
+        log.project_console.print_exception(show_locals=True)
+        log.error_console.print_exception(show_locals=True)

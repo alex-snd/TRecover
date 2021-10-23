@@ -10,7 +10,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, 
 from rich.text import Text
 from typer import Typer, Argument, Option
 
-import config
+from config import vars, log
 from zreader.utils.cli import get_files_columns
 from zreader.utils.visualization import visualize_columns
 
@@ -18,19 +18,19 @@ cli = Typer(name='Client-cli')
 
 
 @cli.command()
-def params(url: str = Option(config.FASTAPI_URL, help='API url'),
+def params(url: str = Option(vars.FASTAPI_URL, help='API url'),
            param: str = Option(None, help='Param name to receive')):
     if param:
         response = requests.get(url=f'{url}/params/{param}')
     else:
         response = requests.get(url=f'{url}/params')
 
-    config.project_console.print(json.dumps(response.json(), indent=4))
+    log.project_console.print(json.dumps(response.json(), indent=4))
 
 
 @cli.command()
 def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
-          url: str = Option(config.FASTAPI_URL, help='API url'),
+          url: str = Option(vars.FASTAPI_URL, help='API url'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
@@ -41,11 +41,11 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
     inference_path = Path(inference_path).absolute()
 
     if not noisy and min_noise >= max_noise:
-        config.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
+        log.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
         return
 
     if not any([inference_path.is_file(), inference_path.is_dir()]):
-        config.project_logger.error('[red]Files for inference needed to be specified')
+        log.project_logger.error('[red]Files for inference needed to be specified')
         return
 
     files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
@@ -65,8 +65,8 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         task_info = task_info.json()
 
         if not task_info['task_id']:
-            config.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
-                                        f'{task_info["message"]}')
+            log.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
+                                     f'{task_info["message"]}')
             continue
 
         task_status = requests.get(url=f'{url}/status/{task_info["task_id"]}')
@@ -97,8 +97,8 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         requests.delete(url=f'{url}/status/{task_info["task_id"]}')
 
         if task_status['status_code'] != HTTPStatus.OK:
-            config.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
-                                        f'{task_status["message"]}')
+            log.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
+                                     f'{task_status["message"]}')
             continue
 
         columns = visualize_columns(file_columns, delimiter=delimiter, as_rows=True)
@@ -114,18 +114,18 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
             *chains
         )
 
-        config.project_console.print(
+        log.project_console.print(
             Panel(panel_group, title=file.name, border_style='magenta'),
             justify='center'
         )
 
-        config.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
+        log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
 if __name__ == '__main__':
     try:
         cli()
     except Exception as e:
-        config.project_logger.error(e)
-        config.project_console.print_exception(show_locals=True)
-        config.error_console.print_exception(show_locals=True)
+        log.project_logger.error(e)
+        log.project_console.print_exception(show_locals=True)
+        log.error_console.print_exception(show_locals=True)

@@ -6,17 +6,17 @@ from typing import Dict, Callable
 from celery.result import AsyncResult
 from fastapi import FastAPI, Request, Path
 
-import config
 from app.api.backend.celeryapp import celery_app
 from app.api.backend.tasks import predict, get_artifacts
 from app.api.schemas import PredictPayload, PredictResponse, TaskResponse
+from config import log
 
 api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
 
 
 @api.on_event('startup')
 def startup() -> None:
-    config.project_logger.info('FatAPI launched')
+    log.project_logger.info('FatAPI launched')
 
 
 def construct_response(handler: Callable[..., Dict]) -> Callable[..., Dict]:

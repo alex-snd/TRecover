@@ -135,9 +135,3 @@ class ZReader(nn.Module):
 
     def load_parameters(self, filename: Path, device: torch.device) -> None:
         self.load_state_dict(torch.load(filename, map_location=device))
-
-
-if __name__ == "__main__":
-    model = ZReader(token_size=26, pe_max_len=1000, num_layers=6, d_model=1024, n_heads=16, d_ff=1024, dropout=0.1)
-
-    print(f'{model.params_count:,}')

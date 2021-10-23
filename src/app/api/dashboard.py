@@ -4,10 +4,9 @@ from typing import Tuple, List
 
 import requests
 import streamlit as st
-
 from requests.exceptions import ConnectionError
 
-import config
+from config import vars, log
 from zreader.utils.data import data_to_columns, create_noisy_columns
 from zreader.utils.visualization import visualize_columns
 
@@ -65,7 +64,7 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
     bw = st.sidebar.slider('Beam search width', 1, 26, key='beam_width',
                            value=st.session_state.get('beam_width', 3))
 
-    if max_noise > config.MAX_NOISE:
+    if max_noise > vars.MAX_NOISE:
         st.sidebar.warning('Max noise value is too large. This will entail poor performance')
 
     return is_plain, min_noise, max_noise + 1, bw
@@ -101,20 +100,20 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
             'beam_width': bw
         }
 
-        task_info = requests.post(url=f'{config.FASTAPI_URL}/zread', json=payload)
+        task_info = requests.post(url=f'{vars.FASTAPI_URL}/zread', json=payload)
         task_info = task_info.json()
 
         if not task_info['task_id']:
             st.error(task_info['message'])
             st.stop()
 
-        task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+        task_status = requests.get(url=f'{vars.FASTAPI_URL}/status/{task_info["task_id"]}')
         task_status = task_status.json()
 
         progress_bar = st.progress(0)
 
         while task_status['status_code'] == HTTPStatus.PROCESSING:
-            task_status = requests.get(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+            task_status = requests.get(url=f'{vars.FASTAPI_URL}/status/{task_info["task_id"]}')
             task_status = task_status.json()
 
             completed = task_status['progress'] or 0
@@ -122,7 +121,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
             time.sleep(0.3)
 
-        requests.delete(url=f'{config.FASTAPI_URL}/status/{task_info["task_id"]}')
+        requests.delete(url=f'{vars.FASTAPI_URL}/status/{task_info["task_id"]}')
 
         if task_status['status_code'] != HTTPStatus.OK:
             st.error(task_status['message'])
@@ -131,7 +130,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
         return task_status['chains']
 
     except ConnectionError as err:
-        st.error(f'Failed to establish a {config.FASTAPI_URL} connection. \n\n{err}')
+        st.error(f'Failed to establish a {vars.FASTAPI_URL} connection. \n\n{err}')
         st.stop()
 
 
@@ -203,4 +202,4 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        config.project_logger.error(e)
+        log.project_logger.error(e)

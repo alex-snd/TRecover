@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple
 import requests
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
-import config
+from config import log
 from zreader.utils.data import read_files_columns, create_files_noisy_columns
 
 
@@ -44,7 +44,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     """
 
     if not (direct_link := get_real_direct_link(sharing_link)):
-        config.project_logger.error(f'[red]Failed to download data from [/][bright_blue] {sharing_link}')
+        log.project_logger.error(f'[red]Failed to download data from [/][bright_blue] {sharing_link}')
         return None
 
     filename = extract_filename(direct_link) or 'downloaded_data'  # Try to recover the filename from the link
@@ -72,7 +72,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
                     fw.write(data)
                     progress.update(download_progress, advance=4096)
 
-    config.project_logger.info(f'[green]Downloaded "{filename}" to {Path(save_dir, filename).absolute()}')
+    log.project_logger.info(f'[green]Downloaded "{filename}" to {Path(save_dir, filename).absolute()}')
 
     return filepath
 
