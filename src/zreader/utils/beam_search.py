@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
 from torch import Tensor
 
+import config
 from zreader.ml.model import ZReader
 from zreader.utils.visualization import visualize_target
 
@@ -71,6 +72,7 @@ def cli_interactive_loop(label: str = 'Processing'
                 TextColumn('Elapsed', style='bright_blue'),
                 TimeElapsedColumn(),
                 transient=True,
+                console=config.project_console
         ) as progress:
             beam_progress = progress.add_task(label, total=encoded_src.shape[0])
 
