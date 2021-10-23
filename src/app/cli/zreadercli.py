@@ -104,7 +104,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         progress.add_task('Model loading...')
         z_reader = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
                              artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
-                             device, weights=Path(weights_path))
+                             device, weights=Path(weights_path), silently=True)
     z_reader.eval()
 
     files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)

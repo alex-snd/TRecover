@@ -42,14 +42,16 @@ def get_model(token_size: int,
               dropout: float,
               device: torch.device = torch.device('cpu'),
               weights: Optional[Path] = None,
-              prompt: bool = False
+              silently: bool = False
               ) -> ZReader:
     model = ZReader(token_size, pe_max_len, num_layers, d_model, n_heads, d_ff, dropout).to(device)
 
     if weights and weights.exists() and weights.is_file():
         model.load_parameters(weights, device=device)
-        config.project_console.print(f'The below model parameters have been loaded:\n{weights}', style='bright_green')
 
+        if not silently:
+            config.project_console.print(f'The below model parameters have been loaded:\n{weights}',
+                                         style='bright_green')
         return model
 
     if weights:
@@ -57,7 +59,7 @@ def get_model(token_size: int,
     else:
         config.project_console.print("Model parameters aren't specified", style='bright_blue')
 
-    if not prompt or Confirm.ask(prompt='[bright_blue]Continue training from scratch?', default=True,
+    if silently or Confirm.ask(prompt='[bright_blue]Continue training from scratch?', default=True,
                                  console=config.project_console):
         return model
     else:

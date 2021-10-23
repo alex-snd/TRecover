@@ -370,7 +370,7 @@ def train(params: ExperimentParams) -> None:
 
     z_reader = get_model(params.token_size, params.pe_max_len, params.n_layers, params.d_model, params.n_heads,
                          params.d_ff, params.dropout, device,
-                         weights=weights_path, prompt=True)
+                         weights=weights_path, silently=False)
 
     # criterion = CustomCrossEntropyLoss(ignore_index=-1)
     criterion = CustomPenaltyLoss(ignore_index=-1)
