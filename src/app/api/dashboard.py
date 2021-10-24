@@ -27,21 +27,14 @@ def main() -> None:
 def sidebar() -> None:
     st.sidebar.header('Sections')
 
-    option = st.sidebar.radio('', ('About the project', 'Inference', 'Inference history'))
+    option = st.sidebar.radio('', ('Inference', 'Inference history'))
 
-    if option == 'About the project':
-        about_sidebar()
-        about_page()
-    elif option == 'Inference':
+    if option == 'Inference':
         is_plain, min_noise, max_noise, bw = inference_sidebar()
         inference_page(is_plain, min_noise, max_noise, bw)
     else:
         history_sidebar()
         history_page()
-
-
-def about_sidebar() -> None:
-    pass
 
 
 def inference_sidebar() -> Tuple[bool, int, int, int]:
@@ -72,12 +65,6 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
 
 def history_sidebar() -> None:
     st.sidebar.text('TODO: Clear button')
-
-
-def about_page() -> None:
-    st.title('About')
-
-    st.text('TODO: Write about the method of keyless reading in columns')
 
 
 def save_to_history(is_plain: bool,
@@ -203,3 +190,5 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         log.project_logger.error(e)
+        log.project_console.print_exception(show_locals=True)
+        log.error_console.print_exception(show_locals=True)
