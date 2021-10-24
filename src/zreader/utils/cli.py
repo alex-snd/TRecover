@@ -1,5 +1,7 @@
+import os
 from pathlib import Path
 from typing import Optional, List, Tuple
+from zipfile import ZipFile
 
 import requests
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
@@ -73,9 +75,32 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
                     fw.write(data)
                     progress.update(download_progress, advance=4096)
 
-    log.project_logger.info(f'[green]Downloaded "{filename}" to {Path(save_dir, filename).absolute()}')
+    log.project_console.print(f'Downloaded "{filename}" to {filepath.absolute()}', style='green')
 
     return filepath
+
+
+def download_archive_from_disk(sharing_link: str, save_dir: str) -> None:
+    """
+        Download archive file from Yandex disk and extract it to save_dir
+
+        Notes
+        -----
+        sharing_link: str
+            Sharing link to the archive file on Yandex disk
+
+        save_dir: str
+            Path where to store extracted data
+
+    """
+
+    if filepath := download_from_disk(sharing_link, save_dir):
+        with ZipFile(filepath) as zf:
+            zf.extractall(path=Path(save_dir, filepath.stem))
+
+        os.remove(filepath)
+
+    log.project_console.print(f'Archive extracted to {Path(save_dir, filepath.stem).absolute()}', style='green')
 
 
 def get_files_columns(inference_path: Path,
