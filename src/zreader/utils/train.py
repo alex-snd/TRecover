@@ -1,7 +1,7 @@
 import re
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
@@ -9,11 +9,13 @@ from torch.optim import Optimizer
 
 
 class ExperimentParams(dict):
-    def __init__(self, params: Optional[Namespace] = None):
+    def __init__(self, params: Union[Namespace, Dict, None] = None):
         super(ExperimentParams, self).__init__()
 
-        if params:
+        if isinstance(params, Namespace):
             self.__dict__.update(vars(params))
+        if isinstance(params, dict):
+            self.__dict__.update(params)
 
     def __getitem__(self, key: Any) -> Any:
         return self.__dict__[key]
