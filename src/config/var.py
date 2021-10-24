@@ -16,6 +16,8 @@ CELERY_BACKEND = os.getenv('CELERY_BACKEND') or 'redis://localhost:6379'
 FASTAPI_HOST = os.getenv('FASTAPI_HOST') or 'localhost'
 FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 8001
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
+INFERENCE_PARAMS_PATH = os.getenv('INFERENCE_PARAMS_PATH') or INFERENCE_DIR / 'params.json'  # TODO  docker worker
+INFERENCE_WEIGHTS_PATH = os.getenv('INFERENCE_WEIGHTS_PATH') or INFERENCE_DIR / 'z_reader.pt'
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
 MAX_NOISE = 13
 

@@ -2,7 +2,7 @@ from typing import Optional, List, Tuple
 
 from pydantic import BaseModel, validator
 
-from config import vars
+from config import var
 
 
 class PredictPayload(BaseModel):
@@ -19,8 +19,8 @@ class PredictPayload(BaseModel):
 
     @validator('beam_width')
     def beam_width_validator(cls, beam_width: int) -> Optional[int]:
-        if not 1 <= beam_width <= len(vars.ALPHABET):
-            raise ValueError(f'Beam width must be in between 1 and {len(vars.ALPHABET)}')
+        if not 1 <= beam_width <= len(var.ALPHABET):
+            raise ValueError(f'Beam width must be in between 1 and {len(var.ALPHABET)}')
 
         return beam_width
 

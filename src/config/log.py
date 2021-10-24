@@ -4,7 +4,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.logging import RichHandler
 
-from config.vars import BASE_DIR
+from config.var import BASE_DIR
 
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(parents=True, exist_ok=True)

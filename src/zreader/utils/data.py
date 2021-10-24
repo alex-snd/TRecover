@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from config import vars
+from config import var
 
 
 # ----------------------------------------Data cleaning & preparation utils---------------------------------------------
@@ -125,7 +125,7 @@ def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]
 
     for symbol in data:
         noise_size = np.random.randint(low=min_noise, high=max_noise, size=1)[0]
-        noise_indexes = np.random.choice(list(vars.ALPHABET.difference(symbol)), size=noise_size, replace=False)
+        noise_indexes = np.random.choice(list(var.ALPHABET.difference(symbol)), size=noise_size, replace=False)
         columns.append(f"{symbol}{''.join(noise_indexes)}")
 
     return columns
@@ -183,11 +183,11 @@ def read_files_columns(files: List[Union[str, Path]], separator: str, n_to_show:
 
 
 def columns_to_tensor(columns: List[str], device: torch.device = torch.device('cpu')) -> Tensor:
-    tensor = torch.zeros((len(columns), len(vars.ALPHABET)), dtype=torch.float, device=device)
+    tensor = torch.zeros((len(columns), len(var.ALPHABET)), dtype=torch.float, device=device)
 
     for col in range(len(columns)):
         for symbol in columns[col]:
-            tensor[col, vars.ALPHABET2NUM[symbol]] = 1
+            tensor[col, var.ALPHABET2NUM[symbol]] = 1
 
     return tensor
 

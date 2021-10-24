@@ -17,12 +17,12 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from config import vars, log, train as train_config
+from config import var, log, train as train_config
 from zreader.data import WikiDataset
 from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
 from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
-from zreader.utils.model import get_model, get_recent_weights_path, save_artifacts
+from zreader.utils.model import get_model, get_recent_weights_path, save_params
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
 from zreader.utils.visualization import visualize_columns, visualize_target
 
@@ -406,8 +406,8 @@ def train(params: ExperimentParams) -> None:
         simplified_params = params.simplify()
 
         with tempfile.TemporaryDirectory() as dp:
-            save_artifacts(simplified_params, Path(dp, "artifacts.json"))  # TODO rename everywhere
-            z_reader.save(Path(dp, "z_reader.pt"))
+            save_params(simplified_params, Path(dp, 'params.json'))
+            z_reader.save(Path(dp, 'z_reader.pt'))
             shutil.copy(trainer.log_file, dp)
 
             mlflow.log_artifacts(dp)
@@ -453,7 +453,7 @@ def get_cmd_args_parser() -> ArgumentParser:
 
     # ----------------------------------------------MODEL PARAMETERS----------------------------------------------------
 
-    parser.add_argument('--token-size', default=len(vars.ALPHABET), type=int,
+    parser.add_argument('--token-size', default=len(var.ALPHABET), type=int,
                         help='Token size')
     parser.add_argument('--pe-max-len', default=256, type=int,
                         help='Positional encoding max length')

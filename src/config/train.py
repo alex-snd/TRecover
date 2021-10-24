@@ -1,4 +1,4 @@
-from config.vars import BASE_DIR
+from config.var import BASE_DIR
 
 DATA_DIR = BASE_DIR / 'data'
 TRAIN_DATA = DATA_DIR / 'train'

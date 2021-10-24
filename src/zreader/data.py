@@ -6,16 +6,16 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-from config import vars
+from config import var
 from zreader.utils.data import generate_subsequent_mask
 
 
 class Collate(object):
     def __init__(self, min_noise: int, max_noise: int) -> None:
-        assert 0 <= min_noise <= len(vars.ALPHABET), \
-            f'min_noise should be between 0 and {len(vars.ALPHABET)} inclusive'
-        assert min_noise <= max_noise <= len(vars.ALPHABET), \
-            f'max_noise should be between {min_noise} and {len(vars.ALPHABET)} inclusive'
+        assert 0 <= min_noise <= len(var.ALPHABET), \
+            f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
+        assert min_noise <= max_noise <= len(var.ALPHABET), \
+            f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
 
         self.min_noise = min_noise
         self.max_noise = max_noise
@@ -26,7 +26,7 @@ class Collate(object):
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
-        batch_size, seq_len, token_size = len(batch), max(sizes), len(vars.ALPHABET)
+        batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
 
         src = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
         tgt_inp = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
@@ -38,14 +38,14 @@ class Collate(object):
             i_tgt = torch.full((seq_len,), fill_value=-1, dtype=torch.long)
 
             for j in range(len(batch[i])):
-                num_repr = vars.ALPHABET2NUM[batch[i][j]]
+                num_repr = var.ALPHABET2NUM[batch[i][j]]
 
                 src[i, j, num_repr] = 1
                 tgt_inp[i, j, num_repr] = 1
                 i_tgt[j] = num_repr
 
                 noise_size = np.random.randint(low=self.min_noise, high=self.max_noise + 1, size=1)[0]
-                noise_indexes = np.random.randint(low=0, high=len(vars.ALPHABET), size=noise_size)
+                noise_indexes = np.random.randint(low=0, high=len(var.ALPHABET), size=noise_size)
 
                 src[i, j, noise_indexes] = 1
 

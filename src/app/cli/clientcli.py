@@ -10,7 +10,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, 
 from rich.text import Text
 from typer import Typer, Argument, Option
 
-from config import vars, log
+from config import var, log
 from zreader.utils.cli import get_files_columns
 from zreader.utils.visualization import visualize_columns
 
@@ -18,7 +18,7 @@ cli = Typer(name='Client-cli')
 
 
 @cli.command()
-def params(url: str = Option(vars.FASTAPI_URL, help='API url'),
+def params(url: str = Option(var.FASTAPI_URL, help='API url'),
            param: str = Option(None, help='Param name to receive')):
     if param:
         response = requests.get(url=f'{url}/params/{param}')
@@ -30,7 +30,7 @@ def params(url: str = Option(vars.FASTAPI_URL, help='API url'),
 
 @cli.command()
 def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
-          url: str = Option(vars.FASTAPI_URL, help='API url'),
+          url: str = Option(var.FASTAPI_URL, help='API url'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is alphabet size'),
