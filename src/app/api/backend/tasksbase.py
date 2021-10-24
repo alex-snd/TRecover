@@ -3,21 +3,21 @@ from typing import Optional
 import celery
 import torch
 
-from config import vars
+from config import var
 from zreader.model import ZReader
-from zreader.utils.model import get_model, load_artifacts
+from zreader.utils.model import get_model, load_params
 
 
 class ArtifactsTask(celery.Task):
     def __init__(self):
         super(ArtifactsTask, self).__init__()
 
-        self.artifacts: Optional[dict] = None
+        self.params: Optional[dict] = None
 
     def __call__(self, *args, **kwargs):
-        if not self.artifacts:
-            self.artifacts = load_artifacts(vars.INFERENCE_DIR / 'artifacts.json')
-            self.artifacts['cuda'] = vars.CUDA and torch.cuda.is_available()
+        if not self.params:
+            self.params = load_params(var.INFERENCE_PARAMS_PATH)
+            self.params.cuda = var.CUDA and torch.cuda.is_available()
 
         return self.run(*args, **kwargs)
 
@@ -27,7 +27,7 @@ class PredictTask(celery.Task):
         super(PredictTask, self).__init__()
 
         self.model: Optional[ZReader] = None
-        self.device = torch.device(f'cuda' if vars.CUDA and torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(f'cuda' if var.CUDA and torch.cuda.is_available() else 'cpu')
 
     def __call__(self, *args, **kwargs):
         """
@@ -37,10 +37,10 @@ class PredictTask(celery.Task):
         """
 
         if not self.model:
-            artifacts = load_artifacts(vars.INFERENCE_DIR / 'artifacts.json')
-            self.model = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                                   artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'],
-                                   artifacts['dropout'], self.device, weights=vars.INFERENCE_DIR / 'weights')
+            params = load_params(var.INFERENCE_PARAMS_PATH)
+            self.model = get_model(params.token_size, params.pe_max_len, params.num_layers,
+                                   params.d_model, params.n_heads, params.d_ff,
+                                   params.dropout, self.device, weights=var.INFERENCE_WEIGHTS_PATH)
             self.model.eval()
 
         return self.run(*args, **kwargs)
