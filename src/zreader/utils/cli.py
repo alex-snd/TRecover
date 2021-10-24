@@ -65,6 +65,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
                     DownloadColumn(),
                     TransferSpeedColumn(),
                     transient=True,
+                    console=log.project_console
             ) as progress:
                 download_progress = progress.add_task('Downloading', total=int(total_length))
 
