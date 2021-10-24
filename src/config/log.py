@@ -6,7 +6,7 @@ from rich.logging import RichHandler
 
 from config.vars import BASE_DIR
 
-LOGS_DIR = Path(BASE_DIR, 'logs')
+LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 project_logger = logging.getLogger('project')
