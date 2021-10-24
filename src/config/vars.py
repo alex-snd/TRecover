@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).parent.parent.parent.absolute()
 
-INFERENCE_DIR = Path(BASE_DIR, 'inference')
-EXAMPLES_DIR = Path(BASE_DIR, 'examples')
+CONFIG_DIR = BASE_DIR / 'config'
+INFERENCE_DIR = BASE_DIR / 'inference'
+EXAMPLES_DIR = BASE_DIR / 'examples'
 
 load_dotenv(BASE_DIR / '.env')
 
