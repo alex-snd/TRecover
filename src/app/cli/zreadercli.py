@@ -1,7 +1,5 @@
-import os
 from pathlib import Path
 from time import time
-from zipfile import ZipFile
 
 import torch
 from rich.console import Group
@@ -10,11 +8,11 @@ from rich.progress import Progress, TextColumn
 from rich.text import Text
 from typer import Typer, Argument, Option
 
-from config import log
+from config import var, log
 from zreader.utils.beam_search import beam_search, cli_interactive_loop
-from zreader.utils.cli import download_from_disk, get_files_columns
+from zreader.utils.cli import download_archive_from_disk, get_files_columns
 from zreader.utils.data import files_columns_to_tensors
-from zreader.utils.model import get_model, load_artifacts
+from zreader.utils.model import get_model, load_params
 from zreader.utils.visualization import visualize_columns, visualize_target
 
 cli = Typer(name='Zreader-cli')
@@ -37,38 +35,34 @@ def download_data(sharing_link: str = Argument(..., help='Sharing link to the tr
 
     """
 
-    if filepath := download_from_disk(sharing_link, save_dir):
-        with ZipFile(filepath) as zf:
-            zf.extractall(path=Path(save_dir, filepath.stem))
-
-        os.remove(filepath)
+    download_archive_from_disk(sharing_link, save_dir)
 
 
 @cli.command()
-def download_weights(sharing_link: str = Argument(..., help='Sharing link to the model weights on Yandex disk'),
-                     save_dir: str = Option('./', help='Path where to save downloaded weights')
-                     ) -> None:
+def download_artifacts(sharing_link: str = Argument(..., help='Sharing link to the model artifacts on Yandex disk'),
+                       save_dir: str = Option('./', help='Path where to save downloaded artifacts')
+                       ) -> None:
     """
-        Download model weights from Yandex disk
+        Download model artifacts from Yandex disk
 
         Notes
         -----
         sharing_link: str
-            Sharing link to the model weights on Yandex disk
+            Sharing link to the model artifacts on Yandex disk
 
         save_dir: str
-            Path where to save downloaded weights
+            Path where to save downloaded artifacts
 
     """
 
-    download_from_disk(sharing_link, save_dir)
+    download_archive_from_disk(sharing_link, save_dir)
 
 
 @cli.command()
 def zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
-          model_artifacts: str = Argument(..., help='Path to model artifacts json file'),
-          weights_path: str = Argument(..., help='Path to model weights'),
-          cuda: bool = Option(True, help='CUDA enabled'),
+          model_params: str = Option(var.INFERENCE_PARAMS_PATH, help='Path to model params json file'),
+          weights_path: str = Option(var.INFERENCE_WEIGHTS_PATH, help='Path to model weights'),
+          cuda: bool = Option(var.CUDA, help='CUDA enabled'),
           gpu_id: int = Option(0, help='GPU id'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
@@ -79,7 +73,7 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
     inference_path = Path(inference_path)
-    artifacts = load_artifacts(Path(model_artifacts))
+    params = load_params(Path(model_params))
 
     if not noisy and min_noise >= max_noise:
         log.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
@@ -89,11 +83,11 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
         log.project_logger.error('[red]Files for inference needed to be specified')
         return
 
-    if artifacts['pe_max_len'] < n_to_show:
-        log.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {artifacts["pe_max_len"]}')
+    if params.pe_max_len < n_to_show:
+        log.project_logger.error(f'[red]Parameter n_to_show={n_to_show} must be less than {params.pe_max_len}')
         return
     elif n_to_show == 0:
-        n_to_show = artifacts['pe_max_len']
+        n_to_show = params.pe_max_len
 
     device = torch.device(f'cuda:{gpu_id}' if cuda and torch.cuda.is_available() else 'cpu')
 
@@ -102,8 +96,8 @@ def zread(inference_path: str = Argument(..., help='Path to file or dir for infe
                   console=log.project_console
                   ) as progress:
         progress.add_task('Model loading...')
-        z_reader = get_model(artifacts['token_size'], artifacts['pe_max_len'], artifacts['num_layers'],
-                             artifacts['d_model'], artifacts['n_heads'], artifacts['d_ff'], artifacts['dropout'],
+        z_reader = get_model(params.token_size, params.pe_max_len, params.num_layers,
+                             params.d_model, params.n_heads, params.d_ff, params.dropout,
                              device, weights=Path(weights_path), silently=True)
     z_reader.eval()
 
