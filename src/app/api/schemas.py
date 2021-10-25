@@ -85,7 +85,7 @@ class TaskResponse(BaseResponse):
 
 class PredictResponse(BaseResponse):
     data: Optional[List[str]]
-    chains: Optional[List[Tuple[str, float]]]
+    chains: Optional[List[Tuple]]
     progress: Optional[int]
 
     class Config:
