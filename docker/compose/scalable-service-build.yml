@@ -2,8 +2,8 @@ version: "3.9"
 
 x-common-env: &common-env
   CUDA: ${CUDA:-True}
-  CELERY_BROKER: ${CELERY_BROKER:-pyamqp://guest@rabbitmq:5672}
-  CELERY_BACKEND: ${CELERY_BACKEND:-redis://redis:6379}
+  CELERY_BROKER: pyamqp://guest@rabbitmq:5672
+  CELERY_BACKEND: redis://redis:6379
 
 
 services:
