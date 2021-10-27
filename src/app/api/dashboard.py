@@ -116,8 +116,9 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
         return task_status['chains']
 
-    except ConnectionError as err:
-        st.error(f'Failed to establish a {var.FASTAPI_URL} connection. \n\n{err}')
+    except ConnectionError:
+        st.error(f'It seems that the API service is not running.\n\n'
+                 f'Failed to establish a {var.FASTAPI_URL} connection.')
         st.stop()
 
 
