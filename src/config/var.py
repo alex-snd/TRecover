@@ -11,13 +11,15 @@ EXAMPLES_DIR = BASE_DIR / 'examples'
 
 load_dotenv(BASE_DIR / '.env')
 
-CELERY_BROKER = os.getenv('CELERY_BROKER') or 'pyamqp://guest@localhost'
-CELERY_BACKEND = os.getenv('CELERY_BACKEND') or 'redis://localhost:6379'
-FASTAPI_HOST = os.getenv('FASTAPI_HOST') or 'localhost'
-FASTAPI_PORT = os.getenv('FASTAPI_PORT') or 8001
+CELERY_BROKER = os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')
+CELERY_BACKEND = os.getenv('CELERY_BACKEND', default='redis://localhost:6379')
+CELERY_WORKERS = int(os.getenv('CELERY_WORKERS', default=1))
+FASTAPI_HOST = os.getenv('FASTAPI_HOST', default='localhost')
+FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', default=8001))
+FASTAPI_WORKERS = int(os.getenv('FASTAPI_WORKERS', default=1))
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
-INFERENCE_PARAMS_PATH = os.getenv('INFERENCE_PARAMS_PATH') or INFERENCE_DIR / 'params.json'  # TODO  docker worker
-INFERENCE_WEIGHTS_PATH = os.getenv('INFERENCE_WEIGHTS_PATH') or INFERENCE_DIR / 'z_reader.pt'
+INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
+INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
 MAX_NOISE = 13
 
