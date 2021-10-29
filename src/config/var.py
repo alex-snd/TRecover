@@ -21,7 +21,7 @@ FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
 INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
-MAX_NOISE = 13
+MAX_NOISE = int(os.getenv('MAX_NOISE', default=13))
 
 ALPHABET = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'v',
             'u', 'w', 'x', 'y', 'z'}
