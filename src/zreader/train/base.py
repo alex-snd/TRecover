@@ -289,6 +289,7 @@ class Trainer(object):
                 TimeRemainingColumn(),
                 TextColumn('Elapsed', style='bright_blue'),
                 TimeElapsedColumn(),
+                console=log.project_console,
                 transient=True,
         ) as progress:
             test_progress = progress.add_task('Testing', total=len(test_loader))
