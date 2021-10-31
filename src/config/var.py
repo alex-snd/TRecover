@@ -7,21 +7,35 @@ BASE_DIR = Path(__file__).parent.parent.parent.absolute()
 
 CONFIG_DIR = BASE_DIR / 'config'
 INFERENCE_DIR = BASE_DIR / 'inference'
-EXAMPLES_DIR = BASE_DIR / 'examples'
+LOGS_DIR = BASE_DIR / 'logs'
+
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
 
-CELERY_BROKER = os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')
-CELERY_BACKEND = os.getenv('CELERY_BACKEND', default='redis://localhost:6379')
+BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))  # TODO change dicker ports
+BROKER_UI_PORT = int(os.getenv('BROKER_UI_PORT', default=15672))
+BACKEND_PORT = int(os.getenv('BACKEND_PORT', default=6379))
+CELERY_BROKER = f"{os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')}:{BROKER_PORT}"
+CELERY_BACKEND = f"{os.getenv('CELERY_BACKEND', default='redis://localhost')}:{BACKEND_PORT}"
 CELERY_WORKERS = int(os.getenv('CELERY_WORKERS', default=1))
-FASTAPI_HOST = os.getenv('FASTAPI_HOST', default='localhost')
+FASTAPI_HOST = os.getenv('FASTAPI_HOST', default='http://localhost')
 FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', default=8001))
 FASTAPI_WORKERS = int(os.getenv('FASTAPI_WORKERS', default=1))
-FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
+FASTAPI_URL = f'{FASTAPI_HOST}:{FASTAPI_PORT}'
 INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
 INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
 MAX_NOISE = int(os.getenv('MAX_NOISE', default=13))
+
+DASHBOARD_PID = CONFIG_DIR / 'dashboard.pid'
+API_PID = CONFIG_DIR / 'api.pid'
+WORKER_PID = CONFIG_DIR / 'worker.pid'
+BROKER_ID = 'zreader_broker'
+BACKEND_ID = 'zreader_backend'
+
+BROKER_IMAGE = os.getenv('BROKER_IMAGE', default='rabbitmq:3.9.8-management')
+BACKEND_IMAGE = os.getenv('BACKEND_IMAGE', default='redis:6.2')
 
 ALPHABET = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'v',
             'u', 'w', 'x', 'y', 'z'}

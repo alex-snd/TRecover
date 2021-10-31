@@ -4,10 +4,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.logging import RichHandler
 
-from config.var import BASE_DIR
-
-LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
+from config.var import LOGS_DIR
 
 project_logger = logging.getLogger('project')
 project_logger.setLevel(logging.DEBUG)
