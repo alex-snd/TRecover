@@ -299,7 +299,7 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
 
 
 @dashboard.command(name='start')
-def dashboard_start():
+def dashboard_start() -> None:
     import sys
     from streamlit import cli as stcli
     from app.api import dashboard
@@ -323,17 +323,17 @@ def dashboard_start():
 
 
 @dashboard.command(name='stop')
-def dashboard_stop():
+def dashboard_stop() -> None:
     pass
 
 
 @dashboard.command(name='status')
-def dashboard_status():
+def dashboard_status() -> None:
     pass
 
 
 @dashboard.command(name='attach')
-def dashboard_attach():
+def dashboard_attach() -> None:
     pass
 
 
@@ -349,17 +349,17 @@ def api_start() -> None:
 
 
 @api.command(name='stop')
-def api_stop():
+def api_stop() -> None:
     pass
 
 
 @api.command(name='status')
-def api_status():
+def api_status() -> None:
     pass
 
 
 @api.command(name='attach')
-def api_attach():
+def api_attach() -> None:
     pass
 
 
@@ -373,17 +373,17 @@ def worker_start() -> None:
 
 
 @worker.command(name='stop')
-def worker_stop():
+def worker_stop() -> None:
     pass
 
 
 @worker.command(name='status')
-def worker_status():
+def worker_status() -> None:
     pass
 
 
 @worker.command(name='attach')
-def worker_attach():
+def worker_attach() -> None:
     pass
 
 
@@ -446,7 +446,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 
 
 @broker.command(name='stop')
-def broker_stop():
+def broker_stop() -> None:
     from zreader.utils.docker import get_container
     container = get_container(var.BROKER_ID)
 
@@ -457,15 +457,31 @@ def broker_stop():
         log.project_console.print('Broker service is already stopped', style='yellow')
 
 
+@broker.command(name='prune')
+def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
+                                      help='Force the removal of a running container'),
+                 v: bool = Option(False,
+                                  help='Remove the volumes associated with the container')
+                 ) -> None:
+    from zreader.utils.docker import get_container
+    container = get_container(var.BROKER_ID)
+
+    if container.status == 'running' and not force:
+        log.project_console.print('You need to stop broker service before pruning or use --force flag', style='yellow')
+    else:
+        container.remove(v=v, force=force)
+        log.project_console.print('Broker service is pruned', style='bright_blue')
+
+
 @broker.command(name='status')
-def broker_status():
+def broker_status() -> None:
     from zreader.utils.docker import get_container
 
     log.project_console.print(f'Broker status: {get_container(var.BROKER_ID).status}', style='bright_blue')
 
 
 @broker.command(name='attach')
-def broker_attach():
+def broker_attach() -> None:
     from zreader.utils.docker import get_container
 
     with log.project_console.screen(hide_cursor=True):
@@ -533,7 +549,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 
 
 @backend.command(name='stop')
-def backend_stop():
+def backend_stop() -> None:
     from zreader.utils.docker import get_container
     container = get_container(var.BACKEND_ID)
 
@@ -544,15 +560,31 @@ def backend_stop():
         log.project_console.print('Backend service is already stopped', style='yellow')
 
 
+@backend.command(name='prune')
+def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
+                                       help='Force the removal of a running container'),
+                  v: bool = Option(False,
+                                   help='Remove the volumes associated with the container')
+                  ) -> None:
+    from zreader.utils.docker import get_container
+    container = get_container(var.BACKEND_ID)
+
+    if container.status == 'running' and not force:
+        log.project_console.print('You need to stop backend service before pruning or use --force flag', style='yellow')
+    else:
+        container.remove(v=v, force=force)
+        log.project_console.print('Backend service is pruned', style='bright_blue')
+
+
 @backend.command(name='status')
-def backend_status():
+def backend_status() -> None:
     from zreader.utils.docker import get_container
 
     log.project_console.print(f'Backend status: {get_container(var.BACKEND_ID).status}', style='bright_blue')
 
 
 @backend.command(name='attach')
-def backend_attach():
+def backend_attach() -> None:
     from zreader.utils.docker import get_container
 
     with log.project_console.screen(hide_cursor=True):
