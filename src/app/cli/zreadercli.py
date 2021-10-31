@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from time import time, sleep
 
@@ -406,7 +405,10 @@ def broker_state_verification(ctx: Context) -> None:
 
 @broker.command(name='start')
 def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                       help='Attach local standard input, output, and error streams')) -> None:
+                                       help='Attach local standard input, output, and error streams'),
+                 auto_remove: bool = Option(False, '--rm', is_flag=True,
+                                            help='Remove docker container after service exit')
+                 ) -> None:
     from config import var, log
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
@@ -429,7 +431,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
     else:
         client.containers.run(image=image.id,
                               name=var.BROKER_ID,
-                              auto_remove=True,
+                              auto_remove=auto_remove,
                               detach=True,
                               stdin_open=True,
                               stdout=True,
@@ -490,7 +492,10 @@ def backend_state_verification(ctx: Context) -> None:
 
 @backend.command(name='start')
 def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                        help='Attach local standard input, output, and error streams')) -> None:
+                                        help='Attach local standard input, output, and error streams'),
+                  auto_remove: bool = Option(False, '--rm', is_flag=True,
+                                             help='Remove docker container after service exit')
+                  ) -> None:
     from config import var, log
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
@@ -513,7 +518,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
     else:
         client.containers.run(image=image.id,
                               name=var.BACKEND_ID,
-                              auto_remove=True,
+                              auto_remove=auto_remove,
                               detach=True,
                               stdin_open=True,
                               stdout=True,
