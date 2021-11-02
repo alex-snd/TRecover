@@ -1,24 +1,30 @@
+from enum import Enum
 from pathlib import Path
-from time import time, sleep
 
-from rich.console import Group
-from rich.panel import Panel
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
-from rich.text import Text
-from typer import Typer, Argument, Option, Context
+from typer import Typer, Argument, Option, Context, BadParameter
 
 from config import var, log
-from zreader.utils.beam_search import beam_search, cli_interactive_loop
-from zreader.utils.cli import download_archive_from_disk, get_files_columns
-from zreader.utils.data import files_columns_to_tensors
-from zreader.utils.model import get_model, load_params
-from zreader.utils.visualization import visualize_columns, visualize_target
 
-# TODO get rid of that imports
+
+class PoolType(str, Enum):
+    prefork = 'prefork'
+    eventlet = 'eventlet'
+    gevent = 'gevent'
+    processes = 'processes'
+    solo = 'solo'
+
+
+class LogLevel(str, Enum):
+    debug = 'debug'
+    info = 'info'
+    warning = 'warning'
+    error = 'error'
+    critical = 'critical'
+
 
 cli = Typer(name='Zreader-cli', add_completion=False)
 download = Typer(name='Download-cli', add_completion=False)
-train = Typer(name='Train-cli', add_completion=False)  # TODO
+train = Typer(name='Train-cli', add_completion=False)
 dashboard = Typer(name='Dashboard-cli', add_completion=False)
 api = Typer(name='API-cli', add_completion=False)
 worker = Typer(name='Worker-cli', add_completion=False)
@@ -54,6 +60,8 @@ def download_data(sharing_link: str = Argument(..., help='Sharing link to the tr
 
     """
 
+    from zreader.utils.cli import download_archive_from_disk
+
     download_archive_from_disk(sharing_link, save_dir)
 
 
@@ -73,6 +81,8 @@ def download_artifacts(sharing_link: str = Argument(..., help='Sharing link to t
             Path where to save downloaded artifacts
 
     """
+
+    from zreader.utils.cli import download_archive_from_disk
 
     download_archive_from_disk(sharing_link, save_dir)
 
@@ -97,7 +107,19 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
           n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
+    from time import time
+
     import torch
+    from rich.console import Group
+    from rich.panel import Panel
+    from rich.progress import Progress, TextColumn
+    from rich.text import Text
+
+    from zreader.utils.beam_search import beam_search, cli_interactive_loop
+    from zreader.utils.cli import get_files_columns
+    from zreader.utils.data import files_columns_to_tensors
+    from zreader.utils.model import get_model, load_params
+    from zreader.utils.visualization import visualize_columns, visualize_target
 
     inference_path = Path(inference_path)
     params = load_params(Path(model_params))
@@ -161,21 +183,7 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 @cli.command()
 def up() -> None:
     """ Up all services """
-    # TODO
-    pass
-
-
-@cli.command()
-def down() -> None:
-    """ Down all services """
-    # TODO
-    pass
-
-
-@cli.command()
-def status() -> None:
-    """ Down all services """
-    # TODO
+    # TODO upp all services in different threads
     pass
 
 
@@ -208,8 +216,17 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
               n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
               delimiter: str = Option('', help='Delimiter for columns visualization')
               ) -> None:
-    from http import HTTPStatus
     import requests
+    from http import HTTPStatus
+    from time import time, sleep
+
+    from rich.console import Group
+    from rich.panel import Panel
+    from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
+    from rich.text import Text
+
+    from zreader.utils.cli import get_files_columns
+    from zreader.utils.visualization import visualize_columns
 
     inference_path = Path(inference_path).absolute()
 
@@ -298,8 +315,19 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
 # ---------------------------------------------Dashboard service commands-----------------------------------------------
 
 
+@dashboard.callback(invoke_without_command=True)
+def dashboard_state_verification(ctx: Context) -> None:
+    if ctx.invoked_subcommand:
+        return
+
+    dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=LogLevel.info)
+
+
 @dashboard.command(name='start')
-def dashboard_start() -> None:
+def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help='Bind socket to this host.'),
+                    port: int = Option(var.STREAMLIT_PORT, '--port', '-p', help='Bind socket to this port.'),
+                    loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                    ) -> None:
     import sys
     from streamlit import cli as stcli
     from app.api import dashboard
@@ -307,11 +335,10 @@ def dashboard_start() -> None:
     sys.argv = ['streamlit',
                 'run',
                 dashboard.__file__,
-                '--logger.level', 'info',  # Level of logging: 'error', 'warning', 'info', or 'debug'
+                '--server.address', host,
+                '--server.port', str(port),
+                '--logger.level', loglevel,
                 '--global.suppressDeprecationWarnings', 'True',
-                '--browser.serverAddress', 'localhost',
-                '--server.address', 'localhost',  # localhost 0.0.0.0
-                '--server.port', '8000',
                 '--server.baseUrlPath', 'dashboard',
                 '--theme.backgroundColor', '#E7EAD9',
                 '--theme.secondaryBackgroundColor', '#DFE3D0',
@@ -322,85 +349,74 @@ def dashboard_start() -> None:
     stcli.main()
 
 
-@dashboard.command(name='stop')
-def dashboard_stop() -> None:
-    pass
-
-
-@dashboard.command(name='status')
-def dashboard_status() -> None:
-    pass
-
-
-@dashboard.command(name='attach')
-def dashboard_attach() -> None:
-    pass
-
-
 # -----------------------------------------------API service commands---------------------------------------------------
 
 
+@api.callback(invoke_without_command=True)
+def api_state_verification(ctx: Context) -> None:
+    if ctx.invoked_subcommand:
+        return
+
+    api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS, loglevel=LogLevel.info)
+
+
 @api.command(name='start')
-def api_start() -> None:
+def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind socket to this host.'),
+              port: int = Option(var.FASTAPI_PORT, '--port', '-p', help='Bind socket to this port.'),
+              concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
+              loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+              ) -> None:
     from app.api.zreaderapi import api
     import uvicorn
 
-    uvicorn.run(api, host=var.FASTAPI_HOST, port=int(var.FASTAPI_PORT), workers=1)
-
-
-@api.command(name='stop')
-def api_stop() -> None:
-    pass
-
-
-@api.command(name='status')
-def api_status() -> None:
-    pass
-
-
-@api.command(name='attach')
-def api_attach() -> None:
-    pass
+    uvicorn.run(api, host=host, port=port, workers=concurrency, reload=False, log_level=loglevel)
 
 
 # ----------------------------------------------Worker service commands-------------------------------------------------
 
+
+@worker.callback(invoke_without_command=True)
+def worker_state_verification(ctx: Context) -> None:
+    if ctx.invoked_subcommand:
+        return
+
+    worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo, loglevel=LogLevel.info)
+
+
 @worker.command(name='start')
-def worker_start() -> None:
+def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set custom worker name.'),
+                 concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes/threads.'),
+                 pool: PoolType = Option(PoolType.solo, '--pool', '-p', help='Worker processes/threads pool type.'),
+                 loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                 ) -> None:
+    import platform
     from app.api.backend.celeryapp import celery_app
 
-    celery_app.Worker(concurrency=1, pool='solo', loglevel='INFO').start()
+    if platform.system() == 'Windows' and pool != PoolType.solo:
+        raise BadParameter("Windows platform only supports 'solo' pool")
 
+    celery_worker = celery_app.Worker(hostname=name, concurrency=concurrency, pool=pool, loglevel=loglevel,
+                                      events=True)
 
-@worker.command(name='stop')
-def worker_stop() -> None:
-    pass
-
-
-@worker.command(name='status')
-def worker_status() -> None:
-    pass
-
-
-@worker.command(name='attach')
-def worker_attach() -> None:
-    pass
+    celery_worker.start()
 
 
 # ----------------------------------------------Broker service commands-------------------------------------------------
 
-@broker.callback()
+@broker.callback(invoke_without_command=True)
 def broker_state_verification(ctx: Context) -> None:
-    import sys
     from zreader.utils.docker import is_docker_running, get_container
 
     if not is_docker_running():
         log.project_console.print('Docker engine is not running', style='red')
-        sys.exit(1)
+        ctx.exit(1)
+
+    if ctx.invoked_subcommand is None:
+        broker_start(attach=False, auto_remove=False)
 
     if ctx.invoked_subcommand != 'start' and not get_container(var.BROKER_ID):
         log.project_console.print('Broker service is not started', style='yellow')
-        sys.exit(1)
+        ctx.exit(1)
 
 
 @broker.command(name='start')
@@ -409,7 +425,6 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                  auto_remove: bool = Option(False, '--rm', is_flag=True,
                                             help='Remove docker container after service exit')
                  ) -> None:
-    from config import var, log
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
@@ -428,6 +443,8 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
         else:
             container.start()
 
+            log.project_console.print(f'Broker service is started', style='bright_blue')
+
     else:
         client.containers.run(image=image.id,
                               name=var.BROKER_ID,
@@ -439,7 +456,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stop_signal='SIGTERM',
                               ports={5672: var.BROKER_PORT, 15672: var.BROKER_UI_PORT})
 
-        log.project_console.print(f'Broker service is started', style='bright_blue')
+        log.project_console.print(f'Broker service is launched', style='bright_blue')
 
     if attach:
         broker_attach()
@@ -448,6 +465,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 @broker.command(name='stop')
 def broker_stop() -> None:
     from zreader.utils.docker import get_container
+
     container = get_container(var.BROKER_ID)
 
     if container.status == 'running':
@@ -464,6 +482,7 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                   help='Remove the volumes associated with the container')
                  ) -> None:
     from zreader.utils.docker import get_container
+
     container = get_container(var.BROKER_ID)
 
     if container.status == 'running' and not force:
@@ -492,18 +511,20 @@ def broker_attach() -> None:
 # ----------------------------------------------Backend service commands------------------------------------------------
 
 
-@backend.callback()
+@backend.callback(invoke_without_command=True)
 def backend_state_verification(ctx: Context) -> None:
-    import sys
     from zreader.utils.docker import is_docker_running, get_container
 
     if not is_docker_running():
         log.project_console.print('Docker engine is not running', style='red')
-        sys.exit(1)
+        ctx.exit(1)
+
+    if ctx.invoked_subcommand is None:
+        backend_start(attach=False, auto_remove=False)
 
     if ctx.invoked_subcommand != 'start' and not get_container(var.BACKEND_ID):
         log.project_console.print('Backend service is not started', style='yellow')
-        sys.exit(1)
+        ctx.exit(1)
 
 
 @backend.command(name='start')
@@ -512,7 +533,6 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                   auto_remove: bool = Option(False, '--rm', is_flag=True,
                                              help='Remove docker container after service exit')
                   ) -> None:
-    from config import var, log
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
@@ -531,6 +551,8 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
         else:
             container.start()
 
+            log.project_console.print(f'Backend service is started', style='bright_blue')
+
     else:
         client.containers.run(image=image.id,
                               name=var.BACKEND_ID,
@@ -542,7 +564,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stop_signal='SIGTERM',
                               ports={6379: var.BACKEND_PORT})
 
-        log.project_console.print(f'Backend service is started', style='bright_blue')
+        log.project_console.print(f'Backend service is launched', style='bright_blue')
 
     if attach:
         backend_attach()
@@ -551,6 +573,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 @backend.command(name='stop')
 def backend_stop() -> None:
     from zreader.utils.docker import get_container
+
     container = get_container(var.BACKEND_ID)
 
     if container.status == 'running':
@@ -567,6 +590,7 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                    help='Remove the volumes associated with the container')
                   ) -> None:
     from zreader.utils.docker import get_container
+
     container = get_container(var.BACKEND_ID)
 
     if container.status == 'running' and not force:
