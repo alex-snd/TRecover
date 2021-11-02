@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).parent.parent.parent.absolute()
 
-CONFIG_DIR = BASE_DIR / 'config'
+CONFIG_DIR = BASE_DIR / 'src' / 'config'
 INFERENCE_DIR = BASE_DIR / 'inference'
 LOGS_DIR = BASE_DIR / 'logs'
 
@@ -13,16 +13,21 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
 
-BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))  # TODO change dicker ports
+BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))  # TODO change docker ports
 BROKER_UI_PORT = int(os.getenv('BROKER_UI_PORT', default=15672))
 BACKEND_PORT = int(os.getenv('BACKEND_PORT', default=6379))
 CELERY_BROKER = f"{os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')}:{BROKER_PORT}"
 CELERY_BACKEND = f"{os.getenv('CELERY_BACKEND', default='redis://localhost')}:{BACKEND_PORT}"
 CELERY_WORKERS = int(os.getenv('CELERY_WORKERS', default=1))
-FASTAPI_HOST = os.getenv('FASTAPI_HOST', default='http://localhost')
+
+FASTAPI_HOST = os.getenv('FASTAPI_HOST', default='localhost')
 FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', default=8001))
 FASTAPI_WORKERS = int(os.getenv('FASTAPI_WORKERS', default=1))
-FASTAPI_URL = f'{FASTAPI_HOST}:{FASTAPI_PORT}'
+FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
+
+STREAMLIT_HOST = os.getenv('STREAMLIT_HOST', default='localhost')
+STREAMLIT_PORT = int(os.getenv('STREAMLIT_PORT', default=8000))
+
 INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
 INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
