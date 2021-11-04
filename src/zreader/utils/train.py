@@ -26,7 +26,7 @@ class ExperimentParams(dict):
     def __str__(self):
         return str(self.__dict__)
 
-    def simplify(self) -> Dict:
+    def jsonify(self) -> Dict:
         simplified = dict()
         simplified.update(self.__dict__)
 

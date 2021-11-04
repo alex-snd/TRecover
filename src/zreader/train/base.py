@@ -404,16 +404,16 @@ def train(params: ExperimentParams) -> None:
         mlflow.log_metrics({'Test loss': test_loss})
         mlflow.log_metrics({'Test accuracy': test_accuracy})
 
-        simplified_params = params.simplify()
+        json_params = params.jsonify()
 
         with tempfile.TemporaryDirectory() as dp:
-            save_params(simplified_params, Path(dp, 'params.json'))
+            save_params(json_params, Path(dp, 'params.json'))
             z_reader.save(Path(dp, 'z_reader.pt'))
             shutil.copy(trainer.log_file, dp)
 
             mlflow.log_artifacts(dp)
 
-        mlflow.log_params(simplified_params)
+        mlflow.log_params(json_params)
 
 
 def get_cmd_args_parser() -> ArgumentParser:
