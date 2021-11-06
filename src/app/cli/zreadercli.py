@@ -317,10 +317,17 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
 
 @dashboard.callback(invoke_without_command=True)
 def dashboard_state_verification(ctx: Context) -> None:
-    if ctx.invoked_subcommand:
-        return
+    if var.DASHBOARD_PID.exists():
+        if ctx.invoked_subcommand in ('start', None):
+            log.project_console.print(':rocket: The dashboard service is already started', style='bright_blue')
+            ctx.exit(0)
 
-    dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=LogLevel.info)
+    elif ctx.invoked_subcommand is None:
+        dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=LogLevel.info)
+
+    elif ctx.invoked_subcommand != 'start':
+        log.project_console.print('The dashboard service is not started', style='yellow')
+        ctx.exit(1)
 
 
 @dashboard.command(name='start')
@@ -328,25 +335,45 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
                     port: int = Option(var.STREAMLIT_PORT, '--port', '-p', help='Bind socket to this port.'),
                     loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
                     ) -> None:
-    import sys
-    from streamlit import cli as stcli
     from app.api import dashboard
+    from subprocess import Popen, STDOUT, CREATE_NO_WINDOW
 
-    sys.argv = ['streamlit',
-                'run',
-                dashboard.__file__,
-                '--server.address', host,
-                '--server.port', str(port),
-                '--logger.level', loglevel,
-                '--global.suppressDeprecationWarnings', 'True',
-                '--server.baseUrlPath', 'dashboard',
-                '--theme.backgroundColor', '#E7EAD9',
-                '--theme.secondaryBackgroundColor', '#DFE3D0',
-                '--theme.primaryColor', '#FF8068',
-                '--theme.textColor', '#157D96'
-                ]
+    argv = ['streamlit',
+            'run', dashboard.__file__,
+            '--server.address', host,
+            '--server.port', str(port),
+            '--logger.level', loglevel,
+            '--global.suppressDeprecationWarnings', 'True',
+            '--theme.backgroundColor', '#E7EAD9',
+            '--theme.secondaryBackgroundColor', '#DFE3D0',
+            '--theme.primaryColor', '#FF8068',
+            '--theme.textColor', '#157D96'
+            ]
 
-    stcli.main()
+    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.DASHBOARD_LOG.open(mode='w'), stderr=STDOUT,
+                    universal_newlines=True)
+
+    with var.DASHBOARD_PID.open('w') as f:
+        f.write(str(process.pid))
+
+    log.project_console.print('The dashboard service is started', style='bright_blue')
+
+
+@dashboard.command(name='stop')
+def dashboard_stop() -> None:
+    from zreader.utils.cli import stop_service
+
+    stop_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+
+
+@dashboard.command(name='status')
+def dashboard_status() -> None:
+    pass  # TODO can be started but dead
+
+
+@dashboard.command(name='attach')
+def dashboard_attach() -> None:
+    pass
 
 
 # -----------------------------------------------API service commands---------------------------------------------------
@@ -354,10 +381,17 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
 
 @api.callback(invoke_without_command=True)
 def api_state_verification(ctx: Context) -> None:
-    if ctx.invoked_subcommand:
-        return
+    if var.API_PID.exists():
+        if ctx.invoked_subcommand in ('start', None):
+            log.project_console.print(':rocket: The API service is already started', style='bright_blue')
+            ctx.exit(0)
 
-    api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS, loglevel=LogLevel.info)
+    elif ctx.invoked_subcommand is None:
+        api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS, loglevel=LogLevel.info)
+
+    elif ctx.invoked_subcommand != 'start':
+        log.project_console.print('The API service is not started', style='yellow')
+        ctx.exit(1)
 
 
 @api.command(name='start')
@@ -366,10 +400,30 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
               concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
               loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
               ) -> None:
-    from app.api.zreaderapi import api
-    import uvicorn
+    from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
 
-    uvicorn.run(api, host=host, port=port, workers=concurrency, reload=False, log_level=loglevel)
+    argv = [
+        'uvicorn', 'app.api.zreaderapi:api',
+        '--host', host,
+        '--port', str(port),
+        '--workers', str(concurrency),
+        '--log-level', loglevel
+    ]
+
+    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.API_LOG.open(mode='w'), stderr=STDOUT,
+                    universal_newlines=True)
+
+    with var.API_PID.open('w') as f:
+        f.write(str(process.pid))
+
+    log.project_console.print('The API service is started', style='bright_blue')
+
+
+@api.command(name='stop')
+def api_stop() -> None:
+    from zreader.utils.cli import stop_service
+
+    stop_service(name='API', pidfile=var.API_PID)
 
 
 # ----------------------------------------------Worker service commands-------------------------------------------------
@@ -377,10 +431,17 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
 
 @worker.callback(invoke_without_command=True)
 def worker_state_verification(ctx: Context) -> None:
-    if ctx.invoked_subcommand:
-        return
+    if var.WORKER_PID.exists():
+        if ctx.invoked_subcommand in ('start', None):
+            log.project_console.print(':rocket: The worker service is already started', style='bright_blue')
+            ctx.exit(0)
 
-    worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo, loglevel=LogLevel.info)
+    elif ctx.invoked_subcommand is None:
+        worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo, loglevel=LogLevel.info)
+
+    elif ctx.invoked_subcommand != 'start':
+        log.project_console.print('The worker service is not started', style='yellow')
+        ctx.exit(1)
 
 
 @worker.command(name='start')
@@ -390,15 +451,34 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
                  loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
                  ) -> None:
     import platform
-    from app.api.backend.celeryapp import celery_app
+    from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
 
     if platform.system() == 'Windows' and pool != PoolType.solo:
         raise BadParameter("Windows platform only supports 'solo' pool")
 
-    celery_worker = celery_app.Worker(hostname=name, concurrency=concurrency, pool=pool, loglevel=loglevel,
-                                      events=True)
+    argv = [
+        'celery',
+        '--app', 'src.app.api.backend.celeryapp', 'worker',
+        '--hostname', name,
+        '--concurrency', str(concurrency),
+        '--pool', pool,
+        '--loglevel', loglevel
+    ]
 
-    celery_worker.start()
+    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.WORKER_LOG.open(mode='w'), stderr=STDOUT,
+                    universal_newlines=True)
+
+    with var.WORKER_PID.open('w') as f:
+        f.write(str(process.pid))
+
+    log.project_console.print('The worker service is started', style='bright_blue')
+
+
+@worker.command(name='stop')
+def worker_stop() -> None:
+    from zreader.utils.cli import stop_service
+
+    stop_service(name='worker', pidfile=var.WORKER_PID)
 
 
 # ----------------------------------------------Broker service commands-------------------------------------------------
@@ -411,10 +491,15 @@ def broker_state_verification(ctx: Context) -> None:
         log.project_console.print('Docker engine is not running', style='red')
         ctx.exit(1)
 
-    if ctx.invoked_subcommand is None:
+    elif (container := get_container(var.BROKER_ID)) and container.status == 'running':
+        if ctx.invoked_subcommand in ('start', None):
+            log.project_console.print(':rocket: The broker service is already started', style='bright_blue')
+            ctx.exit(0)
+
+    elif ctx.invoked_subcommand is None:
         broker_start(attach=False, auto_remove=False)
 
-    if ctx.invoked_subcommand != 'start' and not get_container(var.BROKER_ID):
+    elif ctx.invoked_subcommand != 'start':
         log.project_console.print('Broker service is not started', style='yellow')
         ctx.exit(1)
 
@@ -437,13 +522,9 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
         image = pull_image(var.BROKER_IMAGE)
 
     if container := get_container(var.BROKER_ID):
-        if container.status == 'running':
-            log.project_console.print(':rocket: The broker is already running', style='bright_blue')
-            return
-        else:
-            container.start()
+        container.start()
 
-            log.project_console.print(f'Broker service is started', style='bright_blue')
+        log.project_console.print(f'Broker service is started', style='bright_blue')
 
     else:
         client.containers.run(image=image.id,
@@ -466,13 +547,9 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 def broker_stop() -> None:
     from zreader.utils.docker import get_container
 
-    container = get_container(var.BROKER_ID)
+    get_container(var.BROKER_ID).stop()
 
-    if container.status == 'running':
-        container.stop()
-        log.project_console.print('Broker service is stopped', style='bright_blue')
-    else:
-        log.project_console.print('Broker service is already stopped', style='yellow')
+    log.project_console.print('Broker service is stopped', style='bright_blue')
 
 
 @broker.command(name='prune')
@@ -522,7 +599,7 @@ def backend_state_verification(ctx: Context) -> None:
     if ctx.invoked_subcommand is None:
         backend_start(attach=False, auto_remove=False)
 
-    if ctx.invoked_subcommand != 'start' and not get_container(var.BACKEND_ID):
+    elif ctx.invoked_subcommand != 'start' and not get_container(var.BACKEND_ID):
         log.project_console.print('Backend service is not started', style='yellow')
         ctx.exit(1)
 
