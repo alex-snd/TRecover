@@ -6,6 +6,10 @@ from rich.logging import RichHandler
 
 from config.var import LOGS_DIR
 
+DASHBOARD_LOG = LOGS_DIR / 'dashboard.log'
+API_LOG = LOGS_DIR / 'api.log'
+WORKER_LOG = LOGS_DIR / 'worker.log'
+
 project_logger = logging.getLogger('project')
 project_logger.setLevel(logging.DEBUG)
 
