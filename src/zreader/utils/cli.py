@@ -121,3 +121,27 @@ def get_files_columns(inference_path: Path,
         files_columns = create_files_noisy_columns(files, min_noise, max_noise, n_to_show)
 
     return files, files_columns
+
+
+def stop_service(name: str, pidfile: Path) -> None:
+    import os
+    import signal
+
+    try:
+        with pidfile.open() as f:
+            pid = int(f.read())
+
+        os.kill(pid, signal.SIGINT)
+
+    except ValueError:
+        log.project_console.print(f'The {name} service could not be stopped correctly'
+                                  ' because its PID file is corrupted', style='red')
+    except OSError:
+        log.project_console.print(f'The {name} service could not be stopped correctly'
+                                  ' because it probably failed earlier', style='red')
+    else:
+        log.project_console.print(f'The {name} service is stopped', style='bright_blue')
+
+    finally:
+        if pidfile.exists():
+            os.remove(pidfile)
