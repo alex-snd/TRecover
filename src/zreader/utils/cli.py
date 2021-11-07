@@ -1,7 +1,8 @@
 import os
 import signal
+import time
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Generator
 from zipfile import ZipFile
 
 import psutil
@@ -159,3 +160,15 @@ def check_service(name: str, pidfile: Path) -> None:
     except ValueError:
         log.project_console.print(f'The {name} service could not be checked correctly'
                                   ' because its PID file is corrupted', style='red')
+
+
+def stream(logfile: Path, live: bool = False, period: float = 0.1) -> Generator[str, None, None]:
+    with logfile.open() as log_stream:
+        if live:
+            log_stream.seek(0, 2)
+
+        while True:
+            if record := log_stream.readline():
+                yield record
+            else:
+                time.sleep(period)
