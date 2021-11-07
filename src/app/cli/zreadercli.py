@@ -499,8 +499,8 @@ def broker_state_verification(ctx: Context) -> None:
     elif ctx.invoked_subcommand is None:
         broker_start(attach=False, auto_remove=False)
 
-    elif ctx.invoked_subcommand != 'start':
-        log.project_console.print('Broker service is not started', style='yellow')
+    elif ctx.invoked_subcommand not in ('start', 'prune'):
+        log.project_console.print('The broker service is not started', style='yellow')
         ctx.exit(1)
 
 
@@ -524,7 +524,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
     if container := get_container(var.BROKER_ID):
         container.start()
 
-        log.project_console.print(f'Broker service is started', style='bright_blue')
+        log.project_console.print(f'The broker service is started', style='bright_blue')
 
     else:
         client.containers.run(image=image.id,
@@ -537,7 +537,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stop_signal='SIGTERM',
                               ports={5672: var.BROKER_PORT, 15672: var.BROKER_UI_PORT})
 
-        log.project_console.print(f'Broker service is launched', style='bright_blue')
+        log.project_console.print(f'The broker service is launched', style='bright_blue')
 
     if attach:
         broker_attach()
@@ -549,7 +549,7 @@ def broker_stop() -> None:
 
     get_container(var.BROKER_ID).stop()
 
-    log.project_console.print('Broker service is stopped', style='bright_blue')
+    log.project_console.print(' The broker service is stopped', style='bright_blue')
 
 
 @broker.command(name='prune')
@@ -566,7 +566,7 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
         log.project_console.print('You need to stop broker service before pruning or use --force flag', style='yellow')
     else:
         container.remove(v=v, force=force)
-        log.project_console.print('Broker service is pruned', style='bright_blue')
+        log.project_console.print('The broker service is pruned', style='bright_blue')
 
 
 @broker.command(name='status')
@@ -596,11 +596,16 @@ def backend_state_verification(ctx: Context) -> None:
         log.project_console.print('Docker engine is not running', style='red')
         ctx.exit(1)
 
-    if ctx.invoked_subcommand is None:
+    elif (container := get_container(var.BACKEND_ID)) and container.status == 'running':
+        if ctx.invoked_subcommand in ('start', None):
+            log.project_console.print(':rocket: The backend service is already started', style='bright_blue')
+            ctx.exit(0)
+
+    elif ctx.invoked_subcommand is None:
         backend_start(attach=False, auto_remove=False)
 
-    elif ctx.invoked_subcommand != 'start' and not get_container(var.BACKEND_ID):
-        log.project_console.print('Backend service is not started', style='yellow')
+    elif ctx.invoked_subcommand not in ('start', 'prune'):
+        log.project_console.print('The backend service is not started', style='yellow')
         ctx.exit(1)
 
 
@@ -622,13 +627,9 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
         image = pull_image(var.BACKEND_IMAGE)
 
     if container := get_container(var.BACKEND_ID):
-        if container.status == 'running':
-            log.project_console.print(':rocket: The backend is already running', style='bright_blue')
-            return
-        else:
-            container.start()
+        container.start()
 
-            log.project_console.print(f'Backend service is started', style='bright_blue')
+        log.project_console.print(f'The backend service is started', style='bright_blue')
 
     else:
         client.containers.run(image=image.id,
@@ -641,7 +642,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stop_signal='SIGTERM',
                               ports={6379: var.BACKEND_PORT})
 
-        log.project_console.print(f'Backend service is launched', style='bright_blue')
+        log.project_console.print(f'The backend service is launched', style='bright_blue')
 
     if attach:
         backend_attach()
@@ -651,13 +652,9 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 def backend_stop() -> None:
     from zreader.utils.docker import get_container
 
-    container = get_container(var.BACKEND_ID)
+    get_container(var.BACKEND_ID).stop()
 
-    if container.status == 'running':
-        container.stop()
-        log.project_console.print('Backend service is stopped', style='bright_blue')
-    else:
-        log.project_console.print('Backend service is already stopped', style='yellow')
+    log.project_console.print('The backend service is stopped', style='bright_blue')
 
 
 @backend.command(name='prune')
