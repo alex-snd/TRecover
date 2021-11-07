@@ -334,6 +334,8 @@ def dashboard_state_verification(ctx: Context) -> None:
 def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help='Bind socket to this host.'),
                     port: int = Option(var.STREAMLIT_PORT, '--port', '-p', help='Bind socket to this port.'),
                     loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                    attach: bool = Option(False, '--attach', '-a', is_flag=True,
+                                          help='Attach output and error streams')
                     ) -> None:
     from app.api import dashboard
     from subprocess import Popen, STDOUT, CREATE_NO_WINDOW
@@ -358,6 +360,9 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
 
     log.project_console.print('The dashboard service is started', style='bright_blue')
 
+    if attach:
+        dashboard_attach()
+
 
 @dashboard.command(name='stop')
 def dashboard_stop() -> None:
@@ -374,8 +379,14 @@ def dashboard_status() -> None:
 
 
 @dashboard.command(name='attach')
-def dashboard_attach() -> None:
-    pass
+def dashboard_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
+                                         help='Stream only fresh log records')
+                     ) -> None:
+    from zreader.utils.cli import stream
+
+    with log.project_console.screen():
+        for record in stream(logfile=log.DASHBOARD_LOG, live=live):
+            log.project_console.print(record.strip())
 
 
 # -----------------------------------------------API service commands---------------------------------------------------
@@ -401,6 +412,8 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
               port: int = Option(var.FASTAPI_PORT, '--port', '-p', help='Bind socket to this port.'),
               concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
               loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+              attach: bool = Option(False, '--attach', '-a', is_flag=True,
+                                    help='Attach output and error streams')
               ) -> None:
     from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
 
@@ -420,6 +433,9 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
 
     log.project_console.print('The API service is started', style='bright_blue')
 
+    if attach:
+        dashboard_attach()
+
 
 @api.command(name='stop')
 def api_stop() -> None:
@@ -433,6 +449,17 @@ def api_status() -> None:
     from zreader.utils.cli import check_service
 
     check_service(name='API', pidfile=var.API_PID)
+
+
+@api.command(name='attach')
+def api_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
+                                   help='Stream only fresh log records')
+               ) -> None:
+    from zreader.utils.cli import stream
+
+    with log.project_console.screen():
+        for record in stream(logfile=log.API_LOG, live=live):
+            log.project_console.print(record.strip())
 
 
 # ----------------------------------------------Worker service commands-------------------------------------------------
@@ -458,6 +485,8 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
                  concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes/threads.'),
                  pool: PoolType = Option(PoolType.solo, '--pool', '-p', help='Worker processes/threads pool type.'),
                  loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                 attach: bool = Option(False, '--attach', '-a', is_flag=True,
+                                       help='Attach output and error streams')
                  ) -> None:
     import platform
     from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
@@ -482,6 +511,9 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
 
     log.project_console.print('The worker service is started', style='bright_blue')
 
+    if attach:
+        dashboard_attach()
+
 
 @worker.command(name='stop')
 def worker_stop() -> None:
@@ -495,6 +527,17 @@ def worker_status() -> None:
     from zreader.utils.cli import check_service
 
     check_service(name='worker', pidfile=var.WORKER_PID)
+
+
+@worker.command(name='attach')
+def worker_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
+                                      help='Stream only fresh log records')
+                  ) -> None:
+    from zreader.utils.cli import stream
+
+    with log.project_console.screen():
+        for record in stream(logfile=log.WORKER_LOG, live=live):
+            log.project_console.print(record.strip())
 
 
 # ----------------------------------------------Broker service commands-------------------------------------------------
@@ -694,7 +737,9 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
 def backend_status() -> None:
     from zreader.utils.docker import get_container
 
-    log.project_console.print(f'Backend status: {get_container(var.BACKEND_ID).status}', style='bright_blue')
+    status = container.status if (container := get_container(var.BACKEND_ID)) else '[yellow]is not started'
+
+    log.project_console.print(f'Backend status: {status}', style='bright_blue')
 
 
 @backend.command(name='attach')
