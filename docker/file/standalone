@@ -1,5 +1,5 @@
 # Stage 1: Builder/Compiler
-FROM python:3.8-slim AS builder
+FROM builder AS builder
 
 # Copy necessary data
 COPY ./src /workspace/src
