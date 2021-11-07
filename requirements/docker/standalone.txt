@@ -1,7 +1,7 @@
 torch==1.9.0
 celery[redis]==5.1.2
 pydantic==1.8.2
-streamlit==0.88.0
+streamlit==1.1.0
 numpy==1.19.5
 requests==2.25.1
 mlflow==1.18.0
