@@ -146,7 +146,7 @@ def stop_service(name: str, pidfile: Path) -> None:
             os.remove(pidfile)
 
 
-def check_service(name: str, pidfile: Path) -> bool:
+def check_service(name: str, pidfile: Path) -> None:
     try:
         with pidfile.open() as f:
             pid = int(f.read())
@@ -159,4 +159,3 @@ def check_service(name: str, pidfile: Path) -> bool:
     except ValueError:
         log.project_console.print(f'The {name} service could not be checked correctly'
                                   ' because its PID file is corrupted', style='red')
-        return False
