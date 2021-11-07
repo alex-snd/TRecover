@@ -368,7 +368,9 @@ def dashboard_stop() -> None:
 
 @dashboard.command(name='status')
 def dashboard_status() -> None:
-    pass  # TODO can be started but dead
+    from zreader.utils.cli import check_service
+
+    check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
 
 
 @dashboard.command(name='attach')
@@ -426,6 +428,13 @@ def api_stop() -> None:
     stop_service(name='API', pidfile=var.API_PID)
 
 
+@api.command(name='status')
+def api_status() -> None:
+    from zreader.utils.cli import check_service
+
+    check_service(name='API', pidfile=var.API_PID)
+
+
 # ----------------------------------------------Worker service commands-------------------------------------------------
 
 
@@ -479,6 +488,13 @@ def worker_stop() -> None:
     from zreader.utils.cli import stop_service
 
     stop_service(name='worker', pidfile=var.WORKER_PID)
+
+
+@worker.command(name='status')
+def worker_status() -> None:
+    from zreader.utils.cli import check_service
+
+    check_service(name='worker', pidfile=var.WORKER_PID)
 
 
 # ----------------------------------------------Broker service commands-------------------------------------------------
