@@ -1,8 +1,10 @@
 import os
+import signal
 from pathlib import Path
 from typing import Optional, List, Tuple
 from zipfile import ZipFile
 
+import psutil
 import requests
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
@@ -124,9 +126,6 @@ def get_files_columns(inference_path: Path,
 
 
 def stop_service(name: str, pidfile: Path) -> None:
-    import os
-    import signal
-
     try:
         with pidfile.open() as f:
             pid = int(f.read())
@@ -145,3 +144,19 @@ def stop_service(name: str, pidfile: Path) -> None:
     finally:
         if pidfile.exists():
             os.remove(pidfile)
+
+
+def check_service(name: str, pidfile: Path) -> bool:
+    try:
+        with pidfile.open() as f:
+            pid = int(f.read())
+
+        if psutil.pid_exists(pid):
+            log.project_console.print(f'The {name} status: running', style='bright_blue')
+        else:
+            log.project_console.print(f'The {name} status: dead', style='red')
+
+    except ValueError:
+        log.project_console.print(f'The {name} service could not be checked correctly'
+                                  ' because its PID file is corrupted', style='red')
+        return False
