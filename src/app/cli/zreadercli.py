@@ -22,6 +22,7 @@ class LogLevel(str, Enum):
     critical = 'critical'
 
 
+# TODO help info
 cli = Typer(name='Zreader-cli', add_completion=False)
 download = Typer(name='Download-cli', add_completion=False)
 train = Typer(name='Train-cli', add_completion=False)
@@ -180,11 +181,37 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
         log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
+@cli.callback(invoke_without_command=True)
+def cli_state_verification(ctx: Context,
+                           file: str = Option('zreader-compose.toml', '--file', '-f',
+                                              help='Zreader configuration file'),
+
+                           ) -> None:
+    from zreader.utils.cli import parse_config
+    from zreader.utils.docker import is_docker_running
+
+    if ctx.invoked_subcommand is None:
+        log.project_console.print(ctx.get_help(), markup=False)
+        ctx.exit(0)
+
+    if ctx.invoked_subcommand == 'up':
+        if not is_docker_running():
+            log.project_console.print('Docker engine is not running', style='red')
+            ctx.exit(1)
+
+        ctx.params['conf'] = parse_config(Path(file))
+
+
 @cli.command()
-def up() -> None:
-    """ Up all services """
-    # TODO upp all services in different threads
-    pass
+def up(ctx: Context) -> None:
+    from zreader.utils.cli import check_service
+
+    conf = ctx.parent.params['conf']
+
+    if var.DASHBOARD_PID.exists():
+        check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+    else:
+        print(conf)
 
 
 # ------------------------------------------------API client commands---------------------------------------------------
@@ -323,7 +350,7 @@ def dashboard_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=LogLevel.info)
+        dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=LogLevel.info, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The dashboard service is not started', style='yellow')
@@ -361,7 +388,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
     log.project_console.print('The dashboard service is started', style='bright_blue')
 
     if attach:
-        dashboard_attach()
+        dashboard_attach(live=False)
 
 
 @dashboard.command(name='stop')
@@ -400,7 +427,8 @@ def api_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS, loglevel=LogLevel.info)
+        api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS,
+                  loglevel=LogLevel.info, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The API service is not started', style='yellow')
@@ -434,7 +462,7 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
     log.project_console.print('The API service is started', style='bright_blue')
 
     if attach:
-        dashboard_attach()
+        dashboard_attach(live=False)
 
 
 @api.command(name='stop')
@@ -473,7 +501,9 @@ def worker_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo, loglevel=LogLevel.info)
+        worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo,
+                     broker_url=var.CELERY_BROKER, backend_url=var.CELERY_BACKEND, loglevel=LogLevel.info,
+                     attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The worker service is not started', style='yellow')
@@ -485,6 +515,8 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
                  concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes/threads.'),
                  pool: PoolType = Option(PoolType.solo, '--pool', '-p', help='Worker processes/threads pool type.'),
                  loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                 broker_url: str = Option(var.CELERY_BROKER, '--broker', help='Broker url.'),
+                 backend_url: str = Option(var.CELERY_BACKEND, '--backend', help='Backend url.'),
                  attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                        help='Attach output and error streams')
                  ) -> None:
@@ -496,6 +528,8 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
 
     argv = [
         'celery',
+        '--broker', broker_url,
+        '--result-backend', backend_url,
         '--app', 'src.app.api.backend.celeryapp', 'worker',
         '--hostname', name,
         '--concurrency', str(concurrency),
@@ -512,7 +546,7 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
     log.project_console.print('The worker service is started', style='bright_blue')
 
     if attach:
-        dashboard_attach()
+        dashboard_attach(live=False)
 
 
 @worker.command(name='stop')
@@ -556,7 +590,7 @@ def broker_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        broker_start(attach=False, auto_remove=False)
+        broker_start(port=var.BROKER_PORT, ui_port=var.BROKER_UI_PORT, attach=False, auto_remove=False)
 
     elif ctx.invoked_subcommand not in ('start', 'prune'):
         log.project_console.print('The broker service is not started', style='yellow')
@@ -564,7 +598,11 @@ def broker_state_verification(ctx: Context) -> None:
 
 
 @broker.command(name='start')
-def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
+def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
+                                    help='Bind socket to this port.'),
+                 ui_port: int = Option(var.BROKER_UI_PORT, '--port', '-p',
+                                       help='Bind UI socket to this port.'),
+                 attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                        help='Attach local standard input, output, and error streams'),
                  auto_remove: bool = Option(False, '--rm', is_flag=True,
                                             help='Remove docker container after service exit')
@@ -594,7 +632,7 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stdout=True,
                               tty=True,
                               stop_signal='SIGTERM',
-                              ports={5672: var.BROKER_PORT, 15672: var.BROKER_UI_PORT})
+                              ports={5672: port, 15672: ui_port})
 
         log.project_console.print(f'The broker service is launched', style='bright_blue')
 
@@ -603,18 +641,25 @@ def broker_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 
 
 @broker.command(name='stop')
-def broker_stop() -> None:
+def broker_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
+                                     help='Prune broker.'),
+                v: bool = Option(False, '--volume', '-v', is_flag=True,
+                                 help='Remove the volumes associated with the container')
+                ) -> None:
     from zreader.utils.docker import get_container
 
     get_container(var.BROKER_ID).stop()
 
-    log.project_console.print(' The broker service is stopped', style='bright_blue')
+    log.project_console.print('The broker service is stopped', style='bright_blue')
+
+    if prune:
+        broker_prune(force=False, v=v)
 
 
 @broker.command(name='prune')
 def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                       help='Force the removal of a running container'),
-                 v: bool = Option(False,
+                 v: bool = Option(False, '--volume', '-v', is_flag=True,
                                   help='Remove the volumes associated with the container')
                  ) -> None:
     from zreader.utils.docker import get_container
@@ -661,7 +706,7 @@ def backend_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        backend_start(attach=False, auto_remove=False)
+        backend_start(port=var.BACKEND_PORT, attach=False, auto_remove=False)
 
     elif ctx.invoked_subcommand not in ('start', 'prune'):
         log.project_console.print('The backend service is not started', style='yellow')
@@ -669,7 +714,9 @@ def backend_state_verification(ctx: Context) -> None:
 
 
 @backend.command(name='start')
-def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
+def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
+                                     help='Bind socket to this port.'),
+                  attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                         help='Attach local standard input, output, and error streams'),
                   auto_remove: bool = Option(False, '--rm', is_flag=True,
                                              help='Remove docker container after service exit')
@@ -699,7 +746,7 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
                               stdout=True,
                               tty=True,
                               stop_signal='SIGTERM',
-                              ports={6379: var.BACKEND_PORT})
+                              ports={6379: port})
 
         log.project_console.print(f'The backend service is launched', style='bright_blue')
 
@@ -708,18 +755,25 @@ def backend_start(attach: bool = Option(False, '--attach', '-a', is_flag=True,
 
 
 @backend.command(name='stop')
-def backend_stop() -> None:
+def backend_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
+                                      help='Prune backend.'),
+                 v: bool = Option(False, '--volume', '-v', is_flag=True,
+                                  help='Remove the volumes associated with the container')
+                 ) -> None:
     from zreader.utils.docker import get_container
 
     get_container(var.BACKEND_ID).stop()
 
     log.project_console.print('The backend service is stopped', style='bright_blue')
 
+    if prune:
+        backend_prune(force=False, v=v)
+
 
 @backend.command(name='prune')
 def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                        help='Force the removal of a running container'),
-                  v: bool = Option(False,
+                  v: bool = Option(False, '--volume', '-v', is_flag=True,
                                    help='Remove the volumes associated with the container')
                   ) -> None:
     from zreader.utils.docker import get_container
