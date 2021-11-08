@@ -252,6 +252,41 @@ def up(ctx: Context) -> None:
                       attach=False)
 
 
+@cli.command()
+def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
+                              help='Prune broker.'),
+         v: bool = Option(False, '--volume', '-v', is_flag=True,
+                          help='Remove the volumes associated with the container')
+         ) -> None:
+    from zreader.utils.docker import get_container
+    from zreader.utils.cli import stop_service
+
+    if var.DASHBOARD_PID.exists():
+        stop_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+
+    if var.API_PID.exists():
+        stop_service(name='API', pidfile=var.API_PID)
+
+    if var.WORKER_PID.exists():
+        stop_service(name='API', pidfile=var.WORKER_PID)
+
+    if (container := get_container(var.BROKER_ID)) and container.status == 'running':
+        container.stop()
+
+        log.project_console.print('The broker service is stopped', style='bright_blue')
+
+        if prune:
+            broker_prune(force=False, v=v)
+
+    if (container := get_container(var.BACKEND_ID)) and container.status == 'running':
+        container.stop()
+
+        log.project_console.print('The backend service is stopped', style='bright_blue')
+
+        if prune:
+            backend_prune(force=False, v=v)
+
+
 # ------------------------------------------------API client commands---------------------------------------------------
 
 
