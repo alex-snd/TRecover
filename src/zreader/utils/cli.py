@@ -1,15 +1,17 @@
 import os
 import signal
 import time
+from argparse import Namespace
 from pathlib import Path
 from typing import Optional, List, Tuple, Generator
 from zipfile import ZipFile
 
 import psutil
 import requests
+import toml
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
-from config import log
+from config import var, log
 from zreader.utils.data import read_files_columns, create_files_noisy_columns
 
 
@@ -124,6 +126,20 @@ def get_files_columns(inference_path: Path,
         files_columns = create_files_noisy_columns(files, min_noise, max_noise, n_to_show)
 
     return files, files_columns
+
+
+def parse_config(file: Path) -> Namespace:
+    conf = var.DEFAULT_CONFIG
+    parsed_conf = toml.load(file)
+
+    for service, params in parsed_conf.items():
+        for variable, value in params.items():
+            conf[service][variable] = value
+
+    for service, params in conf.items():
+        conf[service] = Namespace(**params)
+
+    return Namespace(**conf)
 
 
 def stop_service(name: str, pidfile: Path) -> None:
