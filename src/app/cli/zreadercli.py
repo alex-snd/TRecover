@@ -185,7 +185,6 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 def cli_state_verification(ctx: Context,
                            file: str = Option('zreader-compose.toml', '--file', '-f',
                                               help='Zreader configuration file'),
-
                            ) -> None:
     from zreader.utils.cli import parse_config
     from zreader.utils.docker import is_docker_running
@@ -204,6 +203,7 @@ def cli_state_verification(ctx: Context,
 
 @cli.command()
 def up(ctx: Context) -> None:
+    from zreader.utils.docker import get_container
     from zreader.utils.cli import check_service
 
     conf = ctx.parent.params['conf']
@@ -211,7 +211,45 @@ def up(ctx: Context) -> None:
     if var.DASHBOARD_PID.exists():
         check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
     else:
-        print(conf)
+        dashboard_start(host=conf.dashboard.host,
+                        port=conf.dashboard.port,
+                        loglevel=conf.dashboard.loglevel,
+                        attach=False)
+
+    if var.API_PID.exists():
+        check_service(name='API', pidfile=var.API_PID)
+    else:
+        api_start(host=conf.api.host,
+                  port=conf.api.port,
+                  loglevel=conf.api.loglevel,
+                  concurrency=conf.api.concurrency,
+                  attach=False)
+
+    if var.WORKER_PID.exists():
+        check_service(name='API', pidfile=var.WORKER_PID)
+    else:
+        worker_start(name=conf.worker.name,
+                     pool=conf.worker.pool,
+                     loglevel=conf.worker.loglevel,
+                     concurrency=conf.worker.concurrency,
+                     broker_url=conf.worker.broker_url,
+                     backend_url=conf.worker.backend_url,
+                     attach=False)
+
+    if (container := get_container(var.BROKER_ID)) and container.status == 'running':
+        log.project_console.print(':rocket: The broker service is already started', style='bright_blue')
+    else:
+        broker_start(port=conf.broker.port,
+                     ui_port=conf.broker.ui_port,
+                     auto_remove=conf.broker.auto_remove,
+                     attach=False)
+
+    if (container := get_container(var.BACKEND_ID)) and container.status == 'running':
+        log.project_console.print(':rocket: The backend service is already started', style='bright_blue')
+    else:
+        backend_start(port=conf.backend.port,
+                      auto_remove=conf.backend.auto_remove,
+                      attach=False)
 
 
 # ------------------------------------------------API client commands---------------------------------------------------
@@ -427,8 +465,8 @@ def api_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, concurrency=var.FASTAPI_WORKERS,
-                  loglevel=LogLevel.info, attach=False)
+        api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, loglevel=LogLevel.info,
+                  concurrency=var.FASTAPI_WORKERS, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The API service is not started', style='yellow')
@@ -438,8 +476,8 @@ def api_state_verification(ctx: Context) -> None:
 @api.command(name='start')
 def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind socket to this host.'),
               port: int = Option(var.FASTAPI_PORT, '--port', '-p', help='Bind socket to this port.'),
-              concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
               loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+              concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
               attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                     help='Attach output and error streams')
               ) -> None:
@@ -501,9 +539,8 @@ def worker_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        worker_start(name='ZReaderWorker', concurrency=var.CELERY_WORKERS, pool=PoolType.solo,
-                     broker_url=var.CELERY_BROKER, backend_url=var.CELERY_BACKEND, loglevel=LogLevel.info,
-                     attach=False)
+        worker_start(name='ZReaderWorker', pool=PoolType.solo, loglevel=LogLevel.info, concurrency=var.CELERY_WORKERS,
+                     broker_url=var.CELERY_BROKER, backend_url=var.CELERY_BACKEND, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The worker service is not started', style='yellow')
@@ -512,9 +549,9 @@ def worker_state_verification(ctx: Context) -> None:
 
 @worker.command(name='start')
 def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set custom worker name.'),
-                 concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes/threads.'),
                  pool: PoolType = Option(PoolType.solo, '--pool', '-p', help='Worker processes/threads pool type.'),
                  loglevel: LogLevel = Option(LogLevel.info, '--loglevel', '-l', help='Logging level.'),
+                 concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes/threads.'),
                  broker_url: str = Option(var.CELERY_BROKER, '--broker', help='Broker url.'),
                  backend_url: str = Option(var.CELERY_BACKEND, '--backend', help='Backend url.'),
                  attach: bool = Option(False, '--attach', '-a', is_flag=True,
@@ -590,7 +627,7 @@ def broker_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        broker_start(port=var.BROKER_PORT, ui_port=var.BROKER_UI_PORT, attach=False, auto_remove=False)
+        broker_start(port=var.BROKER_PORT, ui_port=var.BROKER_UI_PORT, auto_remove=False, attach=False)
 
     elif ctx.invoked_subcommand not in ('start', 'prune'):
         log.project_console.print('The broker service is not started', style='yellow')
@@ -602,10 +639,11 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
                                     help='Bind socket to this port.'),
                  ui_port: int = Option(var.BROKER_UI_PORT, '--port', '-p',
                                        help='Bind UI socket to this port.'),
-                 attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                       help='Attach local standard input, output, and error streams'),
                  auto_remove: bool = Option(False, '--rm', is_flag=True,
-                                            help='Remove docker container after service exit')
+                                            help='Remove docker container after service exit'),
+                 attach: bool = Option(False, '--attach', '-a', is_flag=True,
+                                       help='Attach local standard input, output, and error streams')
+
                  ) -> None:
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
@@ -706,7 +744,7 @@ def backend_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        backend_start(port=var.BACKEND_PORT, attach=False, auto_remove=False)
+        backend_start(port=var.BACKEND_PORT, auto_remove=False, attach=False)
 
     elif ctx.invoked_subcommand not in ('start', 'prune'):
         log.project_console.print('The backend service is not started', style='yellow')
@@ -716,10 +754,11 @@ def backend_state_verification(ctx: Context) -> None:
 @backend.command(name='start')
 def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
                                      help='Bind socket to this port.'),
-                  attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                        help='Attach local standard input, output, and error streams'),
                   auto_remove: bool = Option(False, '--rm', is_flag=True,
-                                             help='Remove docker container after service exit')
+                                             help='Remove docker container after service exit'),
+                  attach: bool = Option(False, '--attach', '-a', is_flag=True,
+                                        help='Attach local standard input, output, and error streams')
+
                   ) -> None:
     from zreader.utils.docker import client, get_container, get_image, pull_image
     from rich.prompt import Confirm
