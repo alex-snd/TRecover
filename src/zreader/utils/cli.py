@@ -169,7 +169,7 @@ def check_service(name: str, pidfile: Path) -> None:
             pid = int(f.read())
 
         if psutil.pid_exists(pid):
-            log.project_console.print(f'The {name} status: running', style='bright_blue')
+            log.project_console.print(f':rocket: The {name} status: running', style='bright_blue')
         else:
             log.project_console.print(f'The {name} status: dead', style='red')
 

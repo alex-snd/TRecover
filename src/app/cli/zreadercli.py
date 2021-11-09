@@ -151,7 +151,7 @@ def up(ctx: Context) -> None:
                       attach=False)
 
     if var.WORKER_PID.exists():
-        check_service(name='API', pidfile=var.WORKER_PID)
+        check_service(name='worker', pidfile=var.WORKER_PID)
     else:
         worker.worker_start(name=conf.worker.name,
                             pool=conf.worker.pool,
@@ -162,7 +162,7 @@ def up(ctx: Context) -> None:
                             attach=False)
 
     if (container := get_container(var.BROKER_ID)) and container.status == 'running':
-        log.project_console.print(':rocket: The broker service is already started', style='bright_blue')
+        log.project_console.print(':rocket: The broker status: running', style='bright_blue')
     else:
         broker.broker_start(port=conf.broker.port,
                             ui_port=conf.broker.ui_port,
@@ -170,7 +170,7 @@ def up(ctx: Context) -> None:
                             attach=False)
 
     if (container := get_container(var.BACKEND_ID)) and container.status == 'running':
-        log.project_console.print(':rocket: The backend service is already started', style='bright_blue')
+        log.project_console.print(':rocket: The backend status: running', style='bright_blue')
     else:
         backend.backend_start(port=conf.backend.port,
                               auto_remove=conf.backend.auto_remove,
