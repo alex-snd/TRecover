@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -61,7 +62,24 @@ INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERE
 CUDA = False if os.getenv('CUDA', default='').lower() == 'false' else True
 MAX_NOISE = int(os.getenv('MAX_NOISE', default=13))
 
+
 # -------------------------------------------------Services Variables---------------------------------------------------
+
+class PoolType(str, Enum):
+    prefork = 'prefork'
+    eventlet = 'eventlet'
+    gevent = 'gevent'
+    processes = 'processes'
+    solo = 'solo'
+
+
+class LogLevel(str, Enum):
+    debug = 'debug'
+    info = 'info'
+    warning = 'warning'
+    error = 'error'
+    critical = 'critical'
+
 
 DEFAULT_CONFIG = {
     'dashboard': {'host': STREAMLIT_HOST, 'port': STREAMLIT_PORT, 'loglevel': 'info'},
