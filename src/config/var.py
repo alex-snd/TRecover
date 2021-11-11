@@ -22,8 +22,14 @@ BASE_DIR = Path(__file__).parent.parent.parent.absolute()
 CONFIG_DIR = BASE_DIR / 'src' / 'config'
 INFERENCE_DIR = BASE_DIR / 'inference'
 LOGS_DIR = BASE_DIR / 'logs'
+EXPERIMENTS_DIR = BASE_DIR / 'experiments'
+MLFLOW_REGISTRY_DIR = EXPERIMENTS_DIR / 'mlflow_registry'
+WANDB_REGISTRY_DIR = EXPERIMENTS_DIR / 'wandb_registry'
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
+MLFLOW_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+WANDB_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -40,6 +46,12 @@ FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', default=8001))
 FASTAPI_WORKERS = int(os.getenv('FASTAPI_WORKERS', default=1))
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 API_PID = CONFIG_DIR / 'api.pid'
+
+# ---------------------------------------------------Wandb Variables----------------------------------------------------
+
+WANDB_IMAGE = os.getenv('WANDB_IMAGE', default='wandb/local:0.9.45')
+WANDB_PORT = int(os.getenv('WANDB_PORT', default=8002))
+WANDB_ID = 'zreader_wandb'
 
 # --------------------------------------------------Worker Variables----------------------------------------------------
 
