@@ -392,7 +392,7 @@ def train(params: ExperimentParams) -> None:
                       n_columns_to_show=params.n_columns_to_show,
                       delimiter=params.delimiter)
 
-    mlflow.set_tracking_uri(train_config.MODEL_REGISTRY_DIR.absolute().as_uri())
+    mlflow.set_tracking_uri(var.MLFLOW_REGISTRY_DIR.absolute().as_uri())
     mlflow.set_experiment(experiment_name='ZReader')
 
     with mlflow.start_run(run_name=f'l{params.n_layers}_h{params.n_heads}_d{params.d_model}_ff{params.d_ff}'):
@@ -468,7 +468,7 @@ def get_cmd_args_parser() -> ArgumentParser:
                         help='Dimension of the feedforward layer')
     parser.add_argument('--dropout', default=0.1, type=float,
                         help='Dropout range')
-    parser.add_argument('--exp-dir', default=train_config.EXPERIMENTS_DIR, type=str,
+    parser.add_argument('--exp-dir', default=var.EXPERIMENTS_DIR, type=str,
                         help='Experiments folder')
     parser.add_argument('--abs-weights-name', type=str,
                         help='Absolute weights path')
