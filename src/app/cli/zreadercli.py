@@ -2,17 +2,15 @@ from pathlib import Path
 
 from typer import Typer, Argument, Option, Context
 
-from app.cli import download, train, mlflow, dashboard, api, worker, broker, backend, wandb
+from app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
 from config import var, log
 
 # TODO help info
-# TODO mlflow wanb
 cli = Typer(name='Zreader-cli', add_completion=False)
 
 cli.add_typer(download.cli, name='download')
 cli.add_typer(train.cli, name='train')
 cli.add_typer(mlflow.cli, name='mlflow')
-cli.add_typer(wandb.cli, name='wandb')
 cli.add_typer(dashboard.cli, name='dashboard')
 cli.add_typer(api.cli, name='api')
 cli.add_typer(worker.cli, name='worker')
