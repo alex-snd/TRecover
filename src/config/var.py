@@ -24,14 +24,20 @@ INFERENCE_DIR = BASE_DIR / 'inference'
 LOGS_DIR = BASE_DIR / 'logs'
 EXPERIMENTS_DIR = BASE_DIR / 'experiments'
 MLFLOW_REGISTRY_DIR = EXPERIMENTS_DIR / 'mlflow_registry'
-WANDB_REGISTRY_DIR = EXPERIMENTS_DIR / 'wandb_registry'
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 MLFLOW_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
-WANDB_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
+
+# --------------------------------------------------Mlflow Variables----------------------------------------------------
+
+MLFLOW_HOST = os.getenv('MLFLOW_HOST', default='localhost')
+MLFLOW_PORT = int(os.getenv('MLFLOW_PORT', default=8002))
+MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND', default=f'file:///{MLFLOW_REGISTRY_DIR.absolute()}')
+MLFLOW_WORKERS = int(os.getenv('MLFLOW_WORKERS', default=1))
+MLFLOW_PID = CONFIG_DIR / 'mlflow.pid'
 
 # -------------------------------------------------Dashboard Variables--------------------------------------------------
 
@@ -47,24 +53,24 @@ FASTAPI_WORKERS = int(os.getenv('FASTAPI_WORKERS', default=1))
 FASTAPI_URL = f'http://{FASTAPI_HOST}:{FASTAPI_PORT}'
 API_PID = CONFIG_DIR / 'api.pid'
 
-# ---------------------------------------------------Wandb Variables----------------------------------------------------
-
-WANDB_IMAGE = os.getenv('WANDB_IMAGE', default='wandb/local:0.9.45')
-WANDB_PORT = int(os.getenv('WANDB_PORT', default=8002))
-WANDB_ID = 'zreader_wandb'
-
-# --------------------------------------------------Worker Variables----------------------------------------------------
+# --------------------------------------------------Broker Variables----------------------------------------------------
 
 BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))  # TODO change docker ports
 BROKER_UI_PORT = int(os.getenv('BROKER_UI_PORT', default=15672))
+BROKER_IMAGE = os.getenv('BROKER_IMAGE', default='rabbitmq:3.9.8-management')
+BROKER_ID = 'zreader_broker'
+
+# -------------------------------------------------Backend Variables----------------------------------------------------
+
 BACKEND_PORT = int(os.getenv('BACKEND_PORT', default=6379))
+BACKEND_IMAGE = os.getenv('BACKEND_IMAGE', default='redis:6.2')
+BACKEND_ID = 'zreader_backend'
+
+# --------------------------------------------------Worker Variables----------------------------------------------------
+
 CELERY_BROKER = f"{os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')}:{BROKER_PORT}"
 CELERY_BACKEND = f"{os.getenv('CELERY_BACKEND', default='redis://localhost')}:{BACKEND_PORT}"
 CELERY_WORKERS = int(os.getenv('CELERY_WORKERS', default=1))
-BROKER_IMAGE = os.getenv('BROKER_IMAGE', default='rabbitmq:3.9.8-management')
-BACKEND_IMAGE = os.getenv('BACKEND_IMAGE', default='redis:6.2')
-BROKER_ID = 'zreader_broker'
-BACKEND_ID = 'zreader_backend'
 WORKER_PID = CONFIG_DIR / 'worker.pid'
 
 # -------------------------------------------------Inference Variables--------------------------------------------------

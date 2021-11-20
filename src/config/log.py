@@ -6,6 +6,7 @@ from rich.logging import RichHandler
 
 from config.var import LOGS_DIR
 
+MLFLOW_LOG = LOGS_DIR / 'mlflow.log'
 DASHBOARD_LOG = LOGS_DIR / 'dashboard.log'
 API_LOG = LOGS_DIR / 'api.log'
 WORKER_LOG = LOGS_DIR / 'worker.log'
