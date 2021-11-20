@@ -13,15 +13,15 @@ def broker_state_verification(ctx: Context) -> None:
         log.project_console.print('Docker engine is not running', style='red')
         ctx.exit(1)
 
-    elif (container := get_container(var.BROKER_ID)) and container.status == 'running':
-        if ctx.invoked_subcommand in ('start', None):
+    elif container := get_container(var.BROKER_ID):
+        if container.status == 'running' and ctx.invoked_subcommand in ('start', None):
             log.project_console.print(':rocket: The broker service is already started', style='bright_blue')
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
         broker_start(port=var.BROKER_PORT, ui_port=var.BROKER_UI_PORT, auto_remove=False, attach=False)
 
-    elif ctx.invoked_subcommand not in ('start', 'prune'):
+    elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The broker service is not started', style='yellow')
         ctx.exit(1)
 
@@ -62,7 +62,8 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
                               stdout=True,
                               tty=True,
                               stop_signal='SIGTERM',
-                              ports={5672: port, 15672: ui_port})
+                              ports={5672: port, 15672: ui_port},
+                              volumes=[f'{var.BROKER_VOLUME_ID}:/data'])
 
         log.project_console.print(f'The broker service is launched', style='bright_blue')
 
@@ -92,14 +93,18 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                  v: bool = Option(False, '--volume', '-v', is_flag=True,
                                   help='Remove the volumes associated with the container')
                  ) -> None:
-    from zreader.utils.docker import get_container
+    from zreader.utils.docker import get_container, get_volume
 
     container = get_container(var.BROKER_ID)
 
     if container.status == 'running' and not force:
         log.project_console.print('You need to stop broker service before pruning or use --force flag', style='yellow')
     else:
-        container.remove(v=v, force=force)
+        container.remove(force=force)
+
+        if v and (volume := get_volume(var.BROKER_VOLUME_ID)):
+            volume.remove(force=force)
+
         log.project_console.print('The broker service is pruned', style='bright_blue')
 
 
