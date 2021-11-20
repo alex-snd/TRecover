@@ -3,6 +3,7 @@ from typing import List, Optional
 import docker
 from docker.models.containers import Container
 from docker.models.images import Image
+from docker.models.volumes import Volume
 from rich.live import Live
 
 from config import log
@@ -35,6 +36,13 @@ def get_containers_list() -> List[str]:
 def get_container(id_or_name: str) -> Optional[Container]:
     try:
         return client.containers.get(id_or_name)
+    except docker.errors.NotFound:
+        return None
+
+
+def get_volume(id_or_name: str) -> Optional[Volume]:
+    try:
+        return client.volumes.get(id_or_name)
     except docker.errors.NotFound:
         return None
 
