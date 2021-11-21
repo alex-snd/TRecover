@@ -111,13 +111,14 @@ def cli_state_verification(ctx: Context,
                                               help='Zreader configuration file'),
                            ) -> None:
     from zreader.utils.cli import parse_config
-    from zreader.utils.docker import is_docker_running
 
     if ctx.invoked_subcommand is None:
         log.project_console.print(ctx.get_help(), markup=False)
         ctx.exit(0)
 
     if ctx.invoked_subcommand == 'up':
+        from zreader.utils.docker import is_docker_running
+
         if not is_docker_running():
             log.project_console.print('Docker engine is not running', style='red')
             ctx.exit(1)
