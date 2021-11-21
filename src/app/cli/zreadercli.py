@@ -110,20 +110,23 @@ def cli_state_verification(ctx: Context,
                            file: str = Option('zreader-compose.toml', '--file', '-f',
                                               help='Zreader configuration file'),
                            ) -> None:
-    from zreader.utils.cli import parse_config
-
     if ctx.invoked_subcommand is None:
         log.project_console.print(ctx.get_help(), markup=False)
         ctx.exit(0)
 
-    if ctx.invoked_subcommand == 'up':
+    if ctx.invoked_subcommand in ('up', 'down'):
         from zreader.utils.docker import is_docker_running
+        from zreader.utils.cli import parse_config
 
         if not is_docker_running():
             log.project_console.print('Docker engine is not running', style='red')
             ctx.exit(1)
 
-        ctx.params['conf'] = parse_config(Path(file))
+        if not (config_file := Path(file)).exists():
+            log.project_console.print('Defined Zreader configuration file does not exist', style='red')
+            ctx.exit(1)
+
+        ctx.params['conf'] = parse_config(config_file)
 
 
 @cli.command()
