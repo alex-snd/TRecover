@@ -37,7 +37,7 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
                                        help='Attach local standard input, output, and error streams')
 
                  ) -> None:
-    from zreader.utils.docker import client, get_container, get_image, pull_image
+    from zreader.utils.docker import get_client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
     if not (image := get_image(var.BROKER_IMAGE)):
@@ -54,16 +54,16 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
         log.project_console.print(f'The broker service is started', style='bright_blue')
 
     else:
-        client.containers.run(image=image.id,
-                              name=var.BROKER_ID,
-                              auto_remove=auto_remove,
-                              detach=True,
-                              stdin_open=True,
-                              stdout=True,
-                              tty=True,
-                              stop_signal='SIGTERM',
-                              ports={5672: port, 15672: ui_port},
-                              volumes=[f'{var.BROKER_VOLUME_ID}:/data'])
+        get_client().containers.run(image=image.id,
+                                    name=var.BROKER_ID,
+                                    auto_remove=auto_remove,
+                                    detach=True,
+                                    stdin_open=True,
+                                    stdout=True,
+                                    tty=True,
+                                    stop_signal='SIGTERM',
+                                    ports={5672: port, 15672: ui_port},
+                                    volumes=[f'{var.BROKER_VOLUME_ID}:/data'])
 
         log.project_console.print(f'The broker service is launched', style='bright_blue')
 

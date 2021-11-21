@@ -35,7 +35,7 @@ def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
                                         help='Attach local standard input, output, and error streams')
 
                   ) -> None:
-    from zreader.utils.docker import client, get_container, get_image, pull_image
+    from zreader.utils.docker import get_client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
     if not (image := get_image(var.BACKEND_IMAGE)):
@@ -52,16 +52,16 @@ def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
         log.project_console.print(f'The backend service is started', style='bright_blue')
 
     else:
-        client.containers.run(image=image.id,
-                              name=var.BACKEND_ID,
-                              auto_remove=auto_remove,
-                              detach=True,
-                              stdin_open=True,
-                              stdout=True,
-                              tty=True,
-                              stop_signal='SIGTERM',
-                              ports={6379: port},
-                              volumes=[f'{var.BACKEND_VOLUME_ID}:/data'])
+        get_client().containers.run(image=image.id,
+                                    name=var.BACKEND_ID,
+                                    auto_remove=auto_remove,
+                                    detach=True,
+                                    stdin_open=True,
+                                    stdout=True,
+                                    tty=True,
+                                    stop_signal='SIGTERM',
+                                    ports={6379: port},
+                                    volumes=[f'{var.BACKEND_VOLUME_ID}:/data'])
 
         log.project_console.print(f'The backend service is launched', style='bright_blue')
 
