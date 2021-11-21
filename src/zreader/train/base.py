@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Callable, Optional, Tuple, Union, Type
+from typing import Callable, Optional, Tuple, Union, Type, List
 
 import mlflow
 import torch
@@ -416,7 +416,7 @@ def train(params: ExperimentParams) -> None:
         mlflow.log_params(json_params)
 
 
-def get_cmd_args_parser() -> ArgumentParser:
+def get_parser() -> ArgumentParser:
     parser = ArgumentParser()
 
     # --------------------------------------------------DATA PARAMETERS-------------------------------------------------
@@ -513,10 +513,8 @@ def get_cmd_args_parser() -> ArgumentParser:
     return parser
 
 
-def get_experiment_params() -> ExperimentParams:
-    parser = get_cmd_args_parser()
-
-    return ExperimentParams(parser.parse_args())
+def get_experiment_params(args: Optional[List[str]] = None) -> ExperimentParams:
+    return ExperimentParams(get_parser().parse_args(args=args))
 
 
 if __name__ == '__main__':
