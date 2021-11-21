@@ -35,7 +35,7 @@ load_dotenv(BASE_DIR / '.env')
 
 MLFLOW_HOST = os.getenv('MLFLOW_HOST', default='localhost')
 MLFLOW_PORT = int(os.getenv('MLFLOW_PORT', default=8002))
-MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND', default=f'file:///{MLFLOW_REGISTRY_DIR.absolute()}')
+MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND', default=f'sqlite:///{MLFLOW_REGISTRY_DIR.absolute() / "mlflow.db"}')
 MLFLOW_WORKERS = int(os.getenv('MLFLOW_WORKERS', default=1))
 MLFLOW_PID = CONFIG_DIR / 'mlflow.pid'
 
