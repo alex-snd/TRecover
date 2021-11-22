@@ -24,12 +24,17 @@ INFERENCE_DIR = BASE_DIR / 'inference'
 LOGS_DIR = BASE_DIR / 'logs'
 EXPERIMENTS_DIR = BASE_DIR / 'experiments'
 MLFLOW_REGISTRY_DIR = EXPERIMENTS_DIR / 'mlflow_registry'
+WANDB_REGISTRY_DIR = EXPERIMENTS_DIR / 'wandb_registry'
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 MLFLOW_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+WANDB_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
+
+# --------------------------------------------------Wandb Variables----------------------------------------------------
+
 
 # --------------------------------------------------Mlflow Variables----------------------------------------------------
 
