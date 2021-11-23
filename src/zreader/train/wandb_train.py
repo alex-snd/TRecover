@@ -151,7 +151,10 @@ class Trainer(object):
                                        f'Loss: {train_loss:>10.6f} | Accuracy: {accuracy:>6.3f} | '
                                        f'Elapsed: {time() - start_time:>7.3f} | LR {round(self.lr, 6):>8}')
 
-                    wandb.log({"Train loss": train_loss, 'train_step': offset + batch_idx})
+                    wandb.log({'Train loss': train_loss,
+                               'Train accuracy': accuracy,
+                               'LR': self.lr,
+                               'train_step': offset + batch_idx})
 
                     train_loss = 0.0
                     start_time = time()
