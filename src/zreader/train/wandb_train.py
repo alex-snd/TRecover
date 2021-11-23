@@ -256,6 +256,7 @@ class Trainer(object):
         wandb.define_metric('Train loss', step_metric='train_step', summary='min', goal='minimize')
         wandb.define_metric('Val loss', step_metric='val_step', summary='min', goal='minimize')
         wandb.define_metric('Test loss', step_metric='test_step', summary='min', goal='minimize')
+        wandb.define_metric('Train accuracy', step_metric='train_step', summary='max', goal='maximize')
         wandb.define_metric('Val accuracy', step_metric='val_step', summary='max', goal='maximize')
         wandb.define_metric('Test accuracy', step_metric='test_step', summary='max', goal='maximize')
 
@@ -407,7 +408,7 @@ def train(params: ExperimentParams) -> None:
 
     json_params = params.jsonify()
 
-    with wandb.init(project='ZReader',
+    with wandb.init(project='ZReaderLocal',
                     name=trainer.experiment_mark,
                     config=json_params,
                     dir=var.WANDB_REGISTRY_DIR.absolute()):
