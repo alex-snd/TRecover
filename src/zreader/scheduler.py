@@ -15,6 +15,10 @@ class BaseScheduler(ABC):
     def step(self) -> None:
         pass
 
+    @abstractmethod
+    def set_rate(self, rate: float) -> None:
+        pass
+
 
 class WarmupScheduler(BaseScheduler):
     def __init__(self, optimizer: Optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
@@ -25,7 +29,7 @@ class WarmupScheduler(BaseScheduler):
         self.step_size = step_size
         self.factor = factor
 
-        self.__step = seek
+        self.__step = self.__get_rate_step(self.optimizer.param_groups[0]['lr']) + seek
         self.__update_rate()
 
     def __str__(self) -> str:
@@ -36,6 +40,10 @@ class WarmupScheduler(BaseScheduler):
 
         if self.__step % self.step_size == 0:
             self.__update_rate()
+
+    def set_rate(self, rate: float) -> None:
+        self.__step = self.__get_rate_step(rate)
+        self.__update_rate()
 
     def __update_rate(self) -> None:
         self.__rate = self.__get_step_rate(self.__step)
@@ -50,10 +58,19 @@ class WarmupScheduler(BaseScheduler):
         return self.factor * (self.d_model ** (-0.5)) * min((step / self.step_size) ** (-0.5),
                                                             (step / self.step_size) * self.warmup ** (-1.5))
 
+    def __get_rate_step(self, rate: float) -> int:
+        if rate == 0:
+            return 0
+
+        return round(self.step_size / (self.d_model * rate ** 2))
+
 
 class IdentityScheduler(BaseScheduler):
     def __str__(self) -> str:
         return '<IdentityScheduler()>'
 
     def step(self) -> None:
+        pass
+
+    def set_rate(self, rate: float) -> None:
         pass
