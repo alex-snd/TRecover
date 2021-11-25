@@ -156,7 +156,7 @@ def stop_service(name: str, pidfile: Path) -> None:
     except ValueError:
         log.project_console.print(f'The {name} service could not be stopped correctly'
                                   ' because its PID file is corrupted', style='red')
-    except OSError:
+    except (OSError, psutil.NoSuchProcess):
         log.project_console.print(f'The {name} service could not be stopped correctly'
                                   ' because it probably failed earlier', style='red')
     else:
