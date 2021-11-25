@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 from requests.exceptions import ConnectionError
 
-from config import var, log
+from config import var
 from zreader.utils.data import data_to_columns, create_noisy_columns
 from zreader.utils.visualization import visualize_columns
 
@@ -21,7 +21,21 @@ def main() -> None:
     if 'history' not in st.session_state:
         st.session_state.history = list()
 
+    if 'regenerate' not in st.session_state:
+        st.session_state.regenerate = False
+
+    if 'columns' not in st.session_state:
+        st.session_state.columns = None
+
     sidebar()
+
+
+def set_regenerate() -> None:
+    st.session_state.regenerate = True
+
+
+def unset_regenerate() -> None:
+    st.session_state.regenerate = False
 
 
 def sidebar() -> None:
@@ -50,12 +64,13 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
 
     if is_plain:
         min_noise, max_noise = st.sidebar.slider('\nNoise range', 0, 25, key='noise_range',
-                                                 value=st.session_state.get('noise_range', (0, 5)))
+                                                 value=st.session_state.get('noise_range', (0, 5)),
+                                                 on_change=set_regenerate)
     else:
         min_noise, max_noise = 0, 0
 
     bw = st.sidebar.slider('Beam search width', 1, 26, key='beam_width',
-                           value=st.session_state.get('beam_width', 3))
+                           value=st.session_state.get('beam_width', 5))
 
     if max_noise > var.MAX_NOISE:
         st.sidebar.warning('Max noise value is too large. This will entail poor performance')
@@ -64,7 +79,7 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
 
 
 def history_sidebar() -> None:
-    st.sidebar.text('TODO: Clear button')
+    pass
 
 
 def save_to_history(is_plain: bool,
@@ -122,7 +137,6 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
         st.stop()
 
 
-@st.cache(ttl=3600, show_spinner=False)
 def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
     columns = create_noisy_columns(data, min_noise, max_noise)
 
@@ -137,18 +151,27 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     if not data:
         st.stop()
 
-    if is_plain:
-        columns = get_noisy_columns(data, min_noise, max_noise)
+    if st.session_state.regenerate or not st.session_state.columns:
+        if is_plain:
+            columns = get_noisy_columns(data, min_noise, max_noise)
+        else:
+            columns = data_to_columns(data, separator=' ')
+
+        st.session_state.columns = columns
+        unset_regenerate()
+
     else:
-        columns = data_to_columns(data, separator=' ')
+        columns = st.session_state.columns
 
     st.subheader('\nColumns')
     st.text(visualize_columns(columns, delimiter=''))
     st.subheader('\n')
 
     placeholder = st.empty()
+    zread_field, regen_filed = placeholder.columns([.07, 1])
+    regen_filed.button('Regenerate', on_click=set_regenerate)
 
-    if columns and placeholder.button('Zread'):
+    if columns and zread_field.button('Zread'):
         with placeholder:
             chains = predict(columns, bw)
 
@@ -183,13 +206,6 @@ def history_page() -> None:
         st.text('Prediction:')
         st.text('\n\n'.join(chain for chain, _ in chains))
 
-    # TODO restore record or copy columns
-
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    main()
