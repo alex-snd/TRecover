@@ -75,8 +75,8 @@ BACKEND_ID = 'zreader_backend'
 
 # --------------------------------------------------Worker Variables----------------------------------------------------
 
-CELERY_BROKER = f"{os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')}:{BROKER_PORT}"
-CELERY_BACKEND = f"{os.getenv('CELERY_BACKEND', default='redis://localhost')}:{BACKEND_PORT}"
+CELERY_BROKER = os.getenv('CELERY_BROKER', default='pyamqp://guest@localhost')
+CELERY_BACKEND = os.getenv('CELERY_BACKEND', default='redis://localhost')
 CELERY_WORKERS = int(os.getenv('CELERY_WORKERS', default=1))
 WORKER_PID = CONFIG_DIR / 'worker.pid'
 
