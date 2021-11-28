@@ -1,7 +1,7 @@
 torch==1.9.0
 celery[redis]==5.1.2
 pydantic==1.8.2
-streamlit==1.1.0
+streamlit==1.2.0
 numpy==1.19.5
 requests==2.25.1
 mlflow==1.18.0
@@ -12,3 +12,4 @@ uvicorn==0.15.0
 python-dotenv==0.18.0
 docker==5.0.3
 psutil==5.8.0
+wandb==0.12.7
