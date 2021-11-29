@@ -11,7 +11,6 @@ import toml
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
 from config import var, log
-from zreader.utils.data import read_files_columns, create_files_noisy_columns
 
 
 def get_real_direct_link(sharing_link: str) -> str:
@@ -114,6 +113,8 @@ def get_files_columns(inference_path: Path,
                       max_noise: int,
                       n_to_show: int,
                       ) -> Tuple[List[Path], List[List[str]]]:
+    from zreader.utils.data import read_files_columns, create_files_noisy_columns
+
     if inference_path.is_file():
         files = [inference_path, ]
     else:
