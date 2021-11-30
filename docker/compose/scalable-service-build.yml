@@ -51,7 +51,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis
+    image: ${BACKEND_IMAGE:-redis:6.2}
     restart: always
     expose:
       - 6379
@@ -59,7 +59,7 @@ services:
 
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:management
+    image: ${BROKER_IMAGE:-rabbitmq:3.9.8-management}
     restart: always
     expose:
       - 5672
