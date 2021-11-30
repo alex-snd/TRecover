@@ -11,7 +11,7 @@ from zreader.utils.data import generate_subsequent_mask
 
 
 class Collate(object):
-    def __init__(self, min_noise: int, max_noise: int) -> None:
+    def __init__(self, min_noise: int, max_noise: int):
         assert 0 <= min_noise <= len(var.ALPHABET), \
             f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
         assert min_noise <= max_noise <= len(var.ALPHABET), \
@@ -61,8 +61,7 @@ class Collate(object):
 
 
 class WikiDataset(Dataset):
-
-    def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int) -> None:
+    def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int):
         assert self.__exists(datafiles), 'datafiles do not exist'
         assert min_threshold > 0, 'min_threshold should be grater than 0'
         assert max_threshold >= min_threshold, f'max_threshold should be grater or equal than {min_threshold}'

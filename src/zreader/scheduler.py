@@ -21,8 +21,13 @@ class BaseScheduler(ABC):
 
 
 class WarmupScheduler(BaseScheduler):
-    def __init__(self, optimizer: Optimizer, d_model: int, warmup: int, step_size: int, seek: int = 0,
-                 factor: float = 1.0) -> None:
+    def __init__(self,
+                 optimizer: Optimizer,
+                 d_model: int,
+                 warmup: int,
+                 step_size: int,
+                 seek: int = 0,
+                 factor: float = 1.0):
         self.optimizer = optimizer
         self.d_model = d_model
         self.warmup = warmup

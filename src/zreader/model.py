@@ -9,8 +9,7 @@ from torch import Tensor
 
 
 class PositionalEncoding(nn.Module):
-
-    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000) -> None:
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super(PositionalEncoding, self).__init__()
 
         self.dropout = nn.Dropout(p=dropout)
@@ -40,8 +39,7 @@ class ZReader(nn.Module):
                  d_model: int,
                  n_heads: int,
                  d_ff: int,
-                 dropout: float
-                 ) -> None:
+                 dropout: float):
         assert d_model % n_heads == 0, 'd_model size must be evenly divisible by n_heads size'
 
         super(ZReader, self).__init__()
