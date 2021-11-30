@@ -1,0 +1,41 @@
+version: "3.3"
+
+services:
+
+  standalone:
+    container_name: standalone
+    image: ${ZREADER_STANDALONE_IMAGE:-sandersnd/zreader-standalone:latest}
+
+    environment:
+      CUDA: ${CUDA:-True}
+      CELERY_BROKER: pyamqp://guest@rabbitmq:5672
+      CELERY_BACKEND: redis://redis:6379
+      CELERY_WORKERS: ${CELERY_WORKERS:-1}
+      STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
+      FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+      FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
+
+    ports:
+      - ${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}
+      - ${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}
+
+    restart: always
+
+    depends_on:
+      - redis
+      - rabbitmq
+
+  redis:
+    container_name: redis
+    image: ${BACKEND_IMAGE:-redis:6.2}
+    restart: always
+    expose:
+      - 6379
+
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: ${BROKER_IMAGE:-rabbitmq:3.9.8-management}
+    restart: always
+    expose:
+      - 5672
