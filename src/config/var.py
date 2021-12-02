@@ -60,7 +60,7 @@ API_PID = CONFIG_DIR / 'api.pid'
 
 # --------------------------------------------------Broker Variables----------------------------------------------------
 
-BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))  # TODO change docker ports
+BROKER_PORT = int(os.getenv('BROKER_PORT', default=5672))
 BROKER_UI_PORT = int(os.getenv('BROKER_UI_PORT', default=15672))
 BROKER_IMAGE = os.getenv('BROKER_IMAGE', default='rabbitmq:3.9.8-management')
 BROKER_VOLUME_ID = 'zreader_broker_data'
