@@ -24,7 +24,7 @@ COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder ./workspace ./workspace
 
-CMD streamlit run /workspace/src/app/api/dashboard.py --server.address "0.0.0.0" --server.port ${STREAMLIT_PORT} \
+CMD streamlit run /workspace/src/app/dashboard.py --server.address "0.0.0.0" --server.port ${STREAMLIT_PORT} \
 --theme.backgroundColor "#E7EAD9" --theme.secondaryBackgroundColor "#DFE3D0" \
 --theme.primaryColor "#FF8068" --theme.textColor "#157D96"
 

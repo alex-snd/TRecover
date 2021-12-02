@@ -27,7 +27,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
                     attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                           help='Attach output and error streams')
                     ) -> None:
-    from app.api import dashboard
+    from app import dashboard
     from subprocess import Popen, STDOUT, CREATE_NO_WINDOW
 
     argv = ['streamlit',

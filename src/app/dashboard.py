@@ -94,7 +94,7 @@ def save_to_history(is_plain: bool,
     st.session_state.history.append((is_plain, text, min_noise, max_noise, bw, columns, chains))
 
 
-@st.cache(ttl=3600, show_spinner=False)
+@st.cache(ttl=3600, show_spinner=False, suppress_st_warning=True)
 def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
     try:
         payload = {
