@@ -10,6 +10,7 @@ services:
 
   api-dashboard:
     container_name: api-dashboard
+    image: zreader-api-dashboard:latest
 
     build:
       context: ../..
@@ -34,6 +35,8 @@ services:
 
 
   worker:
+    image: zreader-worker:latest
+
     build:
       context: ../..
       dockerfile: ./docker/file/worker

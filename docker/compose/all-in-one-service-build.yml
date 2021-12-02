@@ -4,9 +4,12 @@ services:
 
   standalone:
     container_name: standalone
+    image: zreader-standalone:latest
+
     build:
       context: ../..
       dockerfile: ./docker/file/standalone
+
 
     environment:
       CUDA: ${CUDA:-True}
