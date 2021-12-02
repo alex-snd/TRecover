@@ -4,7 +4,7 @@ services:
 
   standalone:
     container_name: standalone
-    image: ${ZREADER_STANDALONE_IMAGE:-sandersnd/zreader-standalone:latest}
+    image: ${ZREADER_STANDALONE_IMAGE:-alexsnd0/zreader-standalone:latest}
 
     environment:
       CUDA: ${CUDA:-True}
