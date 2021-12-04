@@ -4,8 +4,6 @@ import celery
 import torch
 
 from config import var
-from zreader.model import ZReader
-from zreader.utils.model import get_model, load_params
 
 
 class ArtifactsTask(celery.Task):
@@ -16,6 +14,8 @@ class ArtifactsTask(celery.Task):
 
     def __call__(self, *args, **kwargs):
         if not self.params:
+            from zreader.utils.model import load_params
+
             self.params = load_params(var.INFERENCE_PARAMS_PATH)
             self.params.cuda = var.CUDA and torch.cuda.is_available()
 
@@ -24,6 +24,8 @@ class ArtifactsTask(celery.Task):
 
 class PredictTask(celery.Task):
     def __init__(self):
+        from zreader.model import ZReader
+
         super(PredictTask, self).__init__()
 
         self.model: Optional[ZReader] = None
@@ -37,6 +39,8 @@ class PredictTask(celery.Task):
         """
 
         if not self.model:
+            from zreader.utils.model import get_model, load_params
+
             params = load_params(var.INFERENCE_PARAMS_PATH)
             self.model = get_model(params.token_size, params.pe_max_len, params.num_layers,
                                    params.d_model, params.n_heads, params.d_ff,
