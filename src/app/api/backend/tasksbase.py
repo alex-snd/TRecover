@@ -1,7 +1,6 @@
 from typing import Optional
 
 import celery
-import torch
 
 from config import var
 
@@ -14,6 +13,7 @@ class ArtifactsTask(celery.Task):
 
     def __call__(self, *args, **kwargs):
         if not self.params:
+            import torch
             from zreader.utils.model import load_params
 
             self.params = load_params(var.INFERENCE_PARAMS_PATH)
@@ -24,6 +24,7 @@ class ArtifactsTask(celery.Task):
 
 class PredictTask(celery.Task):
     def __init__(self):
+        import torch
         from zreader.model import ZReader
 
         super(PredictTask, self).__init__()
