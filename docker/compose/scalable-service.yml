@@ -8,7 +8,6 @@ x-common-env: &common-env
 
 services:
 
-
   dashboard:
     container_name: dashboard
     image: ${ZREADER_DASHBOARD_IMAGE:-alexsnd0/zreader-dashboard:latest}
