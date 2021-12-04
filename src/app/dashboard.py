@@ -105,8 +105,8 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
         task_info = requests.post(url=f'{var.FASTAPI_URL}/zread', json=payload)
         task_info = task_info.json()
 
-        if not task_info['task_id']:
-            st.error(task_info['message'])
+        if not task_info.get('task_id'):
+            st.error(task_info)
             st.stop()
 
         task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{task_info["task_id"]}')
