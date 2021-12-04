@@ -11,7 +11,7 @@ from app.api.backend.tasks import predict, get_artifacts
 from app.api.schemas import PredictPayload, PredictResponse, TaskResponse
 from config import log
 
-api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO write description
+api = FastAPI(title='ZreaderAPI', description='Description will be here')
 
 
 @api.on_event('startup')
@@ -22,7 +22,7 @@ def startup() -> None:
 def construct_response(handler: Callable[..., Dict]) -> Callable[..., Dict]:
     """ Construct a JSON response for an endpoint's results. """
 
-    @wraps(handler)  # TODO figure out
+    @wraps(handler)
     def wrap(request: Request, *args, **kwargs) -> Dict:
         response = handler(request, *args, **kwargs)
 
