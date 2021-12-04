@@ -7,7 +7,6 @@ from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 from config import var
-from zreader.utils.data import generate_subsequent_mask
 
 
 class Collate(object):
@@ -55,9 +54,13 @@ class Collate(object):
         empty_token = torch.zeros(batch_size, 1, token_size)
         tgt_inp = torch.cat([empty_token, tgt_inp[:, :-1, :]], dim=1)
         tgt = torch.stack(tgt)
-        subsequent_mask = generate_subsequent_mask(seq_len)
+        subsequent_mask = self.generate_subsequent_mask(seq_len)
 
         return src, tgt_inp, tgt, padding_mask, padding_mask, subsequent_mask
+
+    @staticmethod
+    def generate_subsequent_mask(size: int) -> Tensor:
+        return torch.triu(torch.ones((size, size), dtype=torch.float), diagonal=1) == 1
 
 
 class WikiDataset(Dataset):
