@@ -113,7 +113,7 @@ def get_files_columns(inference_path: Path,
                       max_noise: int,
                       n_to_show: int,
                       ) -> Tuple[List[Path], List[List[str]]]:
-    from zreader.utils.data import read_files_columns, create_files_noisy_columns
+    from zreader.utils.inference import read_files_columns, create_files_noisy_columns
 
     if inference_path.is_file():
         files = [inference_path, ]

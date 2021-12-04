@@ -22,9 +22,9 @@ from zreader.data import WikiDataset
 from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
 from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
-from zreader.utils.data import tensor_to_columns, tensor_to_target
 from zreader.utils.model import get_model, get_recent_weights_path, save_params
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
+from zreader.utils.transform import tensor_to_columns, tensor_to_target
 from zreader.utils.visualization import visualize_columns, visualize_target
 
 

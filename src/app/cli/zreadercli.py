@@ -42,7 +42,7 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 
     from zreader.utils.beam_search import beam_search, cli_interactive_loop
     from zreader.utils.cli import get_files_columns
-    from zreader.utils.data import files_columns_to_tensors
+    from zreader.utils.transform import files_columns_to_tensors
     from zreader.utils.model import get_model, load_params
     from zreader.utils.visualization import visualize_columns, visualize_target
 
