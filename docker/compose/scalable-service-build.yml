@@ -8,22 +8,45 @@ x-common-env: &common-env
 
 services:
 
-  api-dashboard:
-    container_name: api-dashboard
-    image: zreader-api-dashboard:latest
+  dashboard:
+    container_name: dashboard
+    image: zreader-dashboard:latest
 
     build:
       context: ../..
-      dockerfile: ./docker/file/api-dashboard
+      dockerfile: ./docker/file/dashboard
+
+    environment:
+      STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
+      FASTAPI_HOST: api
+      FASTAPI_PORT: ${FASTAPI_PORT:-8001}
+
+    ports:
+      - ${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}
+
+    restart: always
+
+    depends_on:
+      - api
+      - worker
+      - redis
+      - rabbitmq
+
+
+  api:
+    container_name: api
+    image: zreader-api:latest
+
+    build:
+      context: ../..
+      dockerfile: ./docker/file/api
 
     environment:
       <<: *common-env
-      STREAMLIT_PORT: ${STREAMLIT_PORT:-8000}
       FASTAPI_PORT: ${FASTAPI_PORT:-8001}
       FASTAPI_WORKERS: ${FASTAPI_WORKERS:-1}
 
     ports:
-      - ${STREAMLIT_PORT:-8000}:${STREAMLIT_PORT:-8000}
       - ${FASTAPI_PORT:-8001}:${FASTAPI_PORT:-8001}
 
     restart: always
