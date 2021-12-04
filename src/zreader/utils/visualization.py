@@ -1,25 +1,13 @@
 from typing import List, Union
 
-from torch import Tensor
 
-from config import var
-
-
-def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:
-    if len(grid) == 0:
+def visualize_columns(columns: List[str], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:
+    if len(columns) == 0:
         return ''
 
-    columns = list()
-    max_depth = 0
     rows = list()
-
-    if isinstance(grid, Tensor):
-        for c in range(grid.shape[0]):
-            columns.append([var.NUM2ALPHABET[pos] for pos in range(grid.shape[1]) if grid[c, pos]])
-            max_depth = len(columns[c]) if len(columns[c]) > max_depth else max_depth
-    else:
-        columns = [list(column) for column in grid]
-        max_depth = max([len(column) for column in grid])
+    columns = [list(column) for column in columns]
+    max_depth = max([len(column) for column in columns])
 
     for d in range(max_depth):
 
@@ -32,7 +20,5 @@ def visualize_columns(grid: Union[Tensor, List[str]], delimiter: str = '', as_ro
     return rows if as_rows else '\n'.join(rows)
 
 
-def visualize_target(tgt: Tensor, delimiter: str = '') -> str:
-    tgt = [var.NUM2ALPHABET[ch_id] for ch_id in tgt.tolist()]
-
-    return f'{delimiter}{delimiter.join(tgt)}{delimiter}'
+def visualize_target(target: List[str], delimiter: str = '') -> str:
+    return f'{delimiter}{delimiter.join(target)}{delimiter}'

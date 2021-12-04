@@ -22,6 +22,7 @@ from zreader.data import WikiDataset
 from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
 from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
+from zreader.utils.data import tensor_to_columns, tensor_to_target
 from zreader.utils.model import get_model, get_recent_weights_path, save_params
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
 from zreader.utils.visualization import visualize_columns, visualize_target
@@ -220,10 +221,13 @@ class Trainer(object):
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
             for i in range(src.size(0)):
-                columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter, as_rows=True)
+                columns = tensor_to_columns(src[i, : self.n_columns_to_show])
+                columns = visualize_columns(columns, delimiter=self.delimiter, as_rows=True)
                 columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
-                predicted = visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter)
-                original = visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter)
+                target = tensor_to_target(prediction[i, : self.n_columns_to_show])
+                predicted = visualize_target(target, delimiter=self.delimiter)
+                original = tensor_to_target(tgt[i, : self.n_columns_to_show])
+                original = visualize_target(original, delimiter=self.delimiter)
 
                 panel_group = Group(
                     Text('Columns', style='magenta', justify='center'),
@@ -449,15 +453,15 @@ def get_parser() -> ArgumentParser:
                         help='Min sentence lengths')
     parser.add_argument('--max-threshold', default=256, type=int,
                         help='Max sentence lengths')
-    parser.add_argument('--train-dataset-size', default=200, type=int,
+    parser.add_argument('--train-dataset-size', default=5000, type=int,
                         help='Train dataset size')
-    parser.add_argument('--val-dataset-size', default=100, type=int,
+    parser.add_argument('--val-dataset-size', default=500, type=int,
                         help='Validation dataset size')
     parser.add_argument('--vis-dataset-size', default=5, type=int,
                         help='Visualization dataset size')
-    parser.add_argument('--test-dataset-size', default=20, type=int,
+    parser.add_argument('--test-dataset-size', default=500, type=int,
                         help='Test dataset size')
-    parser.add_argument('--batch-size', default=2, type=int,
+    parser.add_argument('--batch-size', default=5, type=int,
                         help='Batch size')
     parser.add_argument('--n-workers', default=3, type=int,
                         help='Number of processes for dataloaders')
@@ -474,11 +478,11 @@ def get_parser() -> ArgumentParser:
                         help='Positional encoding max length')
     parser.add_argument('--n-layers', default=12, type=int,
                         help='Number of encoder and decoder blocks')
-    parser.add_argument('--d-model', default=768, type=int,
+    parser.add_argument('--d-model', default=96, type=int,
                         help='Model dimension - number of expected features in the encoder (decoder) input')
     parser.add_argument('--n-heads', default=12, type=int,
                         help='Number of encoder and decoder attention heads')
-    parser.add_argument('--d-ff', default=768, type=int,
+    parser.add_argument('--d-ff', default=192, type=int,
                         help='Dimension of the feedforward layer')
     parser.add_argument('--dropout', default=0.1, type=float,
                         help='Dropout range')
@@ -495,24 +499,24 @@ def get_parser() -> ArgumentParser:
 
     # --------------------------------------------OPTIMIZATION PARAMETERS-----------------------------------------------
 
-    parser.add_argument('--lr', default=0.00005, type=float,
+    parser.add_argument('--lr', default=0.001577, type=float,
                         help='Learning rate value. Fictive with defined scheduler')
     parser.add_argument('--lr-step-seek', default=0, type=int,
                         help='Number of steps for WarmupScheduler to seek')
-    parser.add_argument('--warmup', default=4_000, type=int,
+    parser.add_argument('--warmup', default=600, type=int,
                         help='Warmup value for WarmupScheduler')
     parser.add_argument('--lr-step-size', default=1, type=int,
                         help='Step size foe learning rate updating')
+    parser.add_argument('--accumulation-step', default=1, type=int,
+                        help='Number of steps for gradients accumulation')
 
     # ---------------------------------------------TRAIN LOOP PARAMETERS------------------------------------------------
 
-    parser.add_argument('--n-epochs', default=10, type=int,
+    parser.add_argument('--n-epochs', default=1000, type=int,
                         help='Number of epochs for training')
-    parser.add_argument('--epoch-seek', default=0, type=int,
+    parser.add_argument('--epoch-seek', default=4, type=int,
                         help='Number of epochs to seek. necessary for correct weights naming'
                              ' in case of an interrupted model training process')
-    parser.add_argument('--accumulation-step', default=5, type=int,
-                        help='Number of steps for gradients accumulation')
     parser.add_argument('--saving-interval', default=1, type=int,
                         help='Weights saving interval per epoch')
     parser.add_argument('--log-interval', default=1, type=int,

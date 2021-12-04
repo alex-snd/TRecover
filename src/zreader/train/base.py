@@ -22,6 +22,7 @@ from zreader.data import WikiDataset
 from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
 from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
+from zreader.utils.data import tensor_to_columns, tensor_to_target
 from zreader.utils.model import get_model, get_recent_weights_path, save_params
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
 from zreader.utils.visualization import visualize_columns, visualize_target
@@ -218,10 +219,13 @@ class Trainer(object):
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
             for i in range(src.size(0)):
-                columns = visualize_columns(src[i, : self.n_columns_to_show], delimiter=self.delimiter, as_rows=True)
+                columns = tensor_to_columns(src[i, : self.n_columns_to_show])
+                columns = visualize_columns(columns, delimiter=self.delimiter, as_rows=True)
                 columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
-                predicted = visualize_target(prediction[i, : self.n_columns_to_show], delimiter=self.delimiter)
-                original = visualize_target(tgt[i, : self.n_columns_to_show], delimiter=self.delimiter)
+                target = tensor_to_target(prediction[i, : self.n_columns_to_show])
+                predicted = visualize_target(target, delimiter=self.delimiter)
+                original = tensor_to_target(tgt[i, : self.n_columns_to_show])
+                original = visualize_target(original, delimiter=self.delimiter)
 
                 panel_group = Group(
                     Text('Columns', style='magenta', justify='center'),
