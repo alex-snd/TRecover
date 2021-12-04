@@ -24,13 +24,11 @@ class ArtifactsTask(celery.Task):
 
 class PredictTask(celery.Task):
     def __init__(self):
-        import torch
-        from zreader.model import ZReader
 
         super(PredictTask, self).__init__()
 
-        self.model: Optional[ZReader] = None
-        self.device = torch.device(f'cuda' if var.CUDA and torch.cuda.is_available() else 'cpu')
+        self.device = None
+        self.model = None
 
     def __call__(self, *args, **kwargs):
         """
@@ -38,6 +36,11 @@ class PredictTask(celery.Task):
             Avoids the need to load model on each task request
 
         """
+
+        if not self.device:
+            import torch
+
+            self.device = torch.device(f'cuda' if var.CUDA and torch.cuda.is_available() else 'cpu')
 
         if not self.model:
             from zreader.utils.model import get_model, load_params
