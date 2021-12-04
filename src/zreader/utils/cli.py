@@ -152,8 +152,6 @@ def stop_service(name: str, pidfile: Path) -> None:
         for child_proc in service.children(recursive=True):
             child_proc.kill()
 
-        service.kill()
-
     except ValueError:
         log.project_console.print(f'The {name} service could not be stopped correctly'
                                   ' because its PID file is corrupted', style='red')
