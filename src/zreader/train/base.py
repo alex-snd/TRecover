@@ -116,7 +116,7 @@ class Trainer(object):
 
         train_loss = 0.0
 
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         start_time = time()
 
         for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(train_loader,
@@ -142,7 +142,7 @@ class Trainer(object):
                 self.scheduler.step()
                 self.optimizer.step()
 
-                self.optimizer.zero_grad()
+                self.optimizer.zero_grad(set_to_none=True)
 
                 if (offset + batch_idx) % self.log_interval == 0:
                     accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
