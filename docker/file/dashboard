@@ -9,8 +9,7 @@ COPY ./requirements /workspace/requirements
 # Install packages
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
-	pip install --no-cache-dir -r /workspace/requirements/docker/dashboard.txt  && \
-    pip install -e /workspace
+    pip install --no-cache-dir -e /workspace/".[dashboard]"
 	
 
 # Stage 2: Runtime

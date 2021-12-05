@@ -10,8 +10,7 @@ COPY ./requirements /workspace/requirements
 # Install packages
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
-	pip install --no-cache-dir -r /workspace/requirements/docker/standalone.txt  && \
-    pip install -e /workspace
+    pip install --no-cache-dir -e /workspace/".[standalone]"
 
 
 # Stage 2: Runtime

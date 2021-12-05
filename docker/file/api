@@ -1,5 +1,5 @@
 # Stage 1: Builder/Compiler
-FROM python:3.8-slim AS builder
+FROM builder-api AS builder
 
 # Copy necessary data
 COPY ./src /workspace/src
@@ -9,8 +9,7 @@ COPY ./requirements /workspace/requirements
 # Install packages
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
-	pip install --no-cache-dir -r /workspace/requirements/docker/api.txt  && \
-    pip install -e /workspace
+    pip install --no-cache-dir -e /workspace/".[api]"
 	
 
 # Stage 2: Runtime
