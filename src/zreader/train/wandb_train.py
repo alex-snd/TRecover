@@ -248,10 +248,10 @@ class Trainer(object):
                 # TODO wandb.log examples
 
     def train(self,
-              train_loader: DataLoader,
-              val_loader: DataLoader,
-              vis_loader: DataLoader,
               n_epochs: int,
+              train_loader: DataLoader,
+              val_loader: Optional[DataLoader] = None,
+              vis_loader: Optional[DataLoader] = None,
               epoch_seek: int = 0
               ) -> None:
         wandb.define_metric('train_step', hidden=True)
@@ -271,7 +271,7 @@ class Trainer(object):
         if len(train_loader) % self.accumulation_step != 0:
             self.console.print('WARNING: Train dataset size must be evenly divisible by batch_size * accumulation_step',
                                style='bold red')
-        if self.device == torch.device('cpu'):
+        if self.device.type == 'cpu':
             self.console.print('WARNING: Training without GPU usage', style='bold red')
 
         try:
@@ -281,9 +281,10 @@ class Trainer(object):
 
                 self.__train_step(train_offset, train_loader, self.accumulation_step)
 
-                self.__val_step(val_offset, val_loader)
+                if val_loader:
+                    self.__val_step(val_offset, val_loader)
 
-                if epoch_idx % self.vis_interval == 0:
+                if vis_loader and epoch_idx % self.vis_interval == 0:
                     self.__vis_step(vis_loader)
 
                 if epoch_idx % self.saving_interval == 0:
@@ -360,6 +361,14 @@ def train(params: ExperimentParams) -> None:
 
     set_seeds(seed=params.seed)
 
+    device = torch.device('cuda' if torch.cuda.is_available() and not params.no_cuda else 'cpu')
+    weights_path = params.abs_weights_name or get_recent_weights_path(Path(params.exp_dir), params.exp_mark,
+                                                                      params.weights_name)
+
+    z_reader = get_model(params.token_size, params.pe_max_len, params.n_layers, params.d_model, params.n_heads,
+                         params.d_ff, params.dropout, device,
+                         weights=weights_path, silently=False)
+
     train_files = [Path(params.train_files, file) for file in Path(params.train_files).iterdir()]
     val_files = [Path(params.val_files, file) for file in Path(params.val_files).iterdir()]
     vis_files = [Path(params.vis_files, file) for file in Path(params.vis_files).iterdir()]
@@ -375,21 +384,17 @@ def train(params: ExperimentParams) -> None:
                                max_threshold=params.max_threshold, dataset_size=params.test_dataset_size)
 
     train_loader = train_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                   max_noise=params.max_noise, num_workers=params.n_workers)
+                                                   max_noise=params.max_noise, num_workers=params.n_workers,
+                                                   device=device)
     val_loader = val_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.n_workers)
+                                               max_noise=params.max_noise, num_workers=params.n_workers,
+                                               device=device)
     vis_loader = vis_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.n_workers)
+                                               max_noise=params.max_noise, num_workers=params.n_workers,
+                                               device=device)
     test_loader = test_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                 max_noise=params.max_noise, num_workers=params.n_workers)
-
-    device = torch.device('cuda' if torch.cuda.is_available() and not params.no_cuda else 'cpu')
-    weights_path = params.abs_weights_name or get_recent_weights_path(Path(params.exp_dir), params.exp_mark,
-                                                                      params.weights_name)
-
-    z_reader = get_model(params.token_size, params.pe_max_len, params.n_layers, params.d_model, params.n_heads,
-                         params.d_ff, params.dropout, device,
-                         weights=weights_path, silently=False)
+                                                 max_noise=params.max_noise, num_workers=params.n_workers,
+                                                 device=device)
 
     # criterion = CustomCrossEntropyLoss(ignore_index=-1)
     criterion = CustomPenaltyLoss(ignore_index=-1)
@@ -417,7 +422,7 @@ def train(params: ExperimentParams) -> None:
                     config=json_params,
                     dir=var.WANDB_REGISTRY_DIR.absolute()):
         with trainer:
-            trainer.train(train_loader, val_loader, vis_loader, params.n_epochs, params.epoch_seek)
+            trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek)
 
             test_loss, test_accuracy = trainer.test(test_loader=test_loader)
 

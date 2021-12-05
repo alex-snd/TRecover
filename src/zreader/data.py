@@ -1,16 +1,17 @@
+import platform
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-from config import var
+from config import var, log
 
 
 class Collate(object):
-    def __init__(self, min_noise: int, max_noise: int):
+    def __init__(self, min_noise: int, max_noise: int, device: Optional[torch.device] = None):
         assert 0 <= min_noise <= len(var.ALPHABET), \
             f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
         assert min_noise <= max_noise <= len(var.ALPHABET), \
@@ -18,6 +19,7 @@ class Collate(object):
 
         self.min_noise = min_noise
         self.max_noise = max_noise
+        self.device = device or torch.device("cpu")
 
     def __str__(self) -> str:
         return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
@@ -27,14 +29,14 @@ class Collate(object):
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
 
-        src = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
-        tgt_inp = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
+        src = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float, device=self.device)
+        tgt_inp = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float, device=self.device)
         tgt = list()
-        padding_mask = torch.zeros((batch_size, seq_len), dtype=torch.bool)  # TODO fix bag
+        padding_mask = torch.zeros((batch_size, seq_len), dtype=torch.bool, device=self.device)  # TODO fix bag
 
         for i in range(len(batch)):
 
-            i_tgt = torch.full((seq_len,), fill_value=-1, dtype=torch.long)
+            i_tgt = torch.full((seq_len,), fill_value=-1, dtype=torch.long, device=self.device)
 
             for j in range(len(batch[i])):
                 num_repr = var.ALPHABET2NUM[batch[i][j]]
@@ -51,16 +53,15 @@ class Collate(object):
             tgt.append(i_tgt)
             padding_mask[i, sizes[i]:] = True
 
-        empty_token = torch.zeros(batch_size, 1, token_size)
+        empty_token = torch.zeros(batch_size, 1, token_size, device=self.device)
         tgt_inp = torch.cat([empty_token, tgt_inp[:, :-1, :]], dim=1)
         tgt = torch.stack(tgt)
         subsequent_mask = self.generate_subsequent_mask(seq_len)
 
         return src, tgt_inp, tgt, padding_mask, padding_mask, subsequent_mask
 
-    @staticmethod
-    def generate_subsequent_mask(size: int) -> Tensor:
-        return torch.triu(torch.ones((size, size), dtype=torch.float), diagonal=1) == 1
+    def generate_subsequent_mask(self, size: int) -> Tensor:
+        return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
 
 
 class WikiDataset(Dataset):
@@ -117,6 +118,7 @@ class WikiDataset(Dataset):
     def create_dataloader(self, batch_size: int,
                           min_noise: int,
                           max_noise: int,
+                          device: Optional[torch.device] = None,
                           num_workers: int = 0,
                           pin_memory: bool = True
                           ) -> DataLoader:
@@ -124,5 +126,19 @@ class WikiDataset(Dataset):
         assert batch_size > 0, 'batch_size should be grater than 0'
         assert num_workers >= 0, 'num_workers should be grater or equal than 0'
 
-        return DataLoader(dataset=self, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                          pin_memory=pin_memory, collate_fn=Collate(min_noise=min_noise, max_noise=max_noise))
+        if device and device.type == 'cuda':
+            if platform.system() == 'Windows' and num_workers > 0:
+                log.project_console.print('WARNING: Dataloader does not support num_workers > 0 and GPU device '
+                                          'on Windows. The training data will be transferred to the GPU just '
+                                          'before it is fed into the model, but not during batch generation.',
+                                          style='bold red')
+                device = torch.device('cpu')
+
+            pin_memory = False
+
+        return DataLoader(dataset=self,
+                          batch_size=batch_size,
+                          shuffle=False,
+                          num_workers=num_workers,
+                          pin_memory=pin_memory,
+                          collate_fn=Collate(min_noise=min_noise, max_noise=max_noise, device=device))
