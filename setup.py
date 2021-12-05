@@ -12,9 +12,13 @@ def get_requirements(filename: str) -> List[str]:
 
 
 essential_packages = get_requirements('essential.txt')
-# dev_packages = get_requirements('dev.txt')  # TODO add extra requirements
-# test_packages = get_requirements('test.txt')
-# docs_packages = get_requirements('docx.txt')
+api_srvice_packages = get_requirements('docker/api.txt')
+dashboard_srvice_packages = get_requirements('docker/dashboard.txt')
+standalone_srvice_packages = get_requirements('docker/standalone.txt')
+worker_srvice_packages = get_requirements('docker/worker.txt')
+
+test_packages = get_requirements('test.txt')
+train_packages = get_requirements('train.txt')
 
 setup(
     name='zreader',
@@ -29,11 +33,14 @@ setup(
     ),
     package_dir={'': 'src'},
     install_requires=[essential_packages],
-    # extras_require={
-    #     "test": test_packages,
-    #     "dev": test_packages + dev_packages + docs_packages,
-    #     "docs": docs_packages,
-    # },
+    extras_require={
+        'api': api_srvice_packages,
+        'dashboard': dashboard_srvice_packages,
+        'standalone': standalone_srvice_packages,
+        'worker': worker_srvice_packages,
+        "test": test_packages,
+        "train": train_packages,
+    },
     entry_points={
         'console_scripts': [
             'zreader = app.cli.zreadercli:cli',

@@ -1,0 +1,9 @@
+celery[redis]==5.1.2
+fastapi==0.68.1
+mlflow==1.18.0
+numpy==1.19.5
+pydantic==1.8.2
+streamlit==1.2.0
+torch==1.9.0
+uvicorn==0.15.0
+wandb==0.12.7
