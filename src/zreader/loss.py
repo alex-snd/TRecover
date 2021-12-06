@@ -17,9 +17,10 @@ class CustomCrossEntropyLoss(torch.nn.Module):
 
 
 class CustomPenaltyLoss(torch.nn.Module):
-    def __init__(self, ignore_index: int = -1):
+    def __init__(self, coefficient: float = 1.0, ignore_index: int = -1):
         super(CustomPenaltyLoss, self).__init__()
 
+        self.coefficient = coefficient
         self.criterion = CrossEntropyLoss(ignore_index=ignore_index)
 
     def forward(self, *tensors) -> Tensor:
@@ -28,4 +29,4 @@ class CustomPenaltyLoss(torch.nn.Module):
         penalty_tensor = -1.0 * torch.masked_select(F.log_softmax(tgt_out, dim=-1) * ~src.bool(),
                                                     mask=~src_pad_mask.view(-1, 1))
 
-        return self.criterion(tgt_out, tgt) + penalty_tensor.mean()
+        return self.criterion(tgt_out, tgt) + self.coefficient * penalty_tensor.mean()
