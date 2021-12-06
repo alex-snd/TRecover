@@ -384,7 +384,7 @@ def train(params: ExperimentParams) -> None:
                                                  device=device)
 
     # criterion = CustomCrossEntropyLoss(ignore_index=-1)
-    criterion = CustomPenaltyLoss(ignore_index=-1)
+    criterion = CustomPenaltyLoss(coefficient=params.penalty_coefficient, ignore_index=-1)
     optimizer = torch.optim.Adam(z_reader.parameters(), lr=params.lr, betas=(0.9, 0.98), eps=1e-9)
 
     scheduler = WarmupScheduler(optimizer, params.d_model, params.warmup, params.lr_step_size, seek=params.lr_step_seek)
@@ -499,6 +499,8 @@ def get_parser() -> ArgumentParser:
                         help='Warmup value for WarmupScheduler')
     parser.add_argument('--lr-step-size', default=1, type=int,
                         help='Step size foe learning rate updating')
+    parser.add_argument('--penalty-coefficient', default=1.0, type=float,
+                        help='Penalty coefficient for CustomPenaltyLoss')
 
     # ---------------------------------------------TRAIN LOOP PARAMETERS------------------------------------------------
 
