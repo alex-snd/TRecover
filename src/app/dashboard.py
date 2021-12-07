@@ -21,11 +21,17 @@ def main() -> None:
     if 'history' not in st.session_state:
         st.session_state.history = list()
 
+    if 'data' not in st.session_state:
+        st.session_state.data = ''
+
     if 'regenerate' not in st.session_state:
         st.session_state.regenerate = False
 
     if 'columns' not in st.session_state:
         st.session_state.columns = None
+
+    if 'task_id' not in st.session_state:
+        st.session_state.task_id = None
 
     sidebar()
 
@@ -102,20 +108,23 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
             'beam_width': bw
         }
 
-        task_info = requests.post(url=f'{var.FASTAPI_URL}/zread', json=payload)
-        task_info = task_info.json()
+        if not st.session_state.task_id:
+            task_info = requests.post(url=f'{var.FASTAPI_URL}/zread', json=payload)
+            task_info = task_info.json()
 
-        if not task_info.get('task_id'):
-            st.error(task_info)
-            st.stop()
+            if not task_info.get('task_id'):
+                st.error(task_info)
+                st.stop()
 
-        task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{task_info["task_id"]}')
+            st.session_state.task_id = task_info["task_id"]
+
+        task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
         task_status = task_status.json()
 
         progress_bar = st.progress(0)
 
         while task_status['status_code'] == HTTPStatus.PROCESSING:
-            task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{task_info["task_id"]}')
+            task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
             task_status = task_status.json()
 
             completed = task_status['progress'] or 0
@@ -123,11 +132,13 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
             time.sleep(0.3)
 
-        requests.delete(url=f'{var.FASTAPI_URL}/status/{task_info["task_id"]}')
+        requests.delete(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
 
         if task_status['status_code'] != HTTPStatus.OK:
             st.error(task_status['message'])
             st.stop()
+
+        st.session_state.task_id = None
 
         return task_status['chains']
 
@@ -146,22 +157,22 @@ def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
 def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> None:
     input_label = 'Insert plain data' if is_plain else 'Insert noisy columns separated by spaces'
     st.subheader(input_label)
-    data = st.text_input('', value=st.session_state.get('data', ''), key='data')
+    data = st.text_input('', value=st.session_state.data)
 
     if not data:
         st.stop()
 
-    if st.session_state.regenerate or not st.session_state.columns:
-        if is_plain:
+    if is_plain:
+        if st.session_state.regenerate or not st.session_state.columns or data != st.session_state.data:
             columns = get_noisy_columns(data, min_noise, max_noise)
+            st.session_state.columns = columns
+            unset_regenerate()
         else:
-            columns = data_to_columns(data, separator=' ')
-
-        st.session_state.columns = columns
-        unset_regenerate()
-
+            columns = st.session_state.columns
     else:
-        columns = st.session_state.columns
+        columns = data_to_columns(data, separator=' ')
+
+    st.session_state.data = data
 
     st.subheader('\nColumns')
     st.text(visualize_columns(columns, delimiter=''))
@@ -169,16 +180,26 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
 
     placeholder = st.empty()
     zread_field, regen_filed = placeholder.columns([.07, 1])
-    regen_filed.button('Regenerate', on_click=set_regenerate)
+
+    if is_plain:
+        regen_filed.button('Regenerate', on_click=set_regenerate)
 
     if columns and zread_field.button('Zread'):
-        with placeholder:
-            chains = predict(columns, bw)
+        with placeholder.container():
+            progress_bar_placeholder = st.empty()
+
+            if st.button('Stop'):  # TODO stop button
+                pass
+
+            with progress_bar_placeholder:
+                chains = predict(columns, bw)
 
         with placeholder.container():
             st.subheader('\nPrediction')
             st.text('\n\n'.join(chain for chain, _ in chains))
-            st.button('Clear')
+
+            if st.button('Clear'):
+                st.session_state.task_id = None
 
         save_to_history(is_plain, min_noise, max_noise, bw, columns, chains)
 
