@@ -78,6 +78,8 @@ def dashboard_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
         for record in stream(logfile=log.DASHBOARD_LOG, live=live):
             log.project_console.print(record.strip())
 
+    log.project_console.clear()
+
 
 if __name__ == '__main__':
     try:

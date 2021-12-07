@@ -123,6 +123,8 @@ def backend_attach() -> None:
         for line in get_container(var.BACKEND_ID).attach(stream=True, logs=True):
             log.project_console.print(line.decode().strip())
 
+    log.project_console.clear()
+
 
 if __name__ == '__main__':
     try:
