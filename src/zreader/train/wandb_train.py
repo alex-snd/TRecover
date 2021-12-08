@@ -418,7 +418,7 @@ def train(params: ExperimentParams) -> None:
 
     json_params = params.jsonify()
 
-    with wandb.init(project='ZReaderLocal',
+    with wandb.init(project=params.wandb_project,
                     name=trainer.experiment_mark,
                     config=json_params,
                     dir=var.WANDB_REGISTRY_DIR.absolute()):
@@ -442,6 +442,11 @@ def train(params: ExperimentParams) -> None:
 
 def get_parser() -> ArgumentParser:
     parser = ArgumentParser()
+
+    # ------------------------------------------------GENERAL PARAMETERS------------------------------------------------
+
+    parser.add_argument('--wandb-project', default='ZReaderLocal', type=str,
+                        help='WandB project name')
 
     # --------------------------------------------------DATA PARAMETERS-------------------------------------------------
 
