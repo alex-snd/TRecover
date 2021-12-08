@@ -349,6 +349,7 @@ def train(params: ExperimentParams) -> None:
     set_seeds(seed=params.seed)
 
     device = torch.device('cuda' if torch.cuda.is_available() and not params.no_cuda else 'cpu')
+    batch_generation_device = device if params.allocate_on_device else None
     weights_path = params.abs_weights_name or get_recent_weights_path(Path(params.exp_dir), params.exp_mark,
                                                                       params.weights_name)
 
@@ -372,16 +373,16 @@ def train(params: ExperimentParams) -> None:
 
     train_loader = train_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
                                                    max_noise=params.max_noise, num_workers=params.n_workers,
-                                                   device=device)
+                                                   device=batch_generation_device)
     val_loader = val_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
                                                max_noise=params.max_noise, num_workers=params.n_workers,
-                                               device=device)
+                                               device=batch_generation_device)
     vis_loader = vis_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
                                                max_noise=params.max_noise, num_workers=params.n_workers,
-                                               device=device)
+                                               device=batch_generation_device)
     test_loader = test_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
                                                  max_noise=params.max_noise, num_workers=params.n_workers,
-                                                 device=device)
+                                                 device=batch_generation_device)
 
     # criterion = CustomCrossEntropyLoss(ignore_index=-1)
     criterion = CustomPenaltyLoss(coefficient=params.penalty_coefficient, ignore_index=-1)
@@ -461,6 +462,8 @@ def get_parser() -> ArgumentParser:
                         help='Min noise range')
     parser.add_argument('--max-noise', default=1, type=int,
                         help='Max noise range')
+    parser.add_argument('--allocate-on-device', action='store_true',
+                        help='Allocate train data on specified device during batch generation')
 
     # ----------------------------------------------MODEL PARAMETERS----------------------------------------------------
 
