@@ -128,11 +128,11 @@ def status(request: Request,
     return response
 
 
-@api.delete('/status/{task_id}', tags=['Prediction'])
+@api.delete('/{task_id}', tags=['Prediction'])
 @construct_response
 def delete_prediction(request: Request,
                       task_id: str = Path(...,
-                                          title='The ID of the task to get status',
+                                          title='The ID of the task to forget',
                                           regex=r'[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}')
                       ) -> Dict:
     task = AsyncResult(task_id, app=celery_app)
