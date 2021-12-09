@@ -122,6 +122,7 @@ def status(request: Request,
         response = {
             'message': HTTPStatus.PROCESSING.phrase,
             'status_code': HTTPStatus.PROCESSING,
+            'task_status': task.status,
             'progress': info.get('progress') if isinstance(info, dict) else None
         }
 
@@ -140,7 +141,7 @@ def delete_prediction(request: Request,
     if task.ready():
         task.forget()
     else:
-        task.revoke()
+        task.revoke(terminate=True)
 
     response = {
         'message': HTTPStatus.OK.phrase,
