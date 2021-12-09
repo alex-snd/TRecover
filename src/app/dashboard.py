@@ -1,3 +1,4 @@
+import platform
 import time
 from http import HTTPStatus
 from typing import Tuple, List
@@ -27,11 +28,17 @@ def main() -> None:
     if 'regenerate' not in st.session_state:
         st.session_state.regenerate = False
 
+    if 'stop' not in st.session_state:
+        st.session_state.stop = False
+
     if 'columns' not in st.session_state:
         st.session_state.columns = None
 
     if 'task_id' not in st.session_state:
         st.session_state.task_id = None
+
+    if 'is_unix' not in st.session_state:
+        st.session_state.is_unix = platform.system() != 'Windows'
 
     sidebar()
 
@@ -42,6 +49,14 @@ def set_regenerate() -> None:
 
 def unset_regenerate() -> None:
     st.session_state.regenerate = False
+
+
+def set_stop() -> None:
+    st.session_state.stop = True
+
+
+def unset_stop() -> None:
+    st.session_state.stop = False
 
 
 def sidebar() -> None:
@@ -132,7 +147,7 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
             time.sleep(0.3)
 
-        requests.delete(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
+        requests.delete(url=f'{var.FASTAPI_URL}/{st.session_state.task_id}')
 
         if task_status['status_code'] != HTTPStatus.OK:
             st.error(task_status['message'])
@@ -141,6 +156,20 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
         st.session_state.task_id = None
 
         return task_status['chains']
+
+    except ConnectionError:
+        st.error(f'It seems that the API service is not running.\n\n'
+                 f'Failed to establish a {var.FASTAPI_URL} connection.')
+        st.stop()
+
+
+def stop_prediction() -> None:
+    try:
+        if st.session_state.task_id:
+            requests.delete(url=f'{var.FASTAPI_URL}/{st.session_state.task_id}')
+            st.session_state.task_id = None
+
+        unset_stop()
 
     except ConnectionError:
         st.error(f'It seems that the API service is not running.\n\n'
@@ -184,12 +213,15 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     if is_plain:
         regen_filed.button('Regenerate', on_click=set_regenerate)
 
+    if st.session_state.stop:
+        stop_prediction()
+
     if columns and zread_field.button('Zread'):
         with placeholder.container():
             progress_bar_placeholder = st.empty()
 
-            if st.button('Stop'):  # TODO stop button
-                pass
+            if st.session_state.is_unix:
+                st.button('Stop', on_click=set_stop)
 
             with progress_bar_placeholder:
                 chains = predict(columns, bw)
