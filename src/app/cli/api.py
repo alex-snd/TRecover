@@ -116,7 +116,7 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
 
                 sleep(0.5)
 
-        requests.delete(url=f'{url}/status/{task_info["task_id"]}')
+        requests.delete(url=f'{url}/{task_info["task_id"]}')
 
         if task_status['status_code'] != HTTPStatus.OK:
             log.project_logger.error(f'{file_id}/{len(files_columns)} [red]Failed {file.name}:\n'
