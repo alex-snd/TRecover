@@ -48,7 +48,7 @@ class PredictTask(celery.Task):
             params = load_params(var.INFERENCE_PARAMS_PATH)
             self.model = get_model(params.token_size, params.pe_max_len, params.num_layers,
                                    params.d_model, params.n_heads, params.d_ff,
-                                   params.dropout, self.device, weights=var.INFERENCE_WEIGHTS_PATH)
+                                   params.dropout, self.device, weights=var.INFERENCE_WEIGHTS_PATH, silently=True)
             self.model.eval()
 
         return self.run(*args, **kwargs)
