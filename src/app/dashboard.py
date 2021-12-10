@@ -217,15 +217,16 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
         stop_prediction()
 
     if columns and zread_field.button('Zread'):
-        with placeholder.container():
-            progress_bar_placeholder = st.empty()
-
-            if st.session_state.is_unix:
+        if st.session_state.is_unix:
+            with placeholder.container():
+                progress_bar_placeholder = st.empty()
                 st.button('Stop', on_click=set_stop)
 
-            with progress_bar_placeholder:
+                with progress_bar_placeholder:
+                    chains = predict(columns, bw)
+        else:
+            with placeholder:
                 chains = predict(columns, bw)
-
         with placeholder.container():
             st.subheader('\nPrediction')
             st.text('\n\n'.join(chain for chain, _ in chains))
