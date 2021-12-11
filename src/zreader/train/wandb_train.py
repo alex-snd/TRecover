@@ -18,10 +18,10 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from config import var, log, train as train_config
-from zreader.data import WikiDataset
-from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
-from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
+from zreader.train.data import WikiDataset
+from zreader.train.loss import CustomPenaltyLoss
+from zreader.train.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
 from zreader.utils.model import get_model, get_recent_weights_path, save_params
 from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str, transfer
 from zreader.utils.transform import tensor_to_columns, tensor_to_target
