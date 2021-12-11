@@ -122,7 +122,7 @@ def status(request: Request,
         response = {
             'message': HTTPStatus.PROCESSING.phrase,
             'status_code': HTTPStatus.PROCESSING,
-            'task_status': task.status,
+            'state': task.status,
             'progress': info.get('progress') if isinstance(info, dict) else None
         }
 
