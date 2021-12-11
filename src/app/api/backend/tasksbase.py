@@ -45,10 +45,14 @@ class PredictTask(celery.Task):
         if not self.model:
             from zreader.utils.model import get_model, load_params
 
+            self.update_state(state='LOADING')
+
             params = load_params(var.INFERENCE_PARAMS_PATH)
             self.model = get_model(params.token_size, params.pe_max_len, params.num_layers,
                                    params.d_model, params.n_heads, params.d_ff,
                                    params.dropout, self.device, weights=var.INFERENCE_WEIGHTS_PATH, silently=True)
             self.model.eval()
+
+        self.update_state(state='PREDICT')
 
         return self.run(*args, **kwargs)

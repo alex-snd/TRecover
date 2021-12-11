@@ -60,7 +60,7 @@ def celery_task_loop(task: celery.Task
 
         for i in range(encoded_src.shape[0]):
             candidates = beam_step(candidates, step_masks[i], step_widths[i], encoded_src, z_reader, width, device)
-            task.update_state(meta={'progress': i + 1})
+            task.update_state(meta={'progress': i + 1}, state='PREDICT')
 
         return candidates
 
