@@ -29,7 +29,7 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
                  registry: str = Option(var.MLFLOW_REGISTRY_DIR, '--registry', '-r',
                                         help='Path to local directory to store artifacts.'),
                  backend_uri: str = Option(var.MLFLOW_BACKEND, '--backend', help='Backend uri.'),
-                 only_ui: bool = Option(False, '--only-ui', is_flag=True, help='Launch only the MLflow tracking UI'),
+                 only_ui: bool = Option(False, '--only-ui', is_flag=True, help='Launch only the Mlflow tracking UI'),
                  attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams')
                  ) -> None:
     import platform
