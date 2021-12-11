@@ -1,10 +1,11 @@
 import re
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple, Optional, Union
 
 import numpy as np
 import torch
+from torch import Tensor
 from torch.optim import Optimizer
 
 
@@ -54,3 +55,10 @@ def optimizer_to_str(optimizer: Optimizer) -> str:
     optimizer_params = re.findall(r'(.+): (.+)', optimizer_str_repr)
 
     return f"{optimizer_name}({', '.join([f'{param.strip()}={value.strip()}' for param, value in optimizer_params])})"
+
+
+def transfer(tensors: Tuple[Optional[Tensor]], to_device: torch.device) -> Tuple[Optional[Tensor], ...]:
+    return tuple([
+        tensor.to(to_device) if isinstance(tensor, Tensor) else tensor
+        for tensor in tensors
+    ])
