@@ -24,7 +24,7 @@ class Collate(object):
     def __str__(self) -> str:
         return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
 
-    def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
@@ -32,7 +32,6 @@ class Collate(object):
         src = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float, device=self.device)
         tgt_inp = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float, device=self.device)
         tgt = list()
-        padding_mask = torch.zeros((batch_size, seq_len), dtype=torch.bool, device=self.device)  # TODO fix bag
 
         for i in range(len(batch)):
 
@@ -51,14 +50,26 @@ class Collate(object):
                 src[i, j, noise_indexes] = 1
 
             tgt.append(i_tgt)
-            padding_mask[i, sizes[i]:] = True
 
-        empty_token = torch.zeros(batch_size, 1, token_size, device=self.device)
+        empty_token = torch.zeros((batch_size, 1, token_size), device=self.device)
         tgt_inp = torch.cat([empty_token, tgt_inp[:, :-1, :]], dim=1)
         tgt = torch.stack(tgt)
         subsequent_mask = self.generate_subsequent_mask(seq_len)
 
-        return src, tgt_inp, tgt, padding_mask, padding_mask, subsequent_mask
+        if min(sizes) == seq_len:
+            src_pad_mask = None
+            tgt_inp_pad_mask = None
+
+        else:
+            src_pad_mask = torch.zeros((batch_size, seq_len), dtype=torch.bool, device=self.device)
+
+            for i in range(len(batch)):
+                src_pad_mask[i, sizes[i]:] = True
+
+            empty_token_pad_mask = torch.zeros((batch_size, 1), dtype=torch.bool, device=self.device)
+            tgt_inp_pad_mask = torch.cat([empty_token_pad_mask, src_pad_mask[:, :-1]], dim=1)
+
+        return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
