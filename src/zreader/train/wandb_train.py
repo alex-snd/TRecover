@@ -23,7 +23,7 @@ from zreader.loss import CustomPenaltyLoss
 from zreader.model import ZReader
 from zreader.scheduler import BaseScheduler, WarmupScheduler, IdentityScheduler
 from zreader.utils.model import get_model, get_recent_weights_path, save_params
-from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str
+from zreader.utils.train import ExperimentParams, set_seeds, optimizer_to_str, transfer
 from zreader.utils.transform import tensor_to_columns, tensor_to_target
 from zreader.utils.visualization import visualize_columns, visualize_target
 
@@ -119,14 +119,9 @@ class Trainer(object):
         self.optimizer.zero_grad(set_to_none=True)
         start_time = time()
 
-        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(train_loader,
-                                                                                                   start=1):
-            src = src.to(self.device)
-            tgt_inp = tgt_inp.to(self.device)
-            tgt = tgt.to(self.device)
-            src_pad_mask = src_pad_mask.to(self.device)
-            tgt_pad_mask = tgt_pad_mask.to(self.device)
-            tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, train_tensors in enumerate(train_loader, start=1):
+            src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(train_tensors,
+                                                                                    to_device=self.device)
 
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
@@ -170,13 +165,8 @@ class Trainer(object):
         val_accuracy = 0
         start_time = time()
 
-        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(val_loader, start=1):
-            src = src.to(self.device)
-            tgt_inp = tgt_inp.to(self.device)
-            tgt = tgt.to(self.device)
-            src_pad_mask = src_pad_mask.to(self.device)
-            tgt_pad_mask = tgt_pad_mask.to(self.device)
-            tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, val_tensors in enumerate(val_loader, start=1):
+            src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(val_tensors, to_device=self.device)
 
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
@@ -208,13 +198,8 @@ class Trainer(object):
 
         self.console.rule(Text('Visualization step', style='bold magenta'), style='magenta')
 
-        for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(vis_loader, start=1):
-            src = src.to(self.device)
-            tgt_inp = tgt_inp.to(self.device)
-            tgt = tgt.to(self.device)
-            src_pad_mask = src_pad_mask.to(self.device)
-            tgt_pad_mask = tgt_pad_mask.to(self.device)
-            tgt_attn_mask = tgt_attn_mask.to(self.device)
+        for batch_idx, vis_tensors in enumerate(vis_loader, start=1):
+            src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
 
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
@@ -314,14 +299,9 @@ class Trainer(object):
         ) as progress:
             test_progress = progress.add_task('Testing', total=len(test_loader))
 
-            for batch_idx, (src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask) in enumerate(test_loader,
-                                                                                                       start=1):
-                src = src.to(self.device)
-                tgt_inp = tgt_inp.to(self.device)
-                tgt = tgt.to(self.device)
-                src_pad_mask = src_pad_mask.to(self.device)
-                tgt_pad_mask = tgt_pad_mask.to(self.device)
-                tgt_attn_mask = tgt_attn_mask.to(self.device)
+            for batch_idx, test_tensors in enumerate(test_loader, start=1):
+                src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(test_tensors,
+                                                                                        to_device=self.device)
 
                 tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
                 tgt_out = tgt_out.reshape(-1, self.model.token_size)
