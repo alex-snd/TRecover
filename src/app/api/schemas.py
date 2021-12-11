@@ -86,6 +86,7 @@ class TaskResponse(BaseResponse):
 class PredictResponse(BaseResponse):
     data: Optional[List[str]]
     chains: Optional[List[Tuple]]
+    state: Optional[str]
     progress: Optional[int]
 
     class Config:
@@ -155,6 +156,7 @@ class PredictResponse(BaseResponse):
                         -33.948646204201395
                     ]
                 ],
+                "state": None,
                 "progress": None
             }
         }
