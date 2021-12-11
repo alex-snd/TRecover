@@ -133,29 +133,46 @@ def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
 
             st.session_state.task_id = task_info["task_id"]
 
-        task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
-        task_status = task_status.json()
+        st.info('Requesting')
+
+        status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
+        status = status.json()
+
+        st.info('Requested')
+
+        while status['status_code'] == HTTPStatus.PROCESSING and status['state'] != 'PREDICT':
+            if status['state'] == 'LOADING':
+                st.info('Wait a moment: Model is loading')
+                time.sleep(0.3)
+            elif status['state'] == 'PENDING':
+                st.info('Wait a moment: Task will be executed as soon as the celery worker is free')
+                time.sleep(1)
+            else:
+                time.sleep(0.1)
+
+            status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
+            status = status.json()
 
         progress_bar = st.progress(0)
 
-        while task_status['status_code'] == HTTPStatus.PROCESSING:
-            task_status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
-            task_status = task_status.json()
+        while status['status_code'] == HTTPStatus.PROCESSING:
+            status = requests.get(url=f'{var.FASTAPI_URL}/status/{st.session_state.task_id}')
+            status = status.json()
 
-            completed = task_status['progress'] or 0
+            completed = status['progress'] or 0
             progress_bar.progress(completed / len(columns))
 
             time.sleep(0.3)
 
         requests.delete(url=f'{var.FASTAPI_URL}/{st.session_state.task_id}')
 
-        if task_status['status_code'] != HTTPStatus.OK:
-            st.error(task_status['message'])
+        if status['status_code'] != HTTPStatus.OK:
+            st.error(status['message'])
             st.stop()
 
         st.session_state.task_id = None
 
-        return task_status['chains']
+        return status['chains']
 
     except ConnectionError:
         st.error(f'It seems that the API service is not running.\n\n'
@@ -227,6 +244,7 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
         else:
             with placeholder:
                 chains = predict(columns, bw)
+
         with placeholder.container():
             st.subheader('\nPrediction')
             st.text('\n\n'.join(chain for chain, _ in chains))
