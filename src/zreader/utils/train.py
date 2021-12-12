@@ -1,7 +1,8 @@
 import re
 from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional, Union
+from typing import Any, Dict, Tuple, Union, Optional
 
 import numpy as np
 import torch
@@ -46,6 +47,11 @@ def set_seeds(seed: int = 2531) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
+
+
+def get_experiment_mark():
+    date = datetime.now()
+    return f'{date.month:0>2}-{date.day:0>2}-{date.hour:0>2}-{date.minute:0>2}'
 
 
 def optimizer_to_str(optimizer: Optimizer) -> str:
