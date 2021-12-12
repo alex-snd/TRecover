@@ -274,7 +274,7 @@ class LocalTrainer(object):
                     self.save_model(str(train_offset + len(train_loader)))
 
         except KeyboardInterrupt:
-            self.console.print('Training is interrupted')
+            self.console.print('Training is interrupted', style='yellow')
 
     @torch.no_grad()
     def test(self, test_loader: DataLoader) -> Tuple[float, float]:
@@ -331,6 +331,6 @@ class LocalTrainer(object):
     def save_html_log(self) -> None:
         self.console.save_html(str(self.log_file), clear=False)
 
-    # TODO
+    # TODO find_batch_size
     def find_batch_size(self):
         pass
