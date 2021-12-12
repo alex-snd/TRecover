@@ -74,7 +74,7 @@ class WandbMonitor(BaseMonitor):
         wandb.log_artifact(path)
 
     def log_variables(self, variables: Dict[str, Union[float, int]]) -> None:
-        for var_name, var_value in variables.keys():
+        for var_name, var_value in variables.items():
             wandb.summary[var_name] = var_value
 
     def start(self) -> Run:
