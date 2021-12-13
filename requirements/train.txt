@@ -1,3 +1,4 @@
+alembic==1.7.5
 celery[redis]==5.1.2
 fastapi==0.68.1
 mlflow==1.18.0
