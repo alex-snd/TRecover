@@ -66,12 +66,11 @@ class WandbMonitor(BaseMonitor):
         self.config = config
         self.registry = registry
 
-    # TODO alter steps
     def log_metrics(self, metrics: Dict[str, Union[float, int]], step: Optional[int] = None) -> None:
-        wandb.log(metrics, step=step)
+        wandb.log(metrics)
 
     def log_artifact(self, path: str) -> None:
-        wandb.log_artifact(path)
+        wandb.log_artifact(artifact_or_path=path, type='experiment_artifact')
 
     def log_variables(self, variables: Dict[str, Union[float, int]]) -> None:
         for var_name, var_value in variables.items():

@@ -160,7 +160,8 @@ class LocalTrainer(object):
 
                     self.monitor.log_metrics({'Train loss': train_loss,
                                               'Train accuracy': accuracy,
-                                              'LR': self.__lr},
+                                              'LR': self.__lr,
+                                              'train_step': offset + batch_idx},
                                              step=offset + batch_idx)
 
                     train_loss = 0.0
@@ -190,7 +191,10 @@ class LocalTrainer(object):
             val_loss += loss
             val_accuracy += accuracy
 
-            self.monitor.log_metrics({"Val loss": loss, "Val accuracy": accuracy}, step=offset + batch_idx)
+            self.monitor.log_metrics({"Val loss": loss,
+                                      "Val accuracy": accuracy,
+                                      'val_step': offset + batch_idx},
+                                     step=offset + batch_idx)
 
             self.console.print(f'Val Batch:    {offset + batch_idx:^7} | Loss: {loss:>10.6f} | '
                                f'Accuracy: {accuracy:>6.3f} | Elapsed: {time() - start_time:>7.3f}')
@@ -240,8 +244,6 @@ class LocalTrainer(object):
                     justify='center'
                 )
                 self.console.print('\n')
-
-                # TODO wandb.log examples
 
     def train(self,
               n_epochs: int,
@@ -311,7 +313,10 @@ class LocalTrainer(object):
                 test_loss += loss
                 test_accuracy += accuracy
 
-                self.monitor.log_metrics({"Test loss": loss, "Test accuracy": accuracy}, step=batch_idx)
+                self.monitor.log_metrics({"Test loss": loss,
+                                          "Test accuracy": accuracy,
+                                          'test_step': batch_idx},
+                                         step=batch_idx)
 
                 progress.update(test_progress, advance=1)
 
