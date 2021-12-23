@@ -1,7 +1,6 @@
 import shutil
 import tempfile
 import traceback
-from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import Callable, Optional, Tuple, Union, Type
@@ -57,16 +56,13 @@ class LocalTrainer(object):
         self.n_columns_to_show = n_columns_to_show
         self.delimiter = delimiter
 
-        date = datetime.now()
-        self.experiment_mark = f'{date.month:0>2}-{date.day:0>2}-{date.hour:0>2}-{date.minute:0>2}'
-
-        self.experiment_folder = self.exp_dir / self.experiment_mark
+        self.experiment_folder = self.exp_dir / self.monitor.experiment_name
         self.weights_folder = self.experiment_folder / 'weights'
 
         self.experiment_folder.mkdir(parents=True, exist_ok=True)
         self.weights_folder.mkdir(parents=True, exist_ok=True)
 
-        self.log_file = self.experiment_folder / f'log_{self.experiment_mark}.html'
+        self.log_file = self.experiment_folder / f'log_{self.monitor.experiment_name}.html'
         self.console = console
 
         self.__log_init_params()
@@ -113,7 +109,7 @@ class LocalTrainer(object):
         return self.optimizer.param_groups[0]['lr']
 
     def __log_init_params(self) -> None:
-        self.console.print(f'Date: {self.experiment_mark}')
+        self.console.print(f'Date: {self.monitor.experiment_name}')
         self.console.print(f'Model: {self.model}')
         self.console.print(f'Trainable parameters: {self.model.params_count:,}')
         self.console.print(f'Optimizer: {optimizer_to_str(self.optimizer)}')
@@ -151,7 +147,7 @@ class LocalTrainer(object):
                 self.optimizer.zero_grad(set_to_none=True)
 
                 if (offset + batch_idx) % self.log_interval == 0:
-                    accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
+                    accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum().item() / tgt.size(0)
                     train_loss /= accumulation_step
 
                     self.console.print(f'Train Batch:  {offset + batch_idx:^7} | '
@@ -331,7 +327,7 @@ class LocalTrainer(object):
         return test_loss, test_accuracy
 
     def save_model(self, weights_name: str) -> None:
-        self.model.save(filename=self.weights_folder / f'{self.experiment_mark}_{weights_name}.pt')
+        self.model.save(filename=self.weights_folder / f'{self.monitor.experiment_name}_{weights_name}.pt')
 
     def save_html_log(self) -> None:
         self.console.save_html(str(self.log_file), clear=False)
