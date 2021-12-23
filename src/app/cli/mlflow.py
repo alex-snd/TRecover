@@ -14,7 +14,7 @@ def mlflow_state_verification(ctx: Context) -> None:
 
     elif ctx.invoked_subcommand is None:
         mlflow_start(host=var.MLFLOW_HOST, port=var.MLFLOW_PORT, concurrency=var.MLFLOW_WORKERS,
-                     registry=var.MLFLOW_REGISTRY_DIR, backend_uri=var.MLFLOW_BACKEND, only_ui=False, attach=False)
+                     registry=var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=var.MLFLOW_BACKEND, only_ui=False, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The mlflow service is not started', style='yellow')
@@ -26,7 +26,7 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
                  port: int = Option(var.MLFLOW_PORT, '--port', '-p', help='Bind socket to this port.'),
                  concurrency: int = Option(var.MLFLOW_WORKERS, '-c',
                                            help='The number of mlflow server workers.'),
-                 registry: str = Option(var.MLFLOW_REGISTRY_DIR, '--registry', '-r',
+                 registry: str = Option(var.MLFLOW_REGISTRY_DIR.as_uri(), '--registry', '-r',
                                         help='Path to local directory to store artifacts.'),
                  backend_uri: str = Option(var.MLFLOW_BACKEND, '--backend', help='Backend uri.'),
                  only_ui: bool = Option(False, '--only-ui', is_flag=True, help='Launch only the Mlflow tracking UI'),
@@ -44,8 +44,8 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
         'mlflow', command,
         '--host', host,
         '--port', str(port),
-        '--default-artifact-root', str(registry),
-        '--backend-store-uri', str(backend_uri)
+        '--default-artifact-root', str(backend_uri),
+        '--backend-store-uri', str(registry)
     ]
 
     if not only_ui and not is_windows:
