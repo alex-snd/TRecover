@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 from typing import Dict, Union, Optional, Any
 
@@ -7,6 +8,7 @@ from mlflow.tracking.fluent import ActiveRun, end_run
 from wandb.wandb_run import Run
 
 from config import var
+from zreader.utils.train import get_experiment_mark
 
 
 class BaseMonitor(object):
@@ -25,14 +27,22 @@ class BaseMonitor(object):
     def finish(self):
         raise NotImplementedError
 
-    def __enter__(self):
-        raise NotImplementedError
+    def __enter__(self) -> Union[Run, ActiveRun]:
+        return self.start(),
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        raise NotImplementedError
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        return self.finish()
 
 
 class IdentityMonitor(BaseMonitor):
+    def __init__(self,
+                 project_name: str = None,
+                 experiment_name: str = None,
+                 config: Dict[str, Any] = None):
+        self.project_name = project_name or f'DefaultProject-{uuid.uuid4().hex}'
+        self.experiment_name = experiment_name or get_experiment_mark()
+        self.config = config or dict()
+
     def log_metrics(self, metrics: Dict[str, Union[float, int]], step: Optional[int] = None) -> None:
         pass
 
@@ -85,23 +95,17 @@ class WandbMonitor(BaseMonitor):
     def finish(self) -> None:
         wandb.finish()
 
-    def __enter__(self) -> Run:
-        return self.start()
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        return self.finish()
-
 
 class MlflowMonitor(BaseMonitor):
     def __init__(self,
                  project_name: str,
                  experiment_name: str,
                  config: Dict[str, Any],
-                 registry_uri: Union[str, Path] = var.MLFLOW_REGISTRY_DIR.absolute().as_uri()):
+                 tracking_uri: Union[str, Path] = var.MLFLOW_REGISTRY_DIR.absolute().as_uri()):
         self.project_name = project_name
         self.experiment_name = experiment_name
         self.config = config
-        self.registry_uri = registry_uri
+        self.tracking_uri = tracking_uri
 
     def log_metrics(self, metrics: Dict[str, Union[float, int]], step: Optional[int] = None) -> None:
         mlflow.log_metrics(metrics, step=step)
@@ -113,17 +117,12 @@ class MlflowMonitor(BaseMonitor):
         mlflow.log_params(variables)
 
     def start(self) -> ActiveRun:
-        mlflow.set_tracking_uri(self.registry_uri)
+        mlflow.set_tracking_uri(self.tracking_uri)
         mlflow.set_experiment(self.project_name)
         mlflow.log_params(self.config)
 
-        return mlflow.start_run(run_name=self.experiment_name)
+        with mlflow.start_run(run_name=self.experiment_name, nested=True) as run:
+            return run
 
     def finish(self):
         end_run()
-
-    def __enter__(self) -> Run:
-        return self.start()
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        return self.finish()
