@@ -204,13 +204,37 @@ def check_service(name: str, pidfile: Path) -> None:
                                   ' because its PID file is corrupted', style='red')
 
 
-def stream(logfile: Path, live: bool = False, period: float = 0.1) -> Generator[str, None, None]:
-    with logfile.open() as log_stream:
-        if live:
-            log_stream.seek(0, 2)
+def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float = 0.1) -> Generator[str, None, None]:
+    names = list()
+    streams = list()
+    alignment = 0
+
+    try:
+        for (name, log_file) in services:
+            names.append(name)
+
+            service_stream = log_file.open()
+
+            if live:
+                service_stream.seek(0, 2)
+
+            streams.append(service_stream)
+
+            if len(name) > alignment:
+                alignment = len(name)
+
+        n_services = len(names)
 
         while True:
-            if record := log_stream.readline():
-                yield record
-            else:
-                time.sleep(period)
+            for i in range(n_services):
+                if record := streams[i].read().strip():
+                    color = var.COLORS[i % len(var.COLORS)]
+
+                    for record_line in record.split('\n'):
+                        yield f'[{color}]{names[i]: <{alignment}} |[/{color}] {record_line}'
+
+            time.sleep(period)
+
+    finally:
+        for service_stream in streams:
+            service_stream.close()
