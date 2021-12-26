@@ -114,7 +114,7 @@ def cli_state_verification(ctx: Context,
         log.project_console.print(ctx.get_help(), markup=False)
         ctx.exit(0)
 
-    if ctx.invoked_subcommand in ('up', 'down'):
+    if ctx.invoked_subcommand in ('up', 'down', 'status'):
         from zreader.utils.docker import is_docker_running
         from zreader.utils.cli import parse_config
 
