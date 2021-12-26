@@ -28,7 +28,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
                                           help='Attach output and error streams')
                     ) -> None:
     from app import dashboard
-    from subprocess import Popen, STDOUT, CREATE_NO_WINDOW
+    from zreader.utils.cli import start_service
 
     argv = ['streamlit',
             'run', dashboard.__file__,
@@ -42,13 +42,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
             '--theme.textColor', '#157D96'
             ]
 
-    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.DASHBOARD_LOG.open(mode='w'), stderr=STDOUT,
-                    universal_newlines=True)
-
-    with var.DASHBOARD_PID.open('w') as f:
-        f.write(str(process.pid))
-
-    log.project_console.print('The dashboard service is started', style='bright_blue')
+    start_service(argv, name='dashboard', logfile=log.DASHBOARD_LOG, pidfile=var.DASHBOARD_PID)
 
     if attach:
         dashboard_attach(live=False)

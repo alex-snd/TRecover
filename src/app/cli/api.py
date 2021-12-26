@@ -152,7 +152,7 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
               attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                     help='Attach output and error streams')
               ) -> None:
-    from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
+    from zreader.utils.cli import start_service
 
     argv = [
         'uvicorn', 'app.api.zreaderapi:api',
@@ -162,13 +162,7 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
         '--log-level', loglevel
     ]
 
-    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.API_LOG.open(mode='w'), stderr=STDOUT,
-                    universal_newlines=True)
-
-    with var.API_PID.open('w') as f:
-        f.write(str(process.pid))
-
-    log.project_console.print('The API service is started', style='bright_blue')
+    start_service(argv, name='API', logfile=log.API_LOG, pidfile=var.API_PID)
 
     if attach:
         api_attach(live=False)

@@ -14,7 +14,8 @@ def mlflow_state_verification(ctx: Context) -> None:
 
     elif ctx.invoked_subcommand is None:
         mlflow_start(host=var.MLFLOW_HOST, port=var.MLFLOW_PORT, concurrency=var.MLFLOW_WORKERS,
-                     registry=var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=var.MLFLOW_BACKEND, only_ui=False, attach=False)
+                     registry=var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=var.MLFLOW_BACKEND, only_ui=False,
+                     attach=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The mlflow service is not started', style='yellow')
@@ -33,7 +34,7 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
                  attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams')
                  ) -> None:
     import platform
-    from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
+    from zreader.utils.cli import start_service
 
     if (is_windows := platform.system() == 'Windows') and concurrency != 1:
         raise BadParameter("Windows platform does not support concurrency option")
@@ -51,13 +52,7 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
     if not only_ui and not is_windows:
         argv.extend(['--workers', str(concurrency)])
 
-    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.MLFLOW_LOG.open(mode='w'), stderr=STDOUT,
-                    universal_newlines=True)
-
-    with var.MLFLOW_PID.open('w') as f:
-        f.write(str(process.pid))
-
-    log.project_console.print('The mlflow service is started', style='bright_blue')
+    start_service(argv, name='mlflow', logfile=log.MLFLOW_LOG, pidfile=var.MLFLOW_PID)
 
     if attach:
         mlflow_attach(live=False)

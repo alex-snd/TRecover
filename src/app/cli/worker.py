@@ -33,7 +33,7 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
                  attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams')
                  ) -> None:
     import platform
-    from subprocess import Popen, CREATE_NO_WINDOW, STDOUT
+    from zreader.utils.cli import start_service
 
     if platform.system() == 'Windows' and pool != var.PoolType.solo:
         raise BadParameter("Windows platform only supports 'solo' pool")
@@ -49,13 +49,7 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
         '--loglevel', loglevel
     ]
 
-    process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=log.WORKER_LOG.open(mode='w'), stderr=STDOUT,
-                    universal_newlines=True)
-
-    with var.WORKER_PID.open('w') as f:
-        f.write(str(process.pid))
-
-    log.project_console.print('The worker service is started', style='bright_blue')
+    start_service(argv, name='worker', logfile=log.WORKER_LOG, pidfile=var.WORKER_PID)
 
     if attach:
         worker_attach(live=False)

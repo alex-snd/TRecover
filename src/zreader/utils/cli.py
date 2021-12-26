@@ -1,7 +1,9 @@
 import os
+import platform
 import time
 from argparse import Namespace
 from pathlib import Path
+from subprocess import Popen, STDOUT
 from typing import Optional, List, Tuple, Generator
 from zipfile import ZipFile
 
@@ -140,6 +142,21 @@ def parse_config(file: Path) -> Namespace:
         conf[service] = Namespace(**params)
 
     return Namespace(**conf)
+
+
+def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> None:
+    if platform.system() == 'Windows':
+        from subprocess import CREATE_NO_WINDOW
+
+        process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=logfile.open(mode='w+'), stderr=STDOUT,
+                        universal_newlines=True)
+    else:
+        process = Popen(argv, stdout=logfile.open(mode='w+'), stderr=STDOUT, universal_newlines=True)
+
+    with pidfile.open('w') as f:
+        f.write(str(process.pid))
+
+    log.project_console.print(f'The {name} service is started', style='bright_blue')
 
 
 def stop_service(name: str, pidfile: Path) -> None:
