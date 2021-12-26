@@ -109,6 +109,8 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 def cli_state_verification(ctx: Context,
                            file: str = Option('zreader-compose.toml', '--file', '-f',
                                               help='Zreader configuration file'),
+                           attach_stream: bool = Option(False, '--attach', '-a', is_flag=True,
+                                                        help='Attach output and error streams')
                            ) -> None:
     if ctx.invoked_subcommand is None:
         log.project_console.print(ctx.get_help(), markup=False)
@@ -127,6 +129,7 @@ def cli_state_verification(ctx: Context,
             ctx.exit(1)
 
         ctx.params['conf'] = parse_config(config_file)
+        ctx.params['attach'] = attach_stream
 
 
 @cli.command()
@@ -179,6 +182,12 @@ def up(ctx: Context) -> None:
                               auto_remove=conf.backend.auto_remove,
                               attach=False)
 
+    if ctx.parent.params['attach']:
+        try:
+            attach(live=False)
+        finally:
+            down(prune=False, v=False)
+
 
 @cli.command()
 def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
@@ -226,6 +235,22 @@ def status() -> None:
     check_service(name='worker', pidfile=var.WORKER_PID)
     broker_status()
     backend_status()
+
+
+@cli.command(name='attach')
+def attach(live: bool = Option(False, '--live', '-l', is_flag=True,
+                               help='Stream only fresh log records')
+           ) -> None:
+    from zreader.utils.cli import stream
+
+    with log.project_console.screen():
+        for record in stream(('dashboard', log.DASHBOARD_LOG),
+                             ('API', log.API_LOG),
+                             ('worker', log.WORKER_LOG),
+                             live=live):
+            log.project_console.print(record)
+
+    log.project_console.clear()
 
 
 if __name__ == '__main__':
