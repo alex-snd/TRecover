@@ -149,9 +149,10 @@ def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> N
         from subprocess import CREATE_NO_WINDOW
 
         process = Popen(argv, creationflags=CREATE_NO_WINDOW, stdout=logfile.open(mode='w+'), stderr=STDOUT,
-                        universal_newlines=True)
+                        universal_newlines=True, start_new_session=True)
     else:
-        process = Popen(argv, stdout=logfile.open(mode='w+'), stderr=STDOUT, universal_newlines=True)
+        process = Popen(argv, stdout=logfile.open(mode='w+'), stderr=STDOUT, universal_newlines=True,
+                        start_new_session=True)
 
     with pidfile.open('w') as f:
         f.write(str(process.pid))
