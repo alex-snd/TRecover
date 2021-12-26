@@ -134,5 +134,6 @@ data/
 weights/
 inference
 experiments
+images
 *.bat
 *.pid
