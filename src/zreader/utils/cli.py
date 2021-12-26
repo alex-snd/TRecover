@@ -193,6 +193,9 @@ def check_service(name: str, pidfile: Path) -> None:
         else:
             log.project_console.print(f'The {name} status: dead', style='red')
 
+    except FileNotFoundError:
+        log.project_console.print(f'The {name} service is not started', style='yellow')
+
     except ValueError:
         log.project_console.print(f'The {name} service could not be checked correctly'
                                   ' because its PID file is corrupted', style='red')

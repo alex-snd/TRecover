@@ -110,9 +110,10 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
 def backend_status() -> None:
     from zreader.utils.docker import get_container
 
-    status = container.status if (container := get_container(var.BACKEND_ID)) else '[yellow]is not started'
-
-    log.project_console.print(f'Backend status: {status}', style='bright_blue')
+    if (container := get_container(var.BACKEND_ID)) and container.status == 'running':
+        log.project_console.print(':rocket: The backend status: running', style='bright_blue')
+    else:
+        log.project_console.print('The backend service is not started', style='yellow')
 
 
 @cli.command(name='attach')

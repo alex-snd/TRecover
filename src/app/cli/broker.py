@@ -112,7 +112,10 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
 def broker_status() -> None:
     from zreader.utils.docker import get_container
 
-    log.project_console.print(f'Broker status: {get_container(var.BROKER_ID).status}', style='bright_blue')
+    if (container := get_container(var.BROKER_ID)) and container.status == 'running':
+        log.project_console.print(':rocket: The broker status: running', style='bright_blue')
+    else:
+        log.project_console.print('The broker service is not started', style='yellow')
 
 
 @cli.command(name='attach')
