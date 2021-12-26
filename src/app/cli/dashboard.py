@@ -69,8 +69,8 @@ def dashboard_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
-        for record in stream(logfile=log.DASHBOARD_LOG, live=live):
-            log.project_console.print(record.strip())
+        for record in stream(('dashboard', log.DASHBOARD_LOG), live=live):
+            log.project_console.print(record)
 
     log.project_console.clear()
 
