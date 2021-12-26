@@ -215,6 +215,19 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
             backend.backend_prune(force=False, v=v)
 
 
+@cli.command(name='status')
+def status() -> None:
+    from zreader.utils.cli import check_service
+    from app.cli.broker import broker_status
+    from app.cli.backend import backend_status
+
+    check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+    check_service(name='API', pidfile=var.API_PID)
+    check_service(name='worker', pidfile=var.WORKER_PID)
+    broker_status()
+    backend_status()
+
+
 if __name__ == '__main__':
     try:
         cli()
