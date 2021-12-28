@@ -1,4 +1,4 @@
-alembic==1.7.5
+alembic==1.4.1
 celery[redis]==5.1.2
 fastapi==0.68.1
 mlflow==1.18.0
