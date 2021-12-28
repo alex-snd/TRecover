@@ -89,7 +89,7 @@ def get_parser() -> ArgumentParser:
     # ----------------------------------------OPTIMIZATION PARAMETERS---------------------------------------------------
 
     parser.add_argument('--lr', default=0.001577, type=float,
-                        help='Learning rate value. Fictive with defined scheduler')
+                        help='Learning rate value.')
     parser.add_argument('--lr-step-seek', default=0, type=int,
                         help='Number of steps for WarmupScheduler to seek')
     parser.add_argument('--warmup', default=600, type=int,
