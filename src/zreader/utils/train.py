@@ -63,7 +63,7 @@ def optimizer_to_str(optimizer: Optimizer) -> str:
     return f"{optimizer_name}({', '.join([f'{param.strip()}={value.strip()}' for param, value in optimizer_params])})"
 
 
-def transfer(tensors: Tuple[Optional[Tensor]], to_device: torch.device) -> Tuple[Optional[Tensor], ...]:
+def transfer(tensors: Tuple[Optional[Tensor], ...], to_device: torch.device) -> Tuple[Optional[Tensor], ...]:
     return tuple([
         tensor.to(to_device) if isinstance(tensor, Tensor) else tensor
         for tensor in tensors
