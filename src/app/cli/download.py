@@ -2,7 +2,7 @@ from typer import Typer, Argument, Option
 
 from config import log
 
-cli = Typer(name='Download-cli', add_completion=False)
+cli = Typer(name='Download-cli', add_completion=False, help='Download train data or pre-trained model')
 
 
 @cli.command(name='data', help='Download train data from Yandex disk')
