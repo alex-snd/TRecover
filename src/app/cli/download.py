@@ -12,7 +12,7 @@ def download_data(sharing_link: str = Argument(..., help='Sharing link to the tr
     """
         Download train data from Yandex disk
 
-        Notes
+        Parameters
         -----
         sharing_link: str
             Sharing link to the train data on Yandex disk
@@ -34,7 +34,7 @@ def download_artifacts(sharing_link: str = Argument(..., help='Sharing link to t
     """
         Download model artifacts from Yandex disk
 
-        Notes
+        Parameters
         -----
         sharing_link: str
             Sharing link to the model artifacts on Yandex disk
