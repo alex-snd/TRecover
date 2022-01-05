@@ -5,7 +5,6 @@ from typer import Typer, Argument, Option, Context
 from app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
 from config import var, log
 
-# TODO help info
 cli = Typer(name='Zreader-cli', add_completion=False)
 
 cli.add_typer(download.cli, name='download')
@@ -18,20 +17,75 @@ cli.add_typer(broker.cli, name='broker')
 cli.add_typer(backend.cli, name='backend')
 
 
-@cli.command()
+@cli.command(help='Perform keyless reading')
 def zread(inference_path: Path = Argument(..., help='Path to file or dir for inference', exists=True),
           model_params: Path = Option(var.INFERENCE_PARAMS_PATH, help='Path to model params json file', exists=True),
           weights_path: Path = Option(var.INFERENCE_WEIGHTS_PATH, help='Path to model weights', exists=True),
-          cuda: bool = Option(var.CUDA, help='CUDA enabled'),
+          cuda: bool = Option(var.CUDA, envvar='CUDA', help='CUDA enabled'),
           gpu_id: int = Option(0, help='GPU id'),
           separator: str = Option(' ', help='Columns separator in the input files'),
           noisy: bool = Option(False, help='Input files are noisy texts'),
           min_noise: int = Option(3, help='Min noise parameter. Minimum value is zero'),
           max_noise: int = Option(5, help='Max noise parameter. Maximum value is alphabet size'),
-          beam_width: int = Option(1, help='Width for beam search algorithm. Maximum value is alphabet size'),
-          n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
+          beam_width: int = Option(5, help='Width for beam search algorithm. Maximum value is alphabet size'),
+          n_to_show: int = Option(0, help="Number of columns to visualize. Zero value means for no restriction's"),
           delimiter: str = Option('', help='Delimiter for columns visualization')
           ) -> None:
+    """
+    Perform keyless reading locally.
+
+    Parameters
+    ----------
+    inference_path : Path
+        Path to file or dir for inference
+    model_params : Path
+        Path to model params json file
+    weights_path : Path
+        Path to model weights
+    cuda : bool
+        CUDA enabled
+    gpu_id : int, default=0
+        GPU id on which perform computations
+    separator : str, default=' '
+        Columns separator in the input files
+    noisy : bool, default=False
+        Indicates that input files are noisy texts
+    min_noise : int, default=3
+        Min noise size per column. Minimum value is zero
+    max_noise : int, default=5
+        Max noise size per column. Maximum value is alphabet size
+    beam_width : int, default=5
+        Width for beam search algorithm. Maximum value is alphabet size
+    n_to_show : int, default=0
+        Number of columns to visualize. Zero value means for no restriction's
+    delimiter : str, default=''
+        Delimiter for columns visualization
+
+    Examples
+    --------
+
+    >>> "zreader zread examples/example_1.txt"
+    ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
+    │                                                        Columns                                                   │
+    │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
+    │ enpenkhgglrifflheioentrmjenkjnrmlhphdddeihliekeeeolflonpmctjolgkdeljjmljmmjiisjknjghgeelhkbddlpjjekrkdkilgiocii… │
+    │ gsxtoplqkrtknksinktipwvnlnqqrstotoqspoejtsnoiuoflpohvtovqeutunjojlmksonosskpvxporrltnfgoprdemstnshnssgnronjreqj… │
+    │ xvzwttqtxvxuoptowuxnxyzrwrrtwtyqwqvutrwrxvtxxwurrtqlwuqzvnwvxossmmpnutosuxlswyuvtttvqulrqzrrwuxtyqouwiuupwsxnrm… │
+    │  y y yz zy  y w zy uz  yys   u tzs   x u         wx     wy w tuvpuwu  x yyowyz  z  wxyu     xyy   v yr    t yvw… │
+    │                                                       Predicted                                                  │
+    │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
+    │                                                                                                                  │
+    ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    Elapsed:   4.716 s
+
+
+    Notes
+    -----
+    A larger "beam_width" parameter value can improve keyless reading, but it will also take longer to compute.
+
+    """
+
     from time import time
 
     import torch
@@ -44,6 +98,7 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
     from zreader.utils.cli import get_files_columns
     from zreader.utils.transform import files_columns_to_tensors
     from zreader.utils.model import get_model, load_params
+    from zreader.utils.transform import tensor_to_columns, tensor_to_target
     from zreader.utils.visualization import visualize_columns, visualize_target
 
     inference_path = Path(inference_path)
@@ -84,10 +139,10 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
         loop_label = f'{file_id}/{len(files_src)} Processing {file.name}'
         chains = beam_search(src, z_reader, beam_width, device,
                              beam_loop=cli_interactive_loop(label=loop_label))
-        chains = [Text(visualize_target(chain, delimiter=delimiter), style='cyan', justify='center',
+        chains = [Text(visualize_target(tensor_to_target(chain), delimiter=delimiter), style='cyan', justify='center',
                        overflow='ellipsis', end='\n\n') for (chain, _) in chains]
 
-        columns = visualize_columns(src, delimiter=delimiter, as_rows=True)
+        columns = visualize_columns(tensor_to_columns(src), delimiter=delimiter, as_rows=True)
         columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
 
         panel_group = Group(
@@ -107,11 +162,26 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 
 @cli.callback(invoke_without_command=True)
 def cli_state_verification(ctx: Context,
-                           file: str = Option('zreader-compose.toml', '--file', '-f',
-                                              help='Zreader configuration file'),
+                           config_file: Path = Option('zreader-compose.toml', '--file', '-f', exists=True,
+                                                      help='Path to ZReader configuration file for "up" command'),
                            attach_stream: bool = Option(False, '--attach', '-a', is_flag=True,
-                                                        help='Attach output and error streams')
+                                                        help='Attach output and error streams for "up" command')
                            ) -> None:
+    """
+    Perform cli commands verification (state checking) and config file parsing.
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level
+    config_file : Path, default=./zreader-compose.toml
+        Path to ZReader configuration file for "up" command
+    attach_stream : bool, default=False
+        Attach output and error streams for "up" command'
+
+    """
+
     if ctx.invoked_subcommand is None:
         log.project_console.print(ctx.get_help(), markup=False)
         ctx.exit(0)
@@ -124,7 +194,7 @@ def cli_state_verification(ctx: Context,
             log.project_console.print('Docker engine is not running', style='red')
             ctx.exit(1)
 
-        if not (config_file := Path(file)).exists():
+        if not config_file.exists():
             log.project_console.print('Defined Zreader configuration file does not exist', style='red')
             ctx.exit(1)
 
@@ -132,8 +202,113 @@ def cli_state_verification(ctx: Context,
         ctx.params['attach'] = attach_stream
 
 
-@cli.command()
+@cli.command(help='Start services')
 def up(ctx: Context) -> None:
+    """
+    Start services: Dashboard, API, Worker, Broker, Backend.
+
+    Command uses zreader-compose.toml config file specified by --file and
+    attaches output and error streams if --attach flag is set.
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level
+
+    Config Variables
+    ----------------
+    dashboard host : str, default=ENV(STREAMLIT_HOST) or 'localhost'
+        The address where the server will listen for client and browser connections.
+        Use this if you want to bind the server to a specific address. If set, the server
+        will only be accessible from this address, and not from any aliases (like localhost).
+
+    dashboard port : int, default=ENV(STREAMLIT_PORT) or 8000
+        The port where the server will listen for browser connections.
+
+    dashboard loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
+        Level of logging.
+
+
+    api host : str, default=ENV(FASTAPI_HOST) or 'localhost'
+        Bind socket to this host.
+
+    api port : int, default=ENV(FASTAPI_PORT) or 8001
+        Bind socket to this port.
+
+    api loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
+        Level of logging.
+
+    api concurrency : int, default=ENV(FASTAPI_WORKERS) or 1
+        The number of worker processes.
+
+    worker name : str, default='ZReaderWorker'
+        Custom worker hostname.
+
+    worker pool : str, {'prefork', 'eventlet', 'gevent', 'processes', 'solo'}, default='solo'
+        Worker processes/threads pool type.
+
+    worker loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
+        Level of logging.
+
+    worker concurrency : int, default=ENV(CELERY_WORKERS) or 1
+        The number of worker processes.
+
+    worker broker_url : str, default=ENV(CELERY_BROKER) or 'pyamqp://guest@localhost'
+        Broker url.
+
+    worker backend_url : str, default=ENV(CELERY_BACKEND) or 'redis://localhost'
+        Backend url.
+
+    broker port : int, default=ENV(BROKER_PORT) or 5672
+        Bind broker socket to this port.
+
+    broker ui_port : int, default=ENV(BROKER_UI_PORT) or 15672
+        Bind UI socket to this port.
+
+    broker auto_remove : bool, default=False
+        Remove broker docker container after service exit.
+
+    backend port : int, default=ENV(BACKEND_PORT) or 6379
+        Bind backend socket to this port.
+
+    backend auto_remove : bool, default=False
+        Remove backend docker container after service exit.
+
+    Examples
+    --------
+    # zreader-compose.toml
+
+        [dashboard]
+        host = "localhost"
+        port = 8000
+        loglevel = 'info'
+
+        [api]
+        host = "localhost"
+        port = 8001
+        loglevel = 'info'
+        concurrency = 1
+
+        [worker]
+        name = "ZReaderWorker"
+        pool = "solo"
+        loglevel = "info"
+        concurrency = 1
+        broker_url = "pyamqp://guest@localhost:5672"
+        backend_url = "redis://localhost:6379"
+
+        [broker]
+        port = 5672
+        ui_port = 15672
+        auto_remove = false
+
+        [backend]
+        port = 6379
+        auto_remove = false
+
+    """
+
     from zreader.utils.docker import get_container
     from zreader.utils.cli import check_service
 
@@ -189,12 +364,25 @@ def up(ctx: Context) -> None:
             down(prune=False, v=False)
 
 
-@cli.command()
+@cli.command(help='Stop services')
 def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
-                              help='Prune broker.'),
+                              help='Prune all docker containers after exit.'),
          v: bool = Option(False, '--volume', '-v', is_flag=True,
-                          help='Remove the volumes associated with the container')
+                          help='Remove the volumes associated with the all docker containers.')
          ) -> None:
+    """
+    Stop services: Dashboard, API, Worker, Broker, Backend.
+
+    Parameters
+    ----------
+    prune : bool, default=False
+        Prune all docker containers after exit.
+
+    v : bool, default=False
+        Remove the volumes associated with the all docker containers.
+
+    """
+
     from zreader.utils.docker import get_container
     from zreader.utils.cli import stop_service
 
@@ -224,8 +412,9 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
             backend.backend_prune(force=False, v=v)
 
 
-@cli.command(name='status')
+@cli.command(name='status', help='Display services status')
 def status() -> None:
+    """ Display services status """
     from zreader.utils.cli import check_service
     from app.cli.broker import broker_status
     from app.cli.backend import backend_status
@@ -237,10 +426,20 @@ def status() -> None:
     backend_status()
 
 
-@cli.command(name='attach')
+@cli.command(name='attach', help='Attach local output stream to a running services')
 def attach(live: bool = Option(False, '--live', '-l', is_flag=True,
                                help='Stream only fresh log records')
            ) -> None:
+    """
+    Attach local output stream to a running services.
+
+    Parameters
+    ----------
+    live : bool, Default=False
+        Stream only fresh log records
+
+    """
+
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
