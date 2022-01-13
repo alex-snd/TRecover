@@ -2,11 +2,22 @@ from typer import Typer, Option, Context
 
 from config import var, log
 
-cli = Typer(name='Backend-cli', add_completion=False)
+cli = Typer(name='Backend-cli', add_completion=False, help='Manage Backend service')
 
 
 @cli.callback(invoke_without_command=True)
 def backend_state_verification(ctx: Context) -> None:
+    """
+    Perform cli commands and docker engine verification (state checking).
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level.
+
+   """
+
     from zreader.utils.docker import is_docker_running, get_container
 
     if not is_docker_running():
@@ -26,7 +37,7 @@ def backend_state_verification(ctx: Context) -> None:
         ctx.exit(1)
 
 
-@cli.command(name='start')
+@cli.command(name='start', help='Start service')
 def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
                                      help='Bind socket to this port.'),
                   auto_remove: bool = Option(False, '--rm', is_flag=True,
@@ -35,6 +46,22 @@ def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
                                         help='Attach local standard input, output, and error streams')
 
                   ) -> None:
+    """
+    Start backend service.
+
+    Parameters
+    ----------
+    port : int, default=ENV(BACKEND_PORT) or 6379
+        Bind backend socket to this port.
+
+    auto_remove : bool, default=False
+        Remove backend docker container after service exit.
+
+    attach : bool, default=False
+        Attach output and error streams.
+
+    """
+
     from zreader.utils.docker import get_client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
@@ -69,12 +96,14 @@ def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
         backend_attach()
 
 
-@cli.command(name='stop')
+@cli.command(name='stop', help='Stop service')
 def backend_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
                                       help='Prune backend.'),
                  v: bool = Option(False, '--volume', '-v', is_flag=True,
                                   help='Remove the volumes associated with the container')
                  ) -> None:
+    """ Stop backend service. """
+
     from zreader.utils.docker import get_container
 
     get_container(var.BACKEND_ID).stop()
@@ -85,12 +114,25 @@ def backend_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
         backend_prune(force=False, v=v)
 
 
-@cli.command(name='prune')
+@cli.command(name='prune', help='Prune docker container')
 def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                        help='Force the removal of a running container'),
                   v: bool = Option(False, '--volume', '-v', is_flag=True,
                                    help='Remove the volumes associated with the container')
                   ) -> None:
+    """
+    Prune backend service docker container.
+
+    Parameters
+    ----------
+    force : bool, default=False
+        Force the removal of a running container.
+
+    v : bool, default=False
+        Remove the volumes associated with the container.
+
+    """
+
     from zreader.utils.docker import get_container, get_volume
 
     container = get_container(var.BACKEND_ID)
@@ -106,8 +148,10 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
         log.project_console.print('Backend service is pruned', style='bright_blue')
 
 
-@cli.command(name='status')
+@cli.command(name='status', help='Display service status')
 def backend_status() -> None:
+    """ Display backend service status. """
+
     from zreader.utils.docker import get_container
 
     if (container := get_container(var.BACKEND_ID)) and container.status == 'running':
@@ -116,8 +160,10 @@ def backend_status() -> None:
         log.project_console.print('The backend service is not started', style='yellow')
 
 
-@cli.command(name='attach')
+@cli.command(name='attach', help='Attach local output stream to a service')
 def backend_attach() -> None:
+    """ Attach local output stream to a running backend service. """
+
     from zreader.utils.docker import get_container
 
     with log.project_console.screen(hide_cursor=True):

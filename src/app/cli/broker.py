@@ -2,11 +2,22 @@ from typer import Typer, Option, Context
 
 from config import var, log
 
-cli = Typer(name='Broker-cli', add_completion=False)
+cli = Typer(name='Broker-cli', add_completion=False, help='Manage Broker service')
 
 
 @cli.callback(invoke_without_command=True)
 def broker_state_verification(ctx: Context) -> None:
+    """
+    Perform cli commands and docker engine verification (state checking).
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level.
+
+   """
+
     from zreader.utils.docker import is_docker_running, get_container
 
     if not is_docker_running():
@@ -26,7 +37,7 @@ def broker_state_verification(ctx: Context) -> None:
         ctx.exit(1)
 
 
-@cli.command(name='start')
+@cli.command(name='start', help='Start service')
 def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
                                     help='Bind socket to this port.'),
                  ui_port: int = Option(var.BROKER_UI_PORT, '--port', '-p',
@@ -37,6 +48,25 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
                                        help='Attach local standard input, output, and error streams')
 
                  ) -> None:
+    """
+    Start broker service.
+
+    Parameters
+    ----------
+    port : int, default=ENV(BROKER_PORT) or 5672
+        Bind broker socket to this port.
+
+    ui_port : int, default=ENV(BROKER_UI_PORT) or 15672
+        Bind UI socket to this port.
+
+    auto_remove : bool, default=False
+        Remove broker docker container after service exit.
+
+    attach : bool, default=False
+        Attach output and error streams.
+
+    """
+
     from zreader.utils.docker import get_client, get_container, get_image, pull_image
     from rich.prompt import Confirm
 
@@ -71,12 +101,14 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
         broker_attach()
 
 
-@cli.command(name='stop')
+@cli.command(name='stop', help='Stop service')
 def broker_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
                                      help='Prune broker.'),
                 v: bool = Option(False, '--volume', '-v', is_flag=True,
                                  help='Remove the volumes associated with the container')
                 ) -> None:
+    """ Stop broker service. """
+
     from zreader.utils.docker import get_container
 
     get_container(var.BROKER_ID).stop()
@@ -87,12 +119,25 @@ def broker_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
         broker_prune(force=False, v=v)
 
 
-@cli.command(name='prune')
+@cli.command(name='prune', help='Prune docker container')
 def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
                                       help='Force the removal of a running container'),
                  v: bool = Option(False, '--volume', '-v', is_flag=True,
                                   help='Remove the volumes associated with the container')
                  ) -> None:
+    """
+    Prune broker service docker container.
+
+    Parameters
+    ----------
+    force : bool, default=False
+        Force the removal of a running container.
+
+    v : bool, default=False
+        Remove the volumes associated with the container.
+
+    """
+
     from zreader.utils.docker import get_container, get_volume
 
     container = get_container(var.BROKER_ID)
@@ -108,8 +153,10 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
         log.project_console.print('The broker service is pruned', style='bright_blue')
 
 
-@cli.command(name='status')
+@cli.command(name='status', help='Display service status')
 def broker_status() -> None:
+    """ Display broker service status. """
+
     from zreader.utils.docker import get_container
 
     if (container := get_container(var.BROKER_ID)) and container.status == 'running':
@@ -118,8 +165,10 @@ def broker_status() -> None:
         log.project_console.print('The broker service is not started', style='yellow')
 
 
-@cli.command(name='attach')
+@cli.command(name='attach', help='Attach local output stream to a service')
 def broker_attach() -> None:
+    """ Attach local output stream to a running broker service. """
+
     from zreader.utils.docker import get_container
 
     with log.project_console.screen(hide_cursor=True):

@@ -10,15 +10,15 @@ def download_data(sharing_link: str = Argument(..., help='Sharing link to the tr
                   save_dir: str = Option('./', help='Path where to store downloaded data')
                   ) -> None:
     """
-        Download train data from Yandex disk
+    Download train data from Yandex disk
 
-        Parameters
-        ----------
-        sharing_link: str
-            Sharing link to the train data on Yandex disk
+    Parameters
+    ----------
+    sharing_link: str
+        Sharing link to the train data on Yandex disk
 
-        save_dir: str
-            Path where to store downloaded data
+    save_dir: str
+        Path where to store downloaded data
 
     """
 
@@ -32,15 +32,15 @@ def download_artifacts(sharing_link: str = Argument(..., help='Sharing link to t
                        save_dir: str = Option('./', help='Path where to save downloaded artifacts')
                        ) -> None:
     """
-        Download model artifacts from Yandex disk
+    Download model artifacts from Yandex disk
 
-        Parameters
-        ----------
-        sharing_link: str
-            Sharing link to the model artifacts on Yandex disk
+    Parameters
+    ----------
+    sharing_link: str
+        Sharing link to the model artifacts on Yandex disk
 
-        save_dir: str
-            Path where to save downloaded artifacts
+    save_dir: str
+        Path where to save downloaded artifacts
 
     """
 

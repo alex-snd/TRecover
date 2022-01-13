@@ -18,7 +18,7 @@ cli.add_typer(backend.cli, name='backend')
 
 
 @cli.command(help='Perform keyless reading')
-def zread(inference_path: Path = Argument(..., help='Path to file or dir for inference', exists=True),
+def zread(data_path: Path = Argument(..., help='Path to file or dir for data', exists=True),
           model_params: Path = Option(var.INFERENCE_PARAMS_PATH, help='Path to model params json file', exists=True),
           weights_path: Path = Option(var.INFERENCE_WEIGHTS_PATH, help='Path to model weights', exists=True),
           cuda: bool = Option(var.CUDA, envvar='CUDA', help='CUDA enabled'),
@@ -36,30 +36,30 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
 
     Parameters
     ----------
-    inference_path : Path
-        Path to file or dir for inference
+    data_path : Path
+        Path to file or dir for data.
     model_params : Path
-        Path to model params json file
+        Path to model params json file.
     weights_path : Path
-        Path to model weights
+        Path to model weights.
     cuda : bool
-        CUDA enabled
+        CUDA enabled.
     gpu_id : int, default=0
-        GPU id on which perform computations
+        GPU id on which perform computations.
     separator : str, default=' '
-        Columns separator in the input files
+        Columns separator in the input files.
     noisy : bool, default=False
-        Indicates that input files are noisy texts
+        Indicates that input files are noisy texts.
     min_noise : int, default=3
-        Min noise size per column. Minimum value is zero
+        Min noise size per column. Minimum value is zero.
     max_noise : int, default=5
-        Max noise size per column. Maximum value is alphabet size
+        Max noise size per column. Maximum value is alphabet size.
     beam_width : int, default=5
-        Width for beam search algorithm. Maximum value is alphabet size
+        Width for beam search algorithm. Maximum value is alphabet size.
     n_to_show : int, default=0
-        Number of columns to visualize. Zero value means for no restriction's
+        Number of columns to visualize. Zero value means for no restriction's.
     delimiter : str, default=''
-        Delimiter for columns visualization
+        Delimiter for columns visualization.
 
     Examples
     --------
@@ -101,14 +101,14 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
     from zreader.utils.transform import tensor_to_columns, tensor_to_target
     from zreader.utils.visualization import visualize_columns, visualize_target
 
-    inference_path = Path(inference_path)
+    data_path = Path(data_path)
     params = load_params(Path(model_params))
 
     if not noisy and min_noise >= max_noise:
         log.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
         return
 
-    if not any([inference_path.is_file(), inference_path.is_dir()]):
+    if not any([data_path.is_file(), data_path.is_dir()]):
         log.project_logger.error('[red]Files for inference needed to be specified')
         return
 
@@ -130,7 +130,7 @@ def zread(inference_path: Path = Argument(..., help='Path to file or dir for inf
                              device, weights=Path(weights_path), silently=True)
     z_reader.eval()
 
-    files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
+    files, files_columns = get_files_columns(data_path, separator, noisy, min_noise, max_noise, n_to_show)
     files_src = files_columns_to_tensors(files_columns, device)
 
     for file_id, (file, src) in enumerate(zip(files, files_src), start=1):
@@ -174,11 +174,11 @@ def cli_state_verification(ctx: Context,
     ----------
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
-        for the script execution at every single level
+        for the script execution at every single level.
     config_file : Path, default=./zreader-compose.toml
-        Path to ZReader configuration file for "up" command
+        Path to ZReader configuration file for "up" command.
     attach_stream : bool, default=False
-        Attach output and error streams for "up" command'
+        Attach output and error streams for "up" command'.
 
     """
 
@@ -214,7 +214,7 @@ def up(ctx: Context) -> None:
     ----------
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
-        for the script execution at every single level
+        for the script execution at every single level.
 
     Config Variables
     ----------------
@@ -228,7 +228,6 @@ def up(ctx: Context) -> None:
 
     dashboard loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
 
     api host : str, default=ENV(FASTAPI_HOST) or 'localhost'
         Bind socket to this host.

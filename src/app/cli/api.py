@@ -2,11 +2,22 @@ from typer import Typer, Option, Argument, Context
 
 from config import var, log
 
-cli = Typer(name='API-cli', add_completion=False)
+cli = Typer(name='API-cli', add_completion=False, help='Manage API service')
 
 
 @cli.callback(invoke_without_command=True)
 def api_state_verification(ctx: Context) -> None:
+    """
+    Perform cli commands verification (state checking).
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level.
+
+    """
+
     if var.API_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
             log.project_console.print(':rocket: The API service is already started', style='bright_blue')
@@ -21,10 +32,21 @@ def api_state_verification(ctx: Context) -> None:
         ctx.exit(1)
 
 
-@cli.command(name='params')
+@cli.command(name='params', help='Receive params values')
 def api_params(url: str = Option(var.FASTAPI_URL, help='API url'),
                param: str = Option(None, help='Param name to receive')
                ) -> None:
+    """
+
+    Parameters
+    ----------
+    url : str, default=ENV(FASTAPI_URL) or 'http://localhost:8001'
+        API url.
+    param: str, default=None
+        Param name whose value to receive. If None receive all parameters values.
+
+    """
+
     import json
     import requests
 
@@ -37,7 +59,7 @@ def api_params(url: str = Option(var.FASTAPI_URL, help='API url'),
 
 
 @cli.command(name='zread')
-def api_zread(inference_path: str = Argument(..., help='Path to file or dir for inference'),
+def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'),
               url: str = Option(var.FASTAPI_URL, help='API url'),
               separator: str = Option(' ', help='Columns separator in the input files'),
               noisy: bool = Option(False, help='Input files are noisy texts'),
@@ -47,6 +69,55 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
               n_to_show: int = Option(0, help='Number of columns to visualize. Zero value means for no restrictions'),
               delimiter: str = Option('', help='Delimiter for columns visualization')
               ) -> None:
+    """
+        Send keyless reading API request.
+
+        Parameters
+        ----------
+        data_path : Path
+            Path to file or dir for data.
+        url : str
+            API url.
+        separator : str, default=' '
+            Columns separator in the input files.
+        noisy : bool, default=False
+            Indicates that input files are noisy texts.
+        min_noise : int, default=3
+            Min noise size per column. Minimum value is zero.
+        max_noise : int, default=5
+            Max noise size per column. Maximum value is alphabet size.
+        beam_width : int, default=5
+            Width for beam search algorithm. Maximum value is alphabet size.
+        n_to_show : int, default=0
+            Number of columns to visualize. Zero value means for no restriction's.
+        delimiter : str, default=''
+            Delimiter for columns visualization.
+
+        Examples
+        --------
+
+        >>> "zreader api zread examples/example_1.txt"
+        ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
+        │                                                        Columns                                                   │
+        │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
+        │ enpenkhgglrifflheioentrmjenkjnrmlhphdddeihliekeeeolflonpmctjolgkdeljjmljmmjiisjknjghgeelhkbddlpjjekrkdkilgiocii… │
+        │ gsxtoplqkrtknksinktipwvnlnqqrstotoqspoejtsnoiuoflpohvtovqeutunjojlmksonosskpvxporrltnfgoprdemstnshnssgnronjreqj… │
+        │ xvzwttqtxvxuoptowuxnxyzrwrrtwtyqwqvutrwrxvtxxwurrtqlwuqzvnwvxossmmpnutosuxlswyuvtttvqulrqzrrwuxtyqouwiuupwsxnrm… │
+        │  y y yz zy  y w zy uz  yys   u tzs   x u         wx     wy w tuvpuwu  x yyowyz  z  wxyu     xyy   v yr    t yvw… │
+        │                                                       Predicted                                                  │
+        │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
+        │                                                                                                                  │
+        ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+        Elapsed:   4.716 s
+
+
+        Notes
+        -----
+        A larger "beam_width" parameter value can improve keyless reading, but it will also take longer to compute.
+
+        """
+
     import requests
     from http import HTTPStatus
     from time import time, sleep
@@ -60,17 +131,17 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
     from zreader.utils.cli import get_files_columns
     from zreader.utils.visualization import visualize_columns
 
-    inference_path = Path(inference_path).absolute()
+    data_path = Path(data_path).absolute()
 
     if not noisy and min_noise >= max_noise:
         log.project_logger.error('[red]Maximum noise range must be grater than minimum noise range')
         return
 
-    if not any([inference_path.is_file(), inference_path.is_dir()]):
+    if not any([data_path.is_file(), data_path.is_dir()]):
         log.project_logger.error('[red]Files for inference needed to be specified')
         return
 
-    files, files_columns = get_files_columns(inference_path, separator, noisy, min_noise, max_noise, n_to_show)
+    files, files_columns = get_files_columns(data_path, separator, noisy, min_noise, max_noise, n_to_show)
     payload = {
         'data': None,
         'beam_width': beam_width,
@@ -144,7 +215,7 @@ def api_zread(inference_path: str = Argument(..., help='Path to file or dir for 
         log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
-@cli.command(name='start')
+@cli.command(name='start', help='Start service')
 def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind socket to this host.'),
               port: int = Option(var.FASTAPI_PORT, '--port', '-p', help='Bind socket to this port.'),
               loglevel: var.LogLevel = Option(var.LogLevel.info, '--loglevel', '-l', help='Logging level.'),
@@ -152,6 +223,28 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
               attach: bool = Option(False, '--attach', '-a', is_flag=True,
                                     help='Attach output and error streams')
               ) -> None:
+    """
+    Start API service.
+
+    Parameters
+    ----------
+    host : str, default=ENV(FASTAPI_HOST) or 'localhost'
+        Bind socket to this host.
+
+    port : int, default=ENV(FASTAPI_PORT) or 8001
+        Bind socket to this port.
+
+    loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
+        Level of logging.
+
+    concurrency : int, default=ENV(FASTAPI_WORKERS) or 1
+        The number of worker processes.
+
+    attach : bool, default=False
+        Attach output and error streams.
+
+    """
+
     from zreader.utils.cli import start_service
 
     argv = [
@@ -168,24 +261,38 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
         api_attach(live=False)
 
 
-@cli.command(name='stop')
+@cli.command(name='stop', help='Stop service')
 def api_stop() -> None:
+    """ Stop API service. """
+
     from zreader.utils.cli import stop_service
 
     stop_service(name='API', pidfile=var.API_PID)
 
 
-@cli.command(name='status')
+@cli.command(name='status', help='Display service status')
 def api_status() -> None:
+    """ Display API service status. """
+
     from zreader.utils.cli import check_service
 
     check_service(name='API', pidfile=var.API_PID)
 
 
-@cli.command(name='attach')
+@cli.command(name='attach', help='Attach local output stream to a service')
 def api_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
                                    help='Stream only fresh log records')
                ) -> None:
+    """
+    Attach local output stream to a running API service.
+
+    Parameters
+    ----------
+    live : bool, Default=False
+        Stream only fresh log records
+
+    """
+
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
