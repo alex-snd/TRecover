@@ -1,2 +1,2 @@
-celery[redis]==5.1.2
+celery[redis]==5.2.2
 torch==1.9.0
