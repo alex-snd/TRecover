@@ -160,7 +160,7 @@ def zread(data_path: Path = Argument(..., help='Path to file or dir for data', e
         log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
 
 
-@cli.callback(invoke_without_command=True)
+@cli.callback(invoke_without_command=True, help='')
 def cli_state_verification(ctx: Context,
                            config_file: Path = Option('zreader-compose.toml', '--file', '-f', exists=True,
                                                       help='Path to ZReader configuration file for "up" command'),
