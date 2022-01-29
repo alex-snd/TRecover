@@ -6,19 +6,61 @@ from config import var
 
 
 class PredictPayload(BaseModel):
+    """ Content declaration of the request body to keyless read. """
+
     data: List[str]
     beam_width: int
     delimiter: Optional[str] = ''
 
     @validator('data')
-    def data_validator(cls, data: str) -> Optional[str]:
-        if not data:
+    def data_validator(cls, data: List[str]) -> List[str]:
+        """
+        Check columns to keyless read.
+
+        Parameters
+        ----------
+        data: List[str]
+            Columns to keyless read
+
+        Returns
+        -------
+        data : List[str]
+            Columns to keyless read.
+
+        Raises
+        ------
+        ValueError
+            If at least one column is empty.
+
+        """
+
+        if not data:  # TODO any()
             ValueError(f'Data for zread must contain at least one character')
 
         return data
 
     @validator('beam_width')
-    def beam_width_validator(cls, beam_width: int) -> Optional[int]:
+    def beam_width_validator(cls, beam_width: int) -> int:
+        """
+        Check columns to keyless read.
+
+        Parameters
+        ----------
+        beam_width: int
+            Columns to keyless read
+
+        Returns
+        -------
+        beam_width : int
+            Width of beam search algorithm.
+
+        Raises
+        ------
+        ValueError
+            If the beam width is out of range.
+
+        """
+
         if not 1 <= beam_width <= len(var.ALPHABET):
             raise ValueError(f'Beam width must be in between 1 and {len(var.ALPHABET)}')
 
@@ -58,6 +100,8 @@ class PredictPayload(BaseModel):
 
 
 class BaseResponse(BaseModel):
+    """ Basic contents declaration of the response body for all API handlers. """
+
     message: str
     method: str
     status_code: int
@@ -66,10 +110,12 @@ class BaseResponse(BaseModel):
 
 
 class TaskResponse(BaseResponse):
+    """ Contents declaration of the 'zread' handler response body. """
+
     task_id: Optional[str]
 
     class Config:
-        """ InteractiveResponse example for API documentation"""
+        """ TaskResponse example for API documentation"""
 
         schema_extra = {
             'example': {
@@ -84,13 +130,15 @@ class TaskResponse(BaseResponse):
 
 
 class PredictResponse(BaseResponse):
+    """ Contents declaration of the 'status' handler response body. """
+
     data: Optional[List[str]]
     chains: Optional[List[Tuple]]
     state: Optional[str]
     progress: Optional[int]
 
     class Config:
-        """ PredictPayload example for API documentation"""
+        """ PredictResponse example for API documentation"""
 
         schema_extra = {
             'example': {
