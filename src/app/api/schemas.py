@@ -34,7 +34,7 @@ class PredictPayload(BaseModel):
 
         """
 
-        if not data:  # TODO any()
+        if any([len(column) == 0 for column in data]):
             ValueError(f'Data for zread must contain at least one character')
 
         return data
