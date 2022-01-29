@@ -131,5 +131,5 @@ class ZReader(nn.Module):
     def save(self, filename: Path) -> None:
         torch.save(self.state_dict(), filename)
 
-    def load_parameters(self, filename: Path, device: torch.device) -> None:
-        self.load_state_dict(torch.load(filename, map_location=device))
+    def load_parameters(self, filename: Path, device: torch.device, strict: bool = True) -> None:
+        self.load_state_dict(torch.load(filename, map_location=device), strict=strict)
