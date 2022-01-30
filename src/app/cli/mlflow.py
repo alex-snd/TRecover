@@ -76,6 +76,11 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
     attach : bool, default=False
         Attach output and error streams.
 
+    Raises
+    ------
+    typer.BadParameter
+        If concurrency option is not equal to one for windows platform.
+
     """
 
     import platform

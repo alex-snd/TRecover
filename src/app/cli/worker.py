@@ -69,6 +69,11 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
     attach : bool, default=False
         Attach output and error streams.
 
+    Raises
+    ------
+    typer.BadParameter
+        If non-solo pool type is selected for windows platform.
+
     """
 
     import platform
