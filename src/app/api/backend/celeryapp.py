@@ -1,23 +1,12 @@
-import celery
+from celery import Celery
 from celery.signals import after_setup_task_logger, after_setup_logger
 
 from config import var, log
 
-
-class Celery(celery.Celery):
-
-    def gen_task_name(self, name: str, module: str) -> str:
-        if module.startswith('src.'):
-            module = module[4:]
-
-        return super().gen_task_name(name, module)
-
-
 celery_app = Celery('ZReader',
                     broker=var.CELERY_BROKER,
                     backend=var.CELERY_BACKEND,
-                    include=['app.api.backend.tasks']
-                    )
+                    include=['app.api.backend.tasks'])
 
 celery_app.conf.update({
     'task_serializer': 'json',
@@ -30,14 +19,17 @@ celery_app.conf.update({
 })
 
 
-# Configure Celery logger
 @after_setup_task_logger.connect
 def setup_task_logger(logger, *args, **kwargs):
+    """ Customize celery task logger. """
+
     logger.addHandler(hdlr=log.error_handler)
     logger.addHandler(hdlr=log.info_handler)
 
 
 @after_setup_logger.connect
 def setup_task_logger(logger, *args, **kwargs):
+    """ Customize celery logger. """
+
     logger.addHandler(hdlr=log.error_handler)
     logger.addHandler(hdlr=log.info_handler)
