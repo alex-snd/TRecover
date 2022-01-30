@@ -1,32 +1,32 @@
 from typing import Tuple, List, Dict
 
 from app.api.backend.celeryapp import celery_app
-from app.api.backend.tasksbase import ArtifactsTask, PredictTask
+from app.api.backend.tasksbase import ModelConfigTask, PredictTask
 
 
-@celery_app.task(bind=True, base=ArtifactsTask)
-def get_artifacts(self: ArtifactsTask) -> Dict:
+@celery_app.task(bind=True, base=ModelConfigTask)
+def get_model_config(self: ModelConfigTask) -> Dict:
     """
     Celery task implementation that returns values of the model configuration.
 
     Parameters
     ----------
-    self: ArtifactsTask
+    self: ModelConfigTask
         Celery task base class.
 
     Returns
     -------
-    self.params : Dict
+    self.config : Dict
         The values of the model configuration.
 
     """
 
-    return self.artifacts
+    return self.config
 
 
 @celery_app.task(bind=True, base=PredictTask)
 def predict(self: PredictTask,
-            data: List[str],
+            columns: List[str],
             beam_width: int,
             delimiter: str
             ) -> Tuple[List[str], List[Tuple[str, float]]]:
@@ -37,7 +37,7 @@ def predict(self: PredictTask,
     ----------
     self: ArtifactsTask
         Celery task base class.
-    data: List[str]
+    columns: List[str]
         Columns to keyless read.
     beam_width: int
         Width for beam search algorithm. Maximum value is alphabet size.
@@ -46,8 +46,8 @@ def predict(self: PredictTask,
 
     Returns
     -------
-    self.params : Dict
-        The values of the model configuration.
+    (columns, chains) : Tuple[List[str], List[Tuple[str, float]]]
+        The columns and read chains.
 
     Raises
     ------
@@ -60,11 +60,11 @@ def predict(self: PredictTask,
     from zreader.utils.transform import columns_to_tensor, tensor_to_target
     from zreader.utils.visualization import visualize_target
 
-    assert len(data) <= self.model.pe_max_len, f'Number of columns must be less than {self.model.pe_max_len}.'
+    assert len(columns) <= self.model.pe_max_len, f'Number of columns must be less than {self.model.pe_max_len}.'
 
-    src = columns_to_tensor(data, self.device)
+    src = columns_to_tensor(columns, self.device)
 
     chains = beam_search(src, self.model, beam_width, self.device, beam_loop=celery_task_loop(self))
     chains = [(visualize_target(tensor_to_target(chain), delimiter=delimiter), prob) for (chain, prob) in chains]
 
-    return data, chains
+    return columns, chains

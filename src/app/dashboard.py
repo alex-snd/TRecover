@@ -119,7 +119,7 @@ def save_to_history(is_plain: bool,
 def predict(columns: List[str], bw: int) -> List[Tuple[str, float]]:
     try:
         payload = {
-            'data': columns,
+            'columns': columns,
             'beam_width': bw
         }
 

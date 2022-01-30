@@ -32,18 +32,19 @@ def api_state_verification(ctx: Context) -> None:
         ctx.exit(1)
 
 
-@cli.command(name='params', help='Receive params values')
-def api_params(url: str = Option(var.FASTAPI_URL, help='API url'),
+@cli.command(name='config', help='Receive configuration or specific parameter of the model used for inference')
+def api_config(url: str = Option(var.FASTAPI_URL, help='API url'),
                param: str = Option(None, help='Param name to receive')
                ) -> None:
     """
+    Receive configuration or specific parameter of the model used for inference.
 
     Parameters
     ----------
     url : str, default=ENV(FASTAPI_URL) or 'http://localhost:8001'
         API url.
     param: str, default=None
-        Param name whose value to receive. If None receive all parameters values.
+        Param name whose value to receive. Receive all configuration values if None.
 
     """
 
@@ -51,14 +52,14 @@ def api_params(url: str = Option(var.FASTAPI_URL, help='API url'),
     import requests
 
     if param:
-        response = requests.get(url=f'{url}/params/{param}')
+        response = requests.get(url=f'{url}/config/{param}')
     else:
-        response = requests.get(url=f'{url}/params')
+        response = requests.get(url=f'{url}/config')
 
     log.project_console.print(json.dumps(response.json(), indent=4))
 
 
-@cli.command(name='zread')
+@cli.command(name='zread', help='Send keyless reading API request')
 def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'),
               url: str = Option(var.FASTAPI_URL, help='API url'),
               separator: str = Option(' ', help='Columns separator in the input files'),
@@ -70,53 +71,53 @@ def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'
               delimiter: str = Option('', help='Delimiter for columns visualization')
               ) -> None:
     """
-        Send keyless reading API request.
+    Send keyless reading API request.
 
-        Parameters
-        ----------
-        data_path : Path
-            Path to file or dir for data.
-        url : str
-            API url.
-        separator : str, default=' '
-            Columns separator in the input files.
-        noisy : bool, default=False
-            Indicates that input files are noisy texts.
-        min_noise : int, default=3
-            Min noise size per column. Minimum value is zero.
-        max_noise : int, default=5
-            Max noise size per column. Maximum value is alphabet size.
-        beam_width : int, default=5
-            Width for beam search algorithm. Maximum value is alphabet size.
-        n_to_show : int, default=0
-            Number of columns to visualize. Zero value means for no restriction's.
-        delimiter : str, default=''
-            Delimiter for columns visualization.
+    Parameters
+    ----------
+    data_path : Path
+        Path to file or dir for data.
+    url : str
+        API url.
+    separator : str, default=' '
+        Columns separator in the input files.
+    noisy : bool, default=False
+        Indicates that input files are noisy texts.
+    min_noise : int, default=3
+        Min noise size per column. Minimum value is zero.
+    max_noise : int, default=5
+        Max noise size per column. Maximum value is alphabet size.
+    beam_width : int, default=5
+        Width for beam search algorithm. Maximum value is alphabet size.
+    n_to_show : int, default=0
+        Number of columns to visualize. Zero value means for no restriction's.
+    delimiter : str, default=''
+        Delimiter for columns visualization.
 
-        Examples
-        --------
+    Examples
+    --------
+    >>> "zreader api zread examples/example_1.txt"
 
-        >>> "zreader api zread examples/example_1.txt"
-        ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
-        │                                                        Columns                                                   │
-        │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
-        │ enpenkhgglrifflheioentrmjenkjnrmlhphdddeihliekeeeolflonpmctjolgkdeljjmljmmjiisjknjghgeelhkbddlpjjekrkdkilgiocii… │
-        │ gsxtoplqkrtknksinktipwvnlnqqrstotoqspoejtsnoiuoflpohvtovqeutunjojlmksonosskpvxporrltnfgoprdemstnshnssgnronjreqj… │
-        │ xvzwttqtxvxuoptowuxnxyzrwrrtwtyqwqvutrwrxvtxxwurrtqlwuqzvnwvxossmmpnutosuxlswyuvtttvqulrqzrrwuxtyqouwiuupwsxnrm… │
-        │  y y yz zy  y w zy uz  yys   u tzs   x u         wx     wy w tuvpuwu  x yyowyz  z  wxyu     xyy   v yr    t yvw… │
-        │                                                       Predicted                                                  │
-        │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
-        │                                                                                                                  │
-        ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
+    │                                                        Columns                                                   │
+    │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
+    │ enpenkhgglrifflheioentrmjenkjnrmlhphdddeihliekeeeolflonpmctjolgkdeljjmljmmjiisjknjghgeelhkbddlpjjekrkdkilgiocii… │
+    │ gsxtoplqkrtknksinktipwvnlnqqrstotoqspoejtsnoiuoflpohvtovqeutunjojlmksonosskpvxporrltnfgoprdemstnshnssgnronjreqj… │
+    │ xvzwttqtxvxuoptowuxnxyzrwrrtwtyqwqvutrwrxvtxxwurrtqlwuqzvnwvxossmmpnutosuxlswyuvtttvqulrqzrrwuxtyqouwiuupwsxnrm… │
+    │  y y yz zy  y w zy uz  yys   u tzs   x u         wx     wy w tuvpuwu  x yyowyz  z  wxyu     xyy   v yr    t yvw… │
+    │                                                       Predicted                                                  │
+    │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
+    │                                                                                                                  │
+    ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-        Elapsed:   4.716 s
+    Elapsed:   4.716 s
 
 
-        Notes
-        -----
-        A larger "beam_width" parameter value can improve keyless reading, but it will also take longer to compute.
+    Notes
+    -----
+    A larger "beam_width" parameter value can improve keyless reading, but it will also take longer to compute.
 
-        """
+    """
 
     import requests
     from http import HTTPStatus
@@ -143,7 +144,7 @@ def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'
 
     files, files_columns = get_files_columns(data_path, separator, noisy, min_noise, max_noise, n_to_show)
     payload = {
-        'data': None,
+        'columns': None,
         'beam_width': beam_width,
         'delimiter': delimiter
     }
@@ -153,7 +154,7 @@ def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'
 
         file_columns = [''.join(set(c)) for c in file_columns]
 
-        payload['data'] = file_columns
+        payload['columns'] = file_columns
         task_info = requests.post(url=f'{url}/zread', json=payload)
         task_info = task_info.json()
 

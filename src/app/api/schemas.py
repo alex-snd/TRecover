@@ -8,18 +8,18 @@ from config import var
 class PredictPayload(BaseModel):
     """ Content declaration of the request body to keyless read. """
 
-    data: List[str]
+    columns: List[str]
     beam_width: int
     delimiter: Optional[str] = ''
 
-    @validator('data')
-    def data_validator(cls, data: List[str]) -> List[str]:
+    @validator('columns')
+    def columns_validator(cls, columns: List[str]) -> List[str]:
         """
         Check columns to keyless read.
 
         Parameters
         ----------
-        data: List[str]
+        columns: List[str]
             Columns to keyless read
 
         Returns
@@ -34,10 +34,10 @@ class PredictPayload(BaseModel):
 
         """
 
-        if any([len(column) == 0 for column in data]):
+        if any([len(column) == 0 for column in columns]):
             raise ValueError(f'Columns to keyless read must contain at least one character')
 
-        return data
+        return columns
 
     @validator('beam_width')
     def beam_width_validator(cls, beam_width: int) -> int:
@@ -71,7 +71,7 @@ class PredictPayload(BaseModel):
 
         schema_extra = {
             'example': {
-                'data': ['adin', 'scjz', 'pzxz', 'evft', 'odev', 'pkzc', 'lipss', 'eayh', 'aepqc', 'rvuqh', 'ozldx',
+                'columns': ['adin', 'scjz', 'pzxz', 'evft', 'odev', 'pkzc', 'lipss', 'eayh', 'aepqc', 'rvuqh', 'ozldx',
                          'ulgq', 'nabhr', 'dvvf', 'tmil', 'huiow', 'euzq', 'cdmh', 'ompzv', 'uguq', 'ntvqi', 'tctm',
                          'rwgi', 'yuonh', 'wkvr', 'efau', 'nrele', 'tbhxq', 'iiqd', 'nhwfy', 'tymio', 'onzpj', 'turho',
                          'hhgnd', 'ehmof', 'scpoi', 'tyqbn', 'roul', 'exoe', 'edwyc', 'thid', 'snqrp', 'tmmh', 'oejg',
@@ -132,7 +132,7 @@ class TaskResponse(BaseResponse):
 class PredictResponse(BaseResponse):
     """ Contents declaration of the 'status' handler response body. """
 
-    data: Optional[List[str]]
+    columns: Optional[List[str]]
     chains: Optional[List[Tuple]]
     state: Optional[str]
     progress: Optional[int]
@@ -147,7 +147,7 @@ class PredictResponse(BaseResponse):
                 "status_code": 200,
                 "timestamp": "2021-09-04T12:54:49.801614",
                 "url": "http://localhost:5001/status/909e4817-cca3-4dbf-a598-f7f83c5d60c9",
-                "data": [
+                "columns": [
                     "adin", "scjz", "pzxz", "evft", "odev", "pkzc", "lipss", "eayh", "aepqc", "rvuqh", "ozldx", "ulgq",
                     "nabhr", "dvvf", "tmil", "huiow", "euzq", "cdmh", "ompzv", "uguq", "ntvqi", "tctm", "rwgi", "yuonh",
                     "wkvr", "efau", "nrele", "tbhxq", "iiqd", "nhwfy", "tymio", "onzpj", "turho", "hhgnd", "ehmof",

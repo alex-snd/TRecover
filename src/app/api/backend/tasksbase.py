@@ -1,15 +1,15 @@
-from typing import Optional
+from typing import Optional, Dict
 
 import celery
 
 from config import var
 
 
-class ArtifactsTask(celery.Task):
+class ModelConfigTask(celery.Task):
     def __init__(self):
-        super(ArtifactsTask, self).__init__()
+        super(ModelConfigTask, self).__init__()
 
-        self.params: Optional[dict] = None
+        self.config: Optional[Dict] = None
 
     def __call__(self, *args, **kwargs):
         """
@@ -18,12 +18,14 @@ class ArtifactsTask(celery.Task):
 
         """
 
-        if not self.params:
+        if not self.config:
             import torch
             from zreader.utils.model import load_params
 
-            self.params = load_params(var.INFERENCE_PARAMS_PATH)
-            self.params.cuda = var.CUDA and torch.cuda.is_available()
+            config = load_params(var.INFERENCE_PARAMS_PATH)
+            config.cuda = var.CUDA and torch.cuda.is_available()
+
+            self.config = config.jsonify()
 
         return self.run(*args, **kwargs)
 

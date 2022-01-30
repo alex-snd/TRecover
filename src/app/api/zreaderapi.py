@@ -7,11 +7,11 @@ from celery.result import AsyncResult
 from fastapi import FastAPI, Request, Path
 
 from app.api.backend.celeryapp import celery_app
-from app.api.backend.tasks import predict, get_artifacts
+from app.api.backend.tasks import predict, get_model_config
 from app.api.schemas import PredictPayload, PredictResponse, TaskResponse
 from config import log
 
-api = FastAPI(title='ZreaderAPI', description='Description will be here')  # TODO description
+api = FastAPI(title='ZReaderAPI', description='Description will be here')  # TODO description
 
 
 @api.on_event('startup')
@@ -88,11 +88,11 @@ def index(request: Request) -> Dict:
     }
 
 
-@api.get('/params', tags=['Parameters'])
+@api.get('/config', tags=['Configuration'])
 @construct_response
-def all_parameters(request: Request) -> Dict:
+def config(request: Request) -> Dict:
     """
-    Get model parameter's values used for inference.
+    Get the configuration of the model used for inference.
 
     Parameters
     ----------
@@ -102,27 +102,27 @@ def all_parameters(request: Request) -> Dict:
     Returns
     -------
     response: Dict
-        Response containing the values of the model parameters in the 'artifacts' field.
+        Response containing the values of the model configuration in the 'config' field.
 
     """
 
-    task = get_artifacts.delay()
-    artifacts = task.get()
+    task = get_model_config.delay()
+    model_config = task.get()
 
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        'artifacts': artifacts
+        'config': model_config
     }
 
     return response
 
 
-@api.get('/params/{param}', tags=['Parameters'])
+@api.get('/config/{param}', tags=['Configuration'])
 @construct_response
-def parameters(request: Request, param: str) -> Dict:
+def config_param(request: Request, param: str) -> Dict:
     """
-    Get a specific parameter's value used for inference.
+    Get the specific configuration parameter of the model used for inference.
 
     Parameters
     ----------
@@ -135,18 +135,18 @@ def parameters(request: Request, param: str) -> Dict:
     Returns
     -------
     response: Dict
-        Response containing the value of the specific model parameter in
+        Response containing the value of the specific configuration parameter in
         the '<param>' field if it exists, otherwise 'Not found' value.
 
     """
 
-    task = get_artifacts.delay()
-    artifacts = task.get()
+    task = get_model_config.delay()
+    model_config = task.get()
 
     response = {
         'message': HTTPStatus.OK.phrase,
         'status_code': HTTPStatus.OK,
-        param: artifacts.get(param, 'Not found')
+        param: model_config.get(param, 'Not found')
     }
 
     return response
@@ -173,7 +173,7 @@ def zread(request: Request, payload: PredictPayload) -> Dict:
 
     """
 
-    task = predict.delay(payload.data, payload.beam_width, payload.delimiter)
+    task = predict.delay(payload.columns, payload.beam_width, payload.delimiter)
 
     response = {
         'message': HTTPStatus.ACCEPTED.phrase,
@@ -221,14 +221,14 @@ def status(request: Request,
         }
 
     elif task.ready():
-        data, chains = task.get()
+        columns, chains = task.get()
 
         response = {
             'message': HTTPStatus.OK.phrase,
             'status_code': HTTPStatus.OK,
-            'data': data,
+            'columns': columns,
             'chains': chains,
-            'progress': len(data)
+            'progress': len(columns)
         }
     else:
         info = task.info
