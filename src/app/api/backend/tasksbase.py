@@ -12,6 +12,12 @@ class ArtifactsTask(celery.Task):
         self.params: Optional[dict] = None
 
     def __call__(self, *args, **kwargs):
+        """
+        Load params config on first call (i.e. first task processed).
+        Avoids the need to load params config on each task request.
+
+        """
+
         if not self.params:
             import torch
             from zreader.utils.model import load_params
@@ -32,8 +38,8 @@ class PredictTask(celery.Task):
 
     def __call__(self, *args, **kwargs):
         """
-            Load model on first call (i.e. first task processed)
-            Avoids the need to load model on each task request
+        Load model on first call (i.e. first task processed).
+        Avoids the need to load model on each task request.
 
         """
 
