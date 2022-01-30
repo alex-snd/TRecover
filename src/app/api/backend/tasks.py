@@ -6,6 +6,21 @@ from app.api.backend.tasksbase import ArtifactsTask, PredictTask
 
 @celery_app.task(bind=True, base=ArtifactsTask)
 def get_artifacts(self: ArtifactsTask) -> Dict:
+    """
+    Celery task implementation that returns values of the model configuration.
+
+    Parameters
+    ----------
+    self: ArtifactsTask
+        Celery task base class.
+
+    Returns
+    -------
+    self.params : Dict
+        The values of the model configuration.
+
+    """
+
     return self.artifacts
 
 
@@ -15,6 +30,32 @@ def predict(self: PredictTask,
             beam_width: int,
             delimiter: str
             ) -> Tuple[List[str], List[Tuple[str, float]]]:
+    """
+    Celery task implementation that performs keyless reading.
+
+    Parameters
+    ----------
+    self: ArtifactsTask
+        Celery task base class.
+    data: List[str]
+        Columns to keyless read.
+    beam_width: int
+        Width for beam search algorithm. Maximum value is alphabet size.
+    delimiter: str
+        Delimiter for columns visualization.
+
+    Returns
+    -------
+    self.params : Dict
+        The values of the model configuration.
+
+    Raises
+    ------
+    AssertionError
+        If the number of columns is grater than self.model.pe_max_len.
+
+    """
+
     from zreader.utils.beam_search import beam_search, celery_task_loop
     from zreader.utils.transform import columns_to_tensor, tensor_to_target
     from zreader.utils.visualization import visualize_target
