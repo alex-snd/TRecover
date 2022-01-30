@@ -35,7 +35,7 @@ class PredictPayload(BaseModel):
         """
 
         if any([len(column) == 0 for column in data]):
-            raise ValueError(f'Data for zread must contain at least one character')
+            raise ValueError(f'Columns to keyless read must contain at least one character')
 
         return data
 
