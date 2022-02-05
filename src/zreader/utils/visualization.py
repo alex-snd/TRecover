@@ -2,6 +2,24 @@ from typing import List, Union
 
 
 def visualize_columns(columns: List[str], delimiter: str = '', as_rows=False) -> Union[str, List[str]]:
+    """
+    Get the columns string representation.
+
+    Parameters
+    ----------
+    columns: List[str]
+        Columns for keyless reading.
+    delimiter: str
+        Delimiter for columns visualization.
+    as_rows: bool
+        Return visualization as a list of strings.
+
+    Returns
+    -------
+    Visualization as a string or list of strings.
+
+    """
+
     if len(columns) == 0:
         return ''
 
@@ -21,4 +39,20 @@ def visualize_columns(columns: List[str], delimiter: str = '', as_rows=False) ->
 
 
 def visualize_target(target: List[str], delimiter: str = '') -> str:
+    """
+    Get the target string representation.
+
+    Parameters
+    ----------
+    target: List[str]
+        List of correct symbols for each column.
+    delimiter: str
+        Delimiter for target visualization.
+
+    Returns
+    -------
+    Visualization as a string.
+
+    """
+
     return f'{delimiter}{delimiter.join(target)}{delimiter}'

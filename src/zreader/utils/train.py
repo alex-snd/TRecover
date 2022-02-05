@@ -11,6 +11,8 @@ from torch.optim import Optimizer
 
 
 class ExperimentParams(dict):
+    """ Container for experiment parameters """
+
     def __init__(self, params: Union[Namespace, Dict, None] = None):
         super(ExperimentParams, self).__init__()
 
@@ -29,6 +31,14 @@ class ExperimentParams(dict):
         return str(self.__dict__)
 
     def jsonify(self) -> Dict:
+        """
+        Simplify experiment parameters for further json serialization.
+
+        Returns
+        -------
+            Experiment parameters as a dictionary with python built-in types values.
+
+        """
         simplified = dict()
         simplified.update(self.__dict__)
 
@@ -43,18 +53,36 @@ class ExperimentParams(dict):
 
 
 def set_seeds(seed: int = 2531) -> None:
+    """ Set seeds for experiment reproducibility """
+
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
 
 
-def get_experiment_mark():
+def get_experiment_mark() -> str:
+    """ Generate a string mark based on current date """
+
     date = datetime.now()
     return f'{date.month:0>2}-{date.day:0>2}-{date.hour:0>2}-{date.minute:0>2}'
 
 
 def optimizer_to_str(optimizer: Optimizer) -> str:
+    """
+    Get optimizer object string representation.
+
+    Parameters
+    ----------
+    optimizer: Optimizer
+        Optimizer object for representation.
+
+    Returns
+    -------
+        Optimizer string representation.
+
+    """
+
     optimizer_str_repr = str(optimizer)
 
     optimizer_name = optimizer_str_repr.split()[0]
@@ -64,6 +92,21 @@ def optimizer_to_str(optimizer: Optimizer) -> str:
 
 
 def transfer(tensors: Tuple[Optional[Tensor], ...], to_device: torch.device) -> Tuple[Optional[Tensor], ...]:
+    """
+    Transfer the tensors to a specified device.
+
+    Parameters
+    ----------
+    tensors: Tuple
+        Sequence of tensors to transfer.
+    to_device: torch.device
+        The desired device of returned tensors.
+
+    Returns
+    -------
+        Tuple of tensors allocated on the specified device.
+
+    """
     return tuple([
         tensor.to(to_device) if isinstance(tensor, Tensor) else tensor
         for tensor in tensors
