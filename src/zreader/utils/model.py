@@ -11,27 +11,22 @@ from zreader.utils.train import ExperimentParams
 
 
 def get_recent_weights_path(exp_dir: Path,
-                            exp_mark: Optional[str] = None,
+                            exp_mark: str,
                             weights_name: Optional[str] = None
                             ) -> Optional[Path]:
-    if exp_mark:
-        if weights_name:
-            return exp_dir / exp_mark / weights_name
+    if weights_name:
+        return weights_path if (weights_path := exp_dir / exp_mark / weights_name).exists() else None
 
-        weights_path = exp_dir / exp_mark / 'weights'
+    if (weights_path := exp_dir / exp_mark / 'weights').exists():
+        recent_weights = None
+        most_recent_timestamp = 0
 
-        if weights_path.exists():
-            recent_weights = None
-            most_recent_timestamp = 0
+        for weights in weights_path.iterdir():
+            if timestamp := weights.stat().st_ctime > most_recent_timestamp:
+                recent_weights = weights
+                most_recent_timestamp = timestamp
 
-            for weights in weights_path.iterdir():
-                if timestamp := weights.stat().st_ctime > most_recent_timestamp:
-                    recent_weights = weights
-                    most_recent_timestamp = timestamp
-
-            return recent_weights
-
-    return None
+        return recent_weights
 
 
 def get_model(token_size: int,
@@ -68,7 +63,6 @@ def get_model(token_size: int,
 
 
 def load_params(model_params: Path) -> ExperimentParams:
-    # TODO load mlflow artifacts
     return ExperimentParams(json.load(model_params.open()))
 
 
