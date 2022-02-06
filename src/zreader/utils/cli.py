@@ -16,13 +16,29 @@ from config import var, log
 
 
 def get_real_direct_link(sharing_link: str) -> str:
+    """
+    Get a direct download link.
+
+    Parameters
+    ----------
+    sharing_link:
+        Sharing link to the file on Yandex disk.
+
+    Returns
+    -------
+    Direct link if it converts, otherwise None.
+
+    """
+
     pk_request = requests.get(
         f'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={sharing_link}')
 
-    return pk_request.json().get('href')  # Returns None if the link cannot be 'converted'
+    return pk_request.json().get('href')
 
 
 def extract_filename(direct_link: str) -> Optional[str]:
+    """ Get filename of downloaded data """
+
     for chunk in direct_link.strip().split('&'):
         if chunk.startswith('filename='):
             return chunk.split('=')[1]
@@ -32,21 +48,20 @@ def extract_filename(direct_link: str) -> Optional[str]:
 
 def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     """
-        Download file from Yandex disk
+    Download file from Yandex disk
 
-        Notes
-        -----
-        sharing_link: str
-            Sharing link to the file on Yandex disk
+    Parameters
+    ----------
+    sharing_link: str
+        Sharing link to the file on Yandex disk.
 
-        save_dir: str
-            Path where to store downloaded file
+    save_dir: str
+        Path where to store downloaded file.
 
-
-        Returns
-        -------
-        filepath: Optional[Path]
-            Path to the downloaded file. None if failed to download
+    Returns
+    -------
+    filepath: Optional[Path]
+        Path to the file if download was successful, otherwise None.
 
     """
 
@@ -87,15 +102,15 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
 
 def download_archive_from_disk(sharing_link: str, save_dir: str) -> None:
     """
-        Download archive file from Yandex disk and extract it to save_dir
+    Download archive file from Yandex disk and extract it to save_dir.
 
-        Notes
-        -----
-        sharing_link: str
-            Sharing link to the archive file on Yandex disk
+    Parameters
+    ----------
+    sharing_link: str
+        Sharing link to the archive file on Yandex disk
 
-        save_dir: str
-            Path where to store extracted data
+    save_dir: str
+        Path where to store extracted data
 
     """
 
@@ -115,6 +130,31 @@ def get_files_columns(inference_path: Path,
                       max_noise: int,
                       n_to_show: int,
                       ) -> Tuple[List[Path], List[List[str]]]:
+    """
+    Get columns for keyless reading from plain data contained in the files with defined noise range.
+
+    Parameters
+    ----------
+    inference_path:
+        Paths to folder with files that contain data to read or create noised columns for keyless reading.
+    separator: str
+        Separator to split the data into columns.
+    noisy: bool
+        Indicates that the data in the files is already noisy and contains columns for keyless reading.
+    min_noise: int
+        Minimum noise range value.
+    max_noise: int
+        Maximum noise range value.
+    n_to_show: int
+        Maximum number of columns. Zero means no restrictions.
+
+    Returns
+    -------
+    (files, files_columns): Tuple[List[Path], List[List[str]]]
+        List of paths and batch of columns for keyless reading.
+
+    """
+
     from zreader.utils.inference import read_files_columns, create_files_noisy_columns
 
     if inference_path.is_file():
@@ -131,6 +171,8 @@ def get_files_columns(inference_path: Path,
 
 
 def parse_config(file: Path) -> Namespace:
+    """ Parse configuration file for 'zreader up' command. """
+
     conf = var.DEFAULT_CONFIG
     parsed_conf = toml.load(file)
 
@@ -145,6 +187,22 @@ def parse_config(file: Path) -> Namespace:
 
 
 def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> None:
+    """
+    Start service as a new process with given pid and log files.
+
+    Parameters
+    ----------
+    argv: List[str]
+        New process command.
+    name: str
+        Service name.
+    logfile: Path
+        Service logfile path.
+    pidfile: Path
+        Service pidfile path.
+
+    """
+
     if platform.system() == 'Windows':
         from subprocess import CREATE_NO_WINDOW
 
@@ -161,6 +219,18 @@ def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> N
 
 
 def stop_service(name: str, pidfile: Path) -> None:
+    """
+    Send an interrupt signal to the process with given pid.
+
+    Parameters
+    ----------
+    name: str
+        Service name.
+    pidfile: Path
+        Service pidfile path.
+
+    """
+
     try:
         with pidfile.open() as f:
             pid = int(f.read())
@@ -188,6 +258,18 @@ def stop_service(name: str, pidfile: Path) -> None:
 
 
 def check_service(name: str, pidfile: Path) -> None:
+    """
+    Display status of the process with given pid.
+
+    Parameters
+    ----------
+    name: str
+        Service name.
+    pidfile: Path
+        Service pidfile path.
+
+    """
+
     try:
         with pidfile.open() as f:
             pid = int(f.read())
@@ -206,6 +288,24 @@ def check_service(name: str, pidfile: Path) -> None:
 
 
 def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float = 0.1) -> Generator[str, None, None]:
+    """
+    Get a generator that yields the services' stdout streams.
+
+    Parameters
+    ----------
+    services: Tuple[Tuple[str, Path]]
+        Sequence of services' names and pidfile paths.
+    live: bool, default=False
+        Yield only new services' logs.
+    period: float, default=0.1
+        Generator's delay.
+
+    Returns
+    -------
+    Generator that yields the services' stdout streams.
+
+    """
+
     names = list()
     streams = list()
     alignment = 0
