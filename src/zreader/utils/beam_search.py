@@ -9,6 +9,7 @@ from torch import Tensor
 
 from config import log
 from zreader.model import ZReader
+from zreader.utils.transform import tensor_to_target
 from zreader.utils.visualization import visualize_target
 
 
@@ -337,7 +338,7 @@ def beam_search(src: Tensor,
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[SEQUENCE_LEN], float]
+    candidates: List[Tuple[Tensor[SEQUENCE_LEN], float]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -352,7 +353,10 @@ def beam_search(src: Tensor,
 
     candidates = beam_loop(src, encoded_src, z_reader, width, device)
 
-    return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]  # first token is empty_token
+    return [
+        (torch.argmax(chain.squeeze(), dim=-1)[1:], score)  # first token is empty_token
+        for chain, score in candidates
+    ]
 
 
 # ---------------------------------------------Asynchronous Beam Search-------------------------------------------------
@@ -493,10 +497,12 @@ def api_interactive_loop(queue: asyncio.Queue,
             candidates = await async_beam_step(candidates, step_masks[i], step_widths[i],
                                                encoded_src, z_reader, width, device)
 
-            candidates = [(torch.argmax(chain.squeeze(), dim=-1)[1:], score) for chain, score in candidates]
-            candidates = [(visualize_target(chain, delimiter), score) for chain, score in candidates]
+            intermediate_result = [
+                tensor_to_target((torch.argmax(chain.squeeze(), dim=-1)[1:]), score)
+                for chain, score in candidates
+            ]
 
-            await queue.put(candidates)
+            await queue.put([(visualize_target(chain, delimiter), score) for chain, score in intermediate_result])
 
         await queue.put(None)
 
