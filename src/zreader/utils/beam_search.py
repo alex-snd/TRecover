@@ -359,61 +359,70 @@ def beam_search(src: Tensor,
 
 
 async def async_beam_step(candidates: List[Tuple[Tensor, float]],
+                          step_mask: Tensor,
+                          step_width: int,
                           encoded_src: Tensor,
                           z_reader: ZReader,
-                          width: int, device: torch.device
+                          beam_width: int,
+                          device: torch.device
                           ) -> List[Tuple[Tensor, float]]:
-    async def candidate_step(tgt_inp: Tensor, score: float) -> None:
-        prediction = z_reader.predict(tgt_inp, encoded_src, tgt_attn_mask=None, tgt_pad_mask=None, src_pad_mask=None)
-        probabilities = F.log_softmax(prediction[:, -1], dim=-1).squeeze()  # first is batch
+    async def candidate_step(chain: Tensor, score: float) -> None:
+        prediction = z_reader.predict(chain, encoded_src, tgt_attn_mask=None, tgt_pad_mask=None, src_pad_mask=None)
+        probabilities = F.log_softmax(prediction[0, -1], dim=-1) + step_mask
 
-        values, indices = probabilities.topk(k=width, dim=-1)
+        values, indices = probabilities.topk(k=min(beam_width, step_width))
         for prob, pos in zip(values, indices):
             new_token = torch.zeros(1, 1, z_reader.token_size, device=device)
             new_token[0, 0, pos] = 1
 
-            step_candidates.append((torch.cat([tgt_inp, new_token], dim=1), score + float(prob)))
+            step_candidates.append((torch.cat([chain, new_token], dim=1), score + float(prob)))
 
     step_candidates = list()
 
-    for candidate_tgt_inp, candidate_score in candidates:
-        await candidate_step(candidate_tgt_inp, candidate_score)
+    for candidate_chain, candidate_score in candidates:
+        await candidate_step(candidate_chain, candidate_score)
 
-    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:width]
+    return sorted(step_candidates, key=lambda candidate: -candidate[1])[:beam_width]
 
 
 def api_interactive_loop(queue: asyncio.Queue,
                          delimiter: str = ''
                          ) -> Callable[[Tensor, ZReader, int, torch.device], Awaitable]:
-    async def async_inner_loop(encoded_src: Tensor,
+    async def async_inner_loop(src: Tensor,
+                               encoded_src: Tensor,
                                z_reader: ZReader,
                                width: int,
                                device: torch.device
                                ) -> None:
+        step_masks, step_widths = get_steps_params(src)
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-        for _ in range(encoded_src.shape[0]):
-            candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
+        for i in range(encoded_src.shape[0]):
+            candidates = await async_beam_step(candidates, step_masks[i], step_widths[i],
+                                               encoded_src, z_reader, width, device)
 
-            chains = [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates]
-            chains = [(visualize_target(tgt, delimiter), prob) for tgt, prob in chains]
+            candidates = [(torch.argmax(chain.squeeze(), dim=-1)[1:], score) for chain, score in candidates]
+            candidates = [(visualize_target(chain, delimiter), score) for chain, score in candidates]
 
-            await queue.put(chains)
+            await queue.put(candidates)
 
         await queue.put(None)
 
     return async_inner_loop
 
 
-async def standard_async_loop(encoded_src: Tensor,
+async def standard_async_loop(src: Tensor,
+                              encoded_src: Tensor,
                               z_reader: ZReader,
                               width: int,
                               device: torch.device
                               ) -> List[Tuple[Tensor, float]]:
+    step_masks, step_widths = get_steps_params(src)
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
-    for _ in range(encoded_src.shape[0]):
-        candidates = await async_beam_step(candidates, encoded_src, z_reader, width, device)
+    for i in range(encoded_src.shape[0]):
+        candidates = await async_beam_step(candidates, step_masks[i], step_widths[i],
+                                           encoded_src, z_reader, width, device)
 
     return candidates
 
@@ -422,13 +431,11 @@ async def async_beam_search(src: Tensor,
                             z_reader: ZReader,
                             width: int,
                             device: torch.device,
-                            beam_loop: Callable[[Tensor, ZReader, int, torch.device],
+                            beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device],
                                                 Awaitable[Optional[List[Tuple[Tensor, float]]]]] = standard_async_loop
                             ) -> Optional[List[Tuple[Tensor, float]]]:
-    src = src.unsqueeze(dim=0)
+    encoded_src = z_reader.encode(src.unsqueeze(dim=0), src_pad_mask=None)
 
-    encoded_src = z_reader.encode(src, src_pad_mask=None)
+    candidates = await beam_loop(src, encoded_src, z_reader, width, device)
 
-    candidates = await beam_loop(encoded_src, z_reader, width, device)
-
-    return [(torch.argmax(tgt.squeeze(), dim=-1)[1:], prob) for tgt, prob in candidates] if candidates else None
+    return [(torch.argmax(chain.squeeze(), dim=-1)[1:], score) for chain, score in candidates] if candidates else None
