@@ -21,12 +21,12 @@ def get_steps_params(src: Tensor) -> Tuple[Tensor, List[int]]:
 
     Parameters
     ----------
-    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the ZReader encoder.
 
     Returns
     -------
-    steps_mask: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]  TODO investigate
+    steps_mask: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Probability masks that consists of zeros in the places that correspond to the letters allowed
         for selection in the column (src[i]) and values equal to minus infinity in all others.
     steps_width: List[int]
@@ -58,13 +58,13 @@ def beam_step(candidates: List[Tuple[Tensor, float]],
     ----------
     candidates: List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
         List of candidates from the previous step.
-    step_mask: Tensor[1, TOKEN_SIZE] TODO investigate
+    step_mask: Tensor[TOKEN_SIZE]
         Column's mask that consists of zeros in the places that correspond to the letters allowed
         for selection in the column and values equal to minus infinity in all others.
         Required so that only the letters in the column are selected as a candidates.
     step_width: int
         Number of candidates that are contained in the step column.
-    encoded_src: Tensor TODO investigate
+    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Columns for keyless reading that were encoded by ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
@@ -138,14 +138,14 @@ def celery_task_loop(task: celery.Task
 
         Parameters
         ----------
-        src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the ZReader encoder.
-        encoded_src: Tensor TODO investigate
+        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by ZReader encoder.
         z_reader: ZReader
             Trained model for keyless reading.
         width: int
-            Number of candidates that can be selected at the each step.
+            Number of candidates that can be selected at each step.
         device: torch.device
             Device on which to allocate the candidate chains.
 
@@ -208,14 +208,14 @@ def cli_interactive_loop(label: str = 'Processing'
 
         Parameters
         ----------
-        src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the ZReader encoder.
-        encoded_src: Tensor TODO investigate
+        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by ZReader encoder.
         z_reader: ZReader
             Trained model for keyless reading.
         width: int
-            Number of candidates that can be selected at the each step.
+            Number of candidates that can be selected at each step.
         device: torch.device
             Device on which to allocate the candidate chains.
 
@@ -275,14 +275,14 @@ def standard_loop(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the ZReader encoder.
-    encoded_src: Tensor TODO investigate
+    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Keyless reading columns that were encoded by ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
     width: int
-        Number of candidates that can be selected at the each step.
+        Number of candidates that can be selected at each step.
     device: torch.device
         Device on which to allocate the candidate chains.
 
@@ -324,12 +324,12 @@ def beam_search(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
     width: int
-        Number of candidates that can be selected at the each step.
+        Number of candidates that can be selected at each step.
     device: torch.device
         Device on which to allocate the candidate chains.
     beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]], default=standard_loop
@@ -337,7 +337,7 @@ def beam_search(src: Tensor,
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[SEQUENCE_LEN, 1], float]] TODO investigate
+    candidates: List[Tuple[Tensor[SEQUENCE_LEN], float]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -373,13 +373,13 @@ async def async_beam_step(candidates: List[Tuple[Tensor, float]],
     ----------
     candidates: List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
         List of candidates from the previous step.
-    step_mask: Tensor[1, TOKEN_SIZE] TODO investigate
+    step_mask: Tensor[TOKEN_SIZE]
         Column's mask that consists of zeros in the places that correspond to the letters allowed
         for selection in the column and values equal to minus infinity in all others.
         Required so that only the letters in the column are selected as a candidates.
     step_width: int
         Number of candidates that are contained in the step column.
-    encoded_src: Tensor TODO investigate
+    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Columns for keyless reading that were encoded by ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
@@ -459,14 +459,14 @@ def api_interactive_loop(queue: asyncio.Queue,
 
         Parameters
         ----------
-        src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the ZReader encoder.
-        encoded_src: Tensor TODO investigate
+        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by ZReader encoder.
         z_reader: ZReader
             Trained model for keyless reading.
         width: int
-            Number of candidates that can be selected at the each step.
+            Number of candidates that can be selected at each step.
         device: torch.device
             Device on which to allocate the candidate chains.
 
@@ -514,14 +514,14 @@ async def standard_async_loop(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the ZReader encoder.
-    encoded_src: Tensor TODO investigate
+    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Keyless reading columns that were encoded by ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
     width: int
-        Number of candidates that can be selected at the each step.
+        Number of candidates that can be selected at each step.
     device: torch.device
         Device on which to allocate the candidate chains.
 
@@ -564,12 +564,12 @@ async def async_beam_search(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the ZReader encoder.
     z_reader: ZReader
         Trained model for keyless reading.
     width: int
-        Number of candidates that can be selected at the each step.
+        Number of candidates that can be selected at each step.
     device: torch.device
         Device on which to allocate the candidate chains.
     beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]], default=standard_loop
@@ -577,7 +577,7 @@ async def async_beam_search(src: Tensor,
 
     Returns
     -------
-    candidates: Optional[List[Tuple[Tensor[SEQUENCE_LEN, 1], float]]] TODO investigate
+    candidates: Optional[List[Tuple[Tensor[SEQUENCE_LEN], float]]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
         Returns None if "api_interactive_loop" is used as a beam search loop function.
