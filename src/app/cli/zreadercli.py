@@ -162,7 +162,8 @@ def zread(data_path: Path = Argument(..., help='Path to file or dir for data', e
 
 @cli.callback(invoke_without_command=True, help='')
 def cli_state_verification(ctx: Context,
-                           config_file: Path = Option('zreader-compose.toml', '--file', '-f', exists=True,
+                           config_file: Path = Option(var.BASE_DIR / 'zreader-compose.toml', '--file', '-f',
+                                                      file_okay=True,
                                                       help='Path to ZReader configuration file for "up" command'),
                            attach_stream: bool = Option(False, '--attach', '-a', is_flag=True,
                                                         help='Attach output and error streams for "up" command')
@@ -175,7 +176,7 @@ def cli_state_verification(ctx: Context,
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
         for the script execution at every single level.
-    config_file : Path, default=./zreader-compose.toml
+    config_file : Path, default=var.BASE_DIR / 'zreader-compose.toml'
         Path to ZReader configuration file for "up" command.
     attach_stream : bool, default=False
         Attach output and error streams for "up" command'.
