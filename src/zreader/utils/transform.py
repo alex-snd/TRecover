@@ -19,7 +19,7 @@ def columns_to_tensor(columns: List[str], device: torch.device = torch.device('c
 
     Returns
     -------
-    tensor: Tensor
+    tensor: Tensor[SEQUENCE_LEN, len(var.ALPHABET)]
         Columns as a torch tensor.
 
     """
@@ -61,7 +61,7 @@ def tensor_to_columns(grid: Tensor) -> List[str]:
 
     Parameters
     ----------
-    grid: Tensor
+    grid: Tensor[SEQUENCE_LEN, len(var.ALPHABET)]
         Columns for keyless reading as a tensor.
 
     Returns
@@ -82,9 +82,8 @@ def tensor_to_target(tgt: Tensor) -> List[str]:
 
     Parameters
     ----------
-    tgt: Tensor
+    tgt: Tensor[SEQUENCE_LEN]
         Target tensor representation of columns' correct symbols.
-
 
     Returns
     -------
