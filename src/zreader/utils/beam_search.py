@@ -366,6 +366,49 @@ async def async_beam_step(candidates: List[Tuple[Tensor, float]],
                           beam_width: int,
                           device: torch.device
                           ) -> List[Tuple[Tensor, float]]:
+    """
+    Asynchronous implementation of the beam search algorithm step.
+
+    Parameters
+    ----------
+    candidates: List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
+        List of candidates from the previous step.
+    step_mask: Tensor[1, TOKEN_SIZE] TODO investigate
+        Column's mask that consists of zeros in the places that correspond to the letters allowed
+        for selection in the column and values equal to minus infinity in all others.
+        Required so that only the letters in the column are selected as a candidates.
+    step_width: int
+        Number of candidates that are contained in the step column.
+    encoded_src: Tensor TODO investigate
+        Columns for keyless reading that were encoded by ZReader encoder.
+    z_reader: ZReader
+        Trained model for keyless reading.
+    beam_width: int
+        Number of candidates that can be selected at the current step.
+    device: torch.device
+        Device on which to allocate the candidate chains.
+
+    Returns
+    -------
+    step_candidates: List[Tuple[Tensor[1, STEP_NUMBER + 1, TOKEN_SIZE], float]]
+        List of candidates of size "beam_width" for the current step
+        sorted in descending order of their probabilities.
+
+    Notes
+    -----
+    For each chain candidate from the previous step:
+    *       Probability distribution is calculated using trained ZReader model to
+            select the next symbol from the current column,taking into account the "step_mask".
+    *       The most probable symbols are selected from the calculated probability distribution,
+            the number of which is set by the "step_width" and "beam_width" parameters.
+    *       For each selected symbol, a new candidate chain with updated probability
+            is constructed and placed in the "step_candidates" list.
+
+    All candidates are sorted in descending order of probabilities and the most probable ones
+    are selected from them, the number of which is set by the "beam_width" parameter.
+
+    """
+
     async def candidate_step(chain: Tensor, score: float) -> None:
         prediction = z_reader.predict(chain, encoded_src, tgt_attn_mask=None, tgt_pad_mask=None, src_pad_mask=None)
         probabilities = F.log_softmax(prediction[0, -1], dim=-1) + step_mask
@@ -387,13 +430,62 @@ async def async_beam_step(candidates: List[Tuple[Tensor, float]],
 
 def api_interactive_loop(queue: asyncio.Queue,
                          delimiter: str = ''
-                         ) -> Callable[[Tensor, ZReader, int, torch.device], Awaitable]:
+                         ) -> Callable[[Tensor, Tensor, ZReader, int, torch.device], Awaitable]:
+    """
+    Get an asynchronous beam search algorithm loop function, which is implemented for the API interface.
+
+    Parameters
+    ----------
+    queue: asyncio.Queue
+        Asynchronous queue for storing intermediate results.
+    delimiter: str, default=''
+        Delimiter for columns visualization.
+
+    Returns
+    -------
+    async_inner_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device], Awaitable]
+        Asynchronous beam search algorithm loop function for the API interface.
+
+    """
+
     async def async_inner_loop(src: Tensor,
                                encoded_src: Tensor,
                                z_reader: ZReader,
                                width: int,
                                device: torch.device
                                ) -> None:
+        """
+        Asynchronous beam search algorithm loop implementation for the API interface.
+
+        Parameters
+        ----------
+        src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+            Keyless reading columns that are passed to the ZReader encoder.
+        encoded_src: Tensor TODO investigate
+            Keyless reading columns that were encoded by ZReader encoder.
+        z_reader: ZReader
+            Trained model for keyless reading.
+        width: int
+            Number of candidates that can be selected at the each step.
+        device: torch.device
+            Device on which to allocate the candidate chains.
+
+        Notes
+        -----
+        Probability masks and beam widths values required for each step of the
+        beam search algorithm are calculated by the "get_steps_params" function using
+        keyless reading columns ("src") that are passed to the ZReader encoder.
+
+        An empty chain (zero token of shape [1, 1, TOKEN_SIZE]) with zero probability
+        is used as the first candidate for the algorithm.
+
+        At each step of the algorithm, the intermediate results are placed in an asynchronous queue.
+
+        At the end of the algorithm, a None value is placed in the asynchronous queue,
+        which is an indicator of its completion.
+
+        """
+
         step_masks, step_widths = get_steps_params(src)
         candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
@@ -417,6 +509,39 @@ async def standard_async_loop(src: Tensor,
                               width: int,
                               device: torch.device
                               ) -> List[Tuple[Tensor, float]]:
+    """
+    Base asynchronous implementation of the beam search algorithm loop.
+
+    Parameters
+    ----------
+    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+        Keyless reading columns that are passed to the ZReader encoder.
+    encoded_src: Tensor TODO investigate
+        Keyless reading columns that were encoded by ZReader encoder.
+    z_reader: ZReader
+        Trained model for keyless reading.
+    width: int
+        Number of candidates that can be selected at the each step.
+    device: torch.device
+        Device on which to allocate the candidate chains.
+
+    Returns
+    -------
+    candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+        List of chains sorted in descending order of probabilities.
+        The number of candidates is set by the "width" parameter.
+
+    Notes
+    -----
+    Probability masks and beam widths values required for each step of the
+    beam search algorithm are calculated by the "get_steps_params" function using
+    keyless reading columns ("src") that are passed to the ZReader encoder.
+
+    An empty chain (zero token of shape [1, 1, TOKEN_SIZE]) with zero probability
+    is used as the first candidate for the algorithm.
+
+    """
+
     step_masks, step_widths = get_steps_params(src)
     candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
 
@@ -434,6 +559,36 @@ async def async_beam_search(src: Tensor,
                             beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device],
                                                 Awaitable[Optional[List[Tuple[Tensor, float]]]]] = standard_async_loop
                             ) -> Optional[List[Tuple[Tensor, float]]]:
+    """
+    Asynchronous beam search algorithm implementation.
+
+    Parameters
+    ----------
+    src: Tensor[BATCH_SIZE, SEQUENCE_LEN, TOKEN_SIZE]
+        Keyless reading columns that are passed to the ZReader encoder.
+    z_reader: ZReader
+        Trained model for keyless reading.
+    width: int
+        Number of candidates that can be selected at the each step.
+    device: torch.device
+        Device on which to allocate the candidate chains.
+    beam_loop: Callable[[Tensor, Tensor, ZReader, int, torch.device], List[Tuple[Tensor, float]]], default=standard_loop
+        Beam search algorithm loop function.
+
+    Returns
+    -------
+    candidates: Optional[List[Tuple[Tensor[SEQUENCE_LEN, 1], float]]] TODO investigate
+        List of chains sorted in descending order of probabilities.
+        The number of candidates is set by the "width" parameter.
+        Returns None if "api_interactive_loop" is used as a beam search loop function.
+
+    Notes
+    -----
+    Initially, the keyless reading columns ("src") are encoded using ZReader encoder,
+    then the encoded columns ("encoded_src") are used at each step of the asynchronous algorithm.
+
+    """
+
     encoded_src = z_reader.encode(src.unsqueeze(dim=0), src_pad_mask=None)
 
     candidates = await beam_loop(src, encoded_src, z_reader, width, device)
