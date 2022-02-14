@@ -1,3 +1,5 @@
+# TODO docs
+
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import List, Optional
@@ -5,7 +7,7 @@ from typing import List, Optional
 import torch
 
 from config import var, log, train as train_config
-from zreader.train.data import WikiDataset
+from zreader.train.data import WikiDataset, StandardCollate
 from zreader.train.loss import CustomPenaltyLoss
 from zreader.train.monitor import WandbMonitor, MlflowMonitor
 from zreader.train.scheduler import WarmupScheduler
@@ -15,6 +17,8 @@ from zreader.utils.train import ExperimentParams, set_seeds, get_experiment_mark
 
 
 def get_parser() -> ArgumentParser:
+    # TODO docs
+
     parser = ArgumentParser()
 
     # ------------------------------------------------GENERAL PARAMETERS------------------------------------------------
@@ -79,7 +83,7 @@ def get_parser() -> ArgumentParser:
                         help='Experiments folder')
     parser.add_argument('--abs-weights-name', type=str,
                         help='Absolute weights path')
-    parser.add_argument('--exp-mark', type=str,
+    parser.add_argument('--exp-mark', type=str, default='base',
                         help="Experiments folder mark placed in 'exp-dir'")
     parser.add_argument('--weights-name', type=str,
                         help="Weights name in specified using 'exp-mark' experiments folder")
@@ -123,10 +127,14 @@ def get_parser() -> ArgumentParser:
 
 
 def get_experiment_params(args: Optional[List[str]] = None) -> ExperimentParams:
+    # TODO docs
+
     return ExperimentParams(get_parser().parse_args(args=args))
 
 
 def train(args: Optional[List[str]] = None) -> None:
+    # TODO docs
+
     params = get_experiment_params(args)
 
     if params.n_columns_to_show > params.pe_max_len:
@@ -159,18 +167,16 @@ def train(args: Optional[List[str]] = None) -> None:
     test_dataset = WikiDataset(datafiles=test_files, min_threshold=params.min_threshold,
                                max_threshold=params.max_threshold, dataset_size=params.test_dataset_size)
 
-    train_loader = train_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                   max_noise=params.max_noise, num_workers=params.n_workers,
-                                                   device=batch_generation_device)
-    val_loader = val_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.n_workers,
-                                               device=batch_generation_device)
-    vis_loader = vis_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                               max_noise=params.max_noise, num_workers=params.n_workers,
-                                               device=batch_generation_device)
-    test_loader = test_dataset.create_dataloader(batch_size=params.batch_size, min_noise=params.min_noise,
-                                                 max_noise=params.max_noise, num_workers=params.n_workers,
-                                                 device=batch_generation_device)
+    collate = StandardCollate(min_noise=params.min_noise, max_noise=params.max_noise, device=batch_generation_device)
+
+    train_loader = train_dataset.create_dataloader(batch_size=params.batch_size, collate=collate,
+                                                   num_workers=params.n_workers)
+    val_loader = val_dataset.create_dataloader(batch_size=params.batch_size, collate=collate,
+                                               num_workers=params.n_workers)
+    vis_loader = vis_dataset.create_dataloader(batch_size=params.batch_size, collate=collate,
+                                               num_workers=params.n_workers)
+    test_loader = test_dataset.create_dataloader(batch_size=params.batch_size, collate=collate,
+                                                 num_workers=params.n_workers)
 
     # criterion = CustomCrossEntropyLoss(ignore_index=-1)
     criterion = CustomPenaltyLoss(coefficient=params.penalty_coefficient, ignore_index=-1)

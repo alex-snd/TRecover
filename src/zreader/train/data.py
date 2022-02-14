@@ -10,21 +10,45 @@ from torch.utils.data import Dataset, DataLoader
 from config import var, log
 
 
-class Collate(object):
+class BaseCollate(object):
+    # TODO docs
+
+    def __init__(self, device: Optional[torch.device] = None):
+        self.device = device or torch.device("cpu")
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
+        raise NotImplementedError
+
+    def generate_subsequent_mask(self, size: int) -> Tensor:
+        # TODO docs
+
+        return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
+
+
+class StandardCollate(BaseCollate):
+    # TODO docs
+
     def __init__(self, min_noise: int, max_noise: int, device: Optional[torch.device] = None):
+        # TODO docs
+
         assert 0 <= min_noise <= len(var.ALPHABET), \
             f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
         assert min_noise <= max_noise <= len(var.ALPHABET), \
             f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
 
+        super().__init__(device)
         self.min_noise = min_noise
         self.max_noise = max_noise
-        self.device = device or torch.device("cpu")
 
     def __str__(self) -> str:
         return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
+        # TODO docs
+
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
@@ -71,12 +95,12 @@ class Collate(object):
 
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
-    def generate_subsequent_mask(self, size: int) -> Tensor:
-        return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
-
 
 class WikiDataset(Dataset):
+    # TODO docs
+
     def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int):
+        # TODO docs
         assert self.__exists(datafiles), 'datafiles do not exist'
         assert min_threshold > 0, 'min_threshold should be grater than 0'
         assert max_threshold >= min_threshold, f'max_threshold should be grater or equal than {min_threshold}'
@@ -91,6 +115,7 @@ class WikiDataset(Dataset):
         self.dataset_size = dataset_size
 
     def __getitem__(self, idx: int) -> str:
+        # TODO docs
         np.random.seed(None)
 
         file_id = np.random.choice(self.n_files, p=self.distribution)
@@ -114,6 +139,7 @@ class WikiDataset(Dataset):
 
     @staticmethod
     def __exists(datafiles: List[Path]) -> bool:
+        # TODO docs
         for file in datafiles:
             if not file.exists():
                 print(f'{file} doesnt exist')
@@ -122,28 +148,28 @@ class WikiDataset(Dataset):
         return True if len(datafiles) else False
 
     def __get_distribution(self) -> np.ndarray:
+        # TODO docs
         powered = np.array(self.file_sizes)
 
         return powered / np.sum(powered)
 
     def create_dataloader(self, batch_size: int,
-                          min_noise: int,
-                          max_noise: int,
-                          device: Optional[torch.device] = None,
+                          collate: Optional[BaseCollate] = StandardCollate(min_noise=0, max_noise=0),
                           num_workers: int = 0,
                           pin_memory: bool = True
                           ) -> DataLoader:
+        # TODO docs
 
         assert batch_size > 0, 'batch_size should be grater than 0'
         assert num_workers >= 0, 'num_workers should be grater or equal than 0'
 
-        if device and device.type == 'cuda':
+        if collate.device.type == 'cuda':
             if platform.system() == 'Windows' and num_workers > 0:
                 log.project_console.print('WARNING: Dataloader does not support num_workers > 0 and GPU device '
                                           'on Windows. The training data will be transferred to the GPU just '
                                           'before it is fed into the model, but not during batch generation.',
                                           style='bold red')
-                device = torch.device('cpu')
+                collate.device = torch.device('cpu')
 
             pin_memory = False
 
@@ -152,4 +178,4 @@ class WikiDataset(Dataset):
                           shuffle=False,
                           num_workers=num_workers,
                           pin_memory=pin_memory,
-                          collate_fn=Collate(min_noise=min_noise, max_noise=max_noise, device=device))
+                          collate_fn=collate)
