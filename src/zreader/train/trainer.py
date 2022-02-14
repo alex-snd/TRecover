@@ -14,7 +14,7 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from config import log
+from zreader.config import log
 from zreader.model import ZReader
 from zreader.train.monitor import BaseMonitor, IdentityMonitor
 from zreader.train.scheduler import BaseScheduler, IdentityScheduler

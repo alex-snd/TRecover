@@ -4,7 +4,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.logging import RichHandler
 
-from config.var import LOGS_DIR
+from zreader.config.var import LOGS_DIR
 
 MLFLOW_LOG = LOGS_DIR / 'mlflow.log'
 DASHBOARD_LOG = LOGS_DIR / 'dashboard.log'

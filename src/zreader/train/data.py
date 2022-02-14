@@ -7,7 +7,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-from config import var, log
+from zreader.config import var, log
 
 
 class BaseCollate(object):

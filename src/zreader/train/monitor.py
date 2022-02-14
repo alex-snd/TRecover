@@ -7,7 +7,7 @@ import wandb
 from mlflow.tracking.fluent import ActiveRun, end_run
 from wandb.wandb_run import Run
 
-from config import var
+from zreader.config import var
 from zreader.utils.train import get_experiment_mark
 
 

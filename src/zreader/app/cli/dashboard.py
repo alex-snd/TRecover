@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context
 
-from config import var, log
+from zreader.config import var, log
 
 cli = Typer(name='Dashboard-cli', add_completion=False, help='Manage Dashboard service')
 
@@ -58,7 +58,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
 
     """
 
-    from app import dashboard
+    from zreader.app import dashboard
     from zreader.utils.cli import start_service
 
     argv = ['streamlit',

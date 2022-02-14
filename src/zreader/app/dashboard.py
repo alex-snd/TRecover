@@ -7,7 +7,7 @@ import requests
 import streamlit as st
 from requests.exceptions import ConnectionError
 
-from config import var
+from zreader.config import var
 from zreader.utils.inference import data_to_columns, create_noisy_columns
 from zreader.utils.visualization import visualize_columns
 

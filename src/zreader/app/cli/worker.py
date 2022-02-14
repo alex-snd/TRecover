@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context, BadParameter
 
-from config import var, log
+from zreader.config import var, log
 
 cli = Typer(name='Worker-cli', add_completion=False, help='Manage Worker service')
 

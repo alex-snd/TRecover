@@ -6,10 +6,10 @@ from typing import Dict, Callable
 from celery.result import AsyncResult
 from fastapi import FastAPI, Request, Path
 
-from app.api.backend.celeryapp import celery_app
-from app.api.backend.tasks import predict, get_model_config
-from app.api.schemas import PredictPayload, PredictResponse, TaskResponse
-from config import log
+from zreader.app.api.backend.celeryapp import celery_app
+from zreader.app.api.backend.tasks import predict, get_model_config
+from zreader.app.api.schemas import PredictPayload, PredictResponse, TaskResponse
+from zreader.config import log
 
 api = FastAPI(title='ZReaderAPI', description='Description will be here')  # TODO description
 

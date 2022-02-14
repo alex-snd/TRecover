@@ -12,7 +12,7 @@ import requests
 import toml
 from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
 
-from config import var, log
+from zreader.config import var, log
 
 
 def get_real_direct_link(sharing_link: str) -> str:

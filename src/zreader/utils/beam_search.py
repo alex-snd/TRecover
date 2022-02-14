@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
 from torch import Tensor
 
-from config import log
+from zreader.config import log
 from zreader.model import ZReader
 from zreader.utils.transform import tensor_to_target
 from zreader.utils.visualization import visualize_target
