@@ -7,7 +7,7 @@ from docker.models.images import Image
 from docker.models.volumes import Volume
 from rich.live import Live
 
-from config import log
+from zreader.config import log
 
 
 def get_client() -> DockerClient:

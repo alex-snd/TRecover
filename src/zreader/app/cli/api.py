@@ -1,6 +1,6 @@
 from typer import Typer, Option, Argument, Context
 
-from config import var, log
+from zreader.config import var, log
 
 cli = Typer(name='API-cli', add_completion=False, help='Manage API service')
 

@@ -1,6 +1,6 @@
 from typer import Typer, Argument, Option
 
-from config import log
+from zreader.config import log
 
 cli = Typer(name='Download-cli', add_completion=False, help='Download train data or pre-trained model')
 

@@ -2,8 +2,8 @@ from pathlib import Path
 
 from typer import Typer, Argument, Option, Context
 
-from app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
-from config import var, log
+from zreader.app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
+from zreader.config import var, log
 
 cli = Typer(name='Zreader-cli', add_completion=False)
 
@@ -416,8 +416,8 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
 def status() -> None:
     """ Display services status """
     from zreader.utils.cli import check_service
-    from app.cli.broker import broker_status
-    from app.cli.backend import backend_status
+    from zreader.app.cli.broker import broker_status
+    from zreader.app.cli.backend import backend_status
 
     check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
     check_service(name='API', pidfile=var.API_PID)

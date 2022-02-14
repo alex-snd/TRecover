@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context
 
-from config import var, log
+from zreader.config import var, log
 
 cli = Typer(name='Broker-cli', add_completion=False, help='Manage Broker service')
 

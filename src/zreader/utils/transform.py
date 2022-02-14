@@ -3,7 +3,7 @@ from typing import List
 import torch
 from torch import Tensor
 
-from config import var
+from zreader.config import var
 
 
 def columns_to_tensor(columns: List[str], device: torch.device = torch.device('cpu')) -> Tensor:

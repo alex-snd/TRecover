@@ -5,7 +5,7 @@ from typing import Dict, Optional
 import torch
 from rich.prompt import Confirm
 
-from config import log
+from zreader.config import log
 from zreader.model import ZReader
 from zreader.utils.train import ExperimentParams
 

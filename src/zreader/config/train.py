@@ -1,4 +1,4 @@
-from config.var import BASE_DIR
+from zreader.config.var import BASE_DIR
 
 DATA_DIR = BASE_DIR / 'data'
 TRAIN_DATA = DATA_DIR / 'train'

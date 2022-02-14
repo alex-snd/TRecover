@@ -1,7 +1,7 @@
 from typing import Tuple, List, Dict
 
-from app.api.backend.celeryapp import celery_app
-from app.api.backend.tasksbase import ModelConfigTask, PredictTask
+from zreader.app.api.backend.celeryapp import celery_app
+from zreader.app.api.backend.tasksbase import ModelConfigTask, PredictTask
 
 
 @celery_app.task(bind=True, base=ModelConfigTask)

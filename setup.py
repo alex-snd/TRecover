@@ -43,7 +43,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'zreader = app.cli.zreadercli:cli',
+            'zreader = zreader.app.cli.zreadercli:cli',
         ],
     },
 )

@@ -4,7 +4,7 @@ from typing import List, Union
 
 import numpy as np
 
-from config import var
+from zreader.config import var
 
 
 # ---------------------------------Plain inference data cleaning & preparation utils------------------------------------

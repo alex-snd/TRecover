@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import torch
 
-from config import var, log, train as train_config
+from zreader.config import var, log, train as train_config
 from zreader.train.data import WikiDataset, StandardCollate
 from zreader.train.loss import CustomPenaltyLoss
 from zreader.train.monitor import WandbMonitor, MlflowMonitor

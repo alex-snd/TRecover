@@ -1,7 +1,7 @@
 from celery import Celery
 from celery.signals import after_setup_task_logger, after_setup_logger
 
-from config import var, log
+from zreader.config import var, log
 
 celery_app = Celery('ZReader',
                     broker=var.CELERY_BROKER,

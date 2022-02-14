@@ -1,6 +1,6 @@
 from typer import Typer, Context, Option
 
-from config import log
+from zreader.config import log
 
 cli = Typer(name='Train-cli', add_completion=False, help='Manage training')
 

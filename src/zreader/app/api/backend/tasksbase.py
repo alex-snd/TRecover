@@ -2,7 +2,7 @@ from typing import Optional, Dict
 
 import celery
 
-from config import var
+from zreader.config import var
 
 
 class ModelConfigTask(celery.Task):
