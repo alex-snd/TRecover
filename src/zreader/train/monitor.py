@@ -12,29 +12,47 @@ from zreader.utils.train import get_experiment_mark
 
 
 class BaseMonitor(object):
+    # TODO docs
+
     def log_metrics(self, metrics: Dict[str, Union[float, int]], step: Optional[int] = None) -> None:
+        # TODO docs
+
         raise NotImplementedError
 
     def log_artifact(self, path: str) -> None:
+        # TODO docs
+
         raise NotImplementedError
 
     def log_variables(self, variables: Dict[str, Union[float, int]]) -> None:
+        # TODO docs
+
         raise NotImplementedError
 
     def start(self):
+        # TODO docs
+
         raise NotImplementedError
 
     def finish(self):
+        # TODO docs
+
         raise NotImplementedError
 
     def __enter__(self) -> Union[Run, ActiveRun]:
+        # TODO docs
+
         return self.start(),
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        # TODO docs
+
         return self.finish()
 
 
 class IdentityMonitor(BaseMonitor):
+    # TODO docs
+
     def __init__(self,
                  project_name: str = None,
                  experiment_name: str = None,
@@ -66,6 +84,8 @@ class IdentityMonitor(BaseMonitor):
 
 
 class WandbMonitor(BaseMonitor):
+    # TODO docs
+
     def __init__(self,
                  project_name: str,
                  experiment_name: str,
@@ -97,6 +117,8 @@ class WandbMonitor(BaseMonitor):
 
 
 class MlflowMonitor(BaseMonitor):
+    # TODO docs
+
     def __init__(self,
                  project_name: str,
                  experiment_name: str,

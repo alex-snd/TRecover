@@ -4,6 +4,8 @@ from torch.optim import Optimizer
 
 
 class BaseScheduler(ABC):
+    # TODO docs
+
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -13,14 +15,33 @@ class BaseScheduler(ABC):
 
     @abstractmethod
     def step(self) -> None:
+        # TODO docs
+
         pass
 
     @abstractmethod
+    def set_rate(self, rate: float) -> None:
+        # TODO docs
+
+        pass
+
+
+class IdentityScheduler(BaseScheduler):
+    # TODO docs
+
+    def __str__(self) -> str:
+        return '<IdentityScheduler()>'
+
+    def step(self) -> None:
+        pass
+
     def set_rate(self, rate: float) -> None:
         pass
 
 
 class WarmupScheduler(BaseScheduler):
+    # TODO docs
+
     def __init__(self,
                  optimizer: Optimizer,
                  d_model: int,
@@ -68,14 +89,3 @@ class WarmupScheduler(BaseScheduler):
             return 0
 
         return round(self.step_size / (self.d_model * rate ** 2))
-
-
-class IdentityScheduler(BaseScheduler):
-    def __str__(self) -> str:
-        return '<IdentityScheduler()>'
-
-    def step(self) -> None:
-        pass
-
-    def set_rate(self, rate: float) -> None:
-        pass

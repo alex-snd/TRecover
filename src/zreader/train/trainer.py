@@ -24,6 +24,9 @@ from zreader.utils.transform import tensor_to_columns, tensor_to_target
 from zreader.utils.visualization import visualize_columns, visualize_target
 
 
+# TODO docs after RemoteTrainer implementation using pytorch-lightning
+
+
 class LocalTrainer(object):
     def __init__(self,
                  params: ExperimentParams,
