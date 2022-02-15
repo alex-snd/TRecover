@@ -6,7 +6,7 @@ from zreader.config import var, log
 celery_app = Celery('ZReader',
                     broker=var.CELERY_BROKER,
                     backend=var.CELERY_BACKEND,
-                    include=['app.api.backend.tasks'])
+                    include=['zreader.app.api.backend.tasks'])
 
 celery_app.conf.update({
     'task_serializer': 'json',

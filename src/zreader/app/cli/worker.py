@@ -86,7 +86,7 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
         'celery',
         '--broker', broker_url,
         '--result-backend', backend_url,
-        '--app', 'src.app.api.backend.celeryapp', 'worker',
+        '--app', 'zreader.app.api.backend.celeryapp', 'worker',
         '--hostname', name,
         '--concurrency', str(concurrency),
         '--pool', pool,

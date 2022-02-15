@@ -249,7 +249,7 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
     from zreader.utils.cli import start_service
 
     argv = [
-        'uvicorn', 'app.api.zreaderapi:api',
+        'uvicorn', 'zreader.app.api.zreaderapi:api',
         '--host', host,
         '--port', str(port),
         '--workers', str(concurrency),
