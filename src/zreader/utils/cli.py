@@ -287,14 +287,17 @@ def check_service(name: str, pidfile: Path) -> None:
                                   ' because its PID file is corrupted', style='red')
 
 
-def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float = 0.1) -> Generator[str, None, None]:
+def stream(*services: Tuple[Tuple[str, Path]],
+           live: bool = False,
+           period: float = 0.1
+           ) -> Optional[Generator[str, None, None]]:
     """
     Get a generator that yields the services' stdout streams.
 
     Parameters
     ----------
     services: Tuple[Tuple[str, Path]]
-        Sequence of services' names and pidfile paths.
+        Sequence of services' names and logfile's paths.
     live: bool, default=False
         Yield only new services' logs.
     period: float, default=0.1
@@ -302,7 +305,7 @@ def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float
 
     Returns
     -------
-    Generator that yields the services' stdout streams.
+    Generator that yields the services' stdout streams or None if services are stopped.
 
     """
 
@@ -312,6 +315,9 @@ def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float
 
     try:
         for (name, log_file) in services:
+            if not log_file.exists():
+                continue
+
             names.append(name)
 
             service_stream = log_file.open()
@@ -324,7 +330,8 @@ def stream(*services: Tuple[Tuple[str, Path]], live: bool = False, period: float
             if len(name) > alignment:
                 alignment = len(name)
 
-        n_services = len(names)
+        if not (n_services := len(names)):
+            return None
 
         while True:
             for i in range(n_services):
