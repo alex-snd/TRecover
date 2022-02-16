@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import torch
 
-from zreader.config import var, log, train as train_config
+from zreader.config import var, train_var, log
 from zreader.train.data import WikiDataset, StandardCollate
 from zreader.train.loss import CustomPenaltyLoss
 from zreader.train.monitor import WandbMonitor, MlflowMonitor
@@ -32,13 +32,13 @@ def get_parser() -> ArgumentParser:
 
     parser.add_argument('--seed', default=2531, type=int,
                         help='Reproducible seed number')
-    parser.add_argument('--train-files', default=train_config.TRAIN_DATA, type=str,
+    parser.add_argument('--train-files', default=train_var.TRAIN_DATA, type=str,
                         help='Path to train files folder')
-    parser.add_argument('--val-files', default=train_config.VAL_DATA, type=str,
+    parser.add_argument('--val-files', default=train_var.VAL_DATA, type=str,
                         help='Path to validation files folder')
-    parser.add_argument('--vis-files', default=train_config.VIS_DATA, type=str,
+    parser.add_argument('--vis-files', default=train_var.VIS_DATA, type=str,
                         help='Path to visualization files folder')
-    parser.add_argument('--test-files', default=train_config.VIS_DATA, type=str,
+    parser.add_argument('--test-files', default=train_var.VIS_DATA, type=str,
                         help='Path to test files folder')
     parser.add_argument('--min-threshold', default=256, type=int,
                         help='Min sentence lengths')
@@ -188,10 +188,10 @@ def train(args: Optional[List[str]] = None) -> None:
 
     if params.mlflow:
         monitor = MlflowMonitor(params.project_name, experiment_mark, params.jsonify(),
-                                var.MLFLOW_REGISTRY_DIR.absolute().as_uri())
+                                train_var.MLFLOW_REGISTRY_DIR.absolute().as_uri())
     else:
         monitor = WandbMonitor(params.project_name, experiment_mark, params.jsonify(),
-                               var.WANDB_REGISTRY_DIR.absolute())
+                               train_var.WANDB_REGISTRY_DIR.absolute())
 
     with LocalTrainer(params=params,
                       model=z_reader,
