@@ -20,7 +20,7 @@ def mlflow_state_verification(ctx: Context) -> None:
 
    """
 
-    from zreader.config import log, train_var
+    from zreader.config import log, exp_var
 
     if var.MLFLOW_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
@@ -29,7 +29,7 @@ def mlflow_state_verification(ctx: Context) -> None:
 
     elif ctx.invoked_subcommand is None:
         mlflow_start(host=var.MLFLOW_HOST, port=var.MLFLOW_PORT, concurrency=var.MLFLOW_WORKERS,
-                     registry=train_var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=train_var.MLFLOW_BACKEND,
+                     registry=exp_var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=exp_var.MLFLOW_BACKEND,
                      only_ui=False, attach=False)
 
     elif ctx.invoked_subcommand != 'start':
@@ -89,15 +89,15 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
 
     import platform
 
-    from zreader.config import log, train_var
+    from zreader.config import log, exp_var
     from zreader.utils.cli import start_service
 
     if (is_windows := platform.system() == 'Windows') and concurrency != 1:
         raise BadParameter("Windows platform does not support concurrency option")
 
     command = 'ui' if only_ui else 'server'
-    registry = registry or str(train_var.MLFLOW_REGISTRY_DIR.as_uri())
-    backend_uri = backend_uri or str(train_var.MLFLOW_BACKEND)
+    registry = registry or str(exp_var.MLFLOW_REGISTRY_DIR.as_uri())
+    backend_uri = backend_uri or str(exp_var.MLFLOW_BACKEND)
 
     argv = [
         'mlflow', command,

@@ -7,7 +7,7 @@ import wandb
 from mlflow.tracking.fluent import ActiveRun, end_run
 from wandb.wandb_run import Run
 
-from zreader.config import train_var
+from zreader.config import exp_var
 from zreader.utils.train import get_experiment_mark
 
 
@@ -90,7 +90,7 @@ class WandbMonitor(BaseMonitor):
                  project_name: str,
                  experiment_name: str,
                  config: Dict[str, Any],
-                 registry: Union[str, Path] = train_var.WANDB_REGISTRY_DIR.absolute()):
+                 registry: Union[str, Path] = exp_var.WANDB_REGISTRY_DIR.absolute()):
         self.project_name = project_name
         self.experiment_name = experiment_name
         self.config = config
@@ -123,7 +123,7 @@ class MlflowMonitor(BaseMonitor):
                  project_name: str,
                  experiment_name: str,
                  config: Dict[str, Any],
-                 tracking_uri: Union[str, Path] = train_var.MLFLOW_REGISTRY_DIR.absolute().as_uri()):
+                 tracking_uri: Union[str, Path] = exp_var.MLFLOW_REGISTRY_DIR.absolute().as_uri()):
         self.project_name = project_name
         self.experiment_name = experiment_name
         self.config = config
