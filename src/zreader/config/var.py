@@ -20,19 +20,18 @@ NUM2ALPHABET = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h', 
 COLORS = ('green', 'yellow', 'blue', 'magenta', 'cyan', 'bright_green', 'bright_yellow', 'bright_blue',
           'bright_magenta', 'bright_cyan', 'red')
 
-BASE_DIR = Path(__file__).parent.parent.parent.parent.absolute()
+CONFIG_DIR = Path(__file__).parent.absolute()
+BASE_INIT = CONFIG_DIR / 'base.init'
 
-CONFIG_DIR = BASE_DIR / 'src' / 'config'
-INFERENCE_DIR = BASE_DIR / 'inference'
+if not BASE_INIT.exists():
+    BASE_DIR = Path().absolute()
+else:
+    with BASE_INIT.open() as f:
+        BASE_DIR = Path(f.read()).absolute()
+
 LOGS_DIR = BASE_DIR / 'logs'
+DATA_DIR = BASE_DIR / 'data'
 EXPERIMENTS_DIR = BASE_DIR / 'experiments'
-MLFLOW_REGISTRY_DIR = EXPERIMENTS_DIR / 'mlflow_registry'
-WANDB_REGISTRY_DIR = EXPERIMENTS_DIR / 'wandb_registry'
-
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
-EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
-MLFLOW_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
-WANDB_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -41,8 +40,6 @@ load_dotenv(BASE_DIR / '.env')
 
 MLFLOW_HOST = os.getenv('MLFLOW_HOST', default='localhost')
 MLFLOW_PORT = int(os.getenv('MLFLOW_PORT', default=8002))
-MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND',
-                           default=f'sqlite:{(MLFLOW_REGISTRY_DIR.absolute() / "mlflow.db").as_uri()[5:]}')
 MLFLOW_WORKERS = int(os.getenv('MLFLOW_WORKERS', default=1))
 MLFLOW_PID = CONFIG_DIR / 'mlflow.pid'
 
@@ -84,6 +81,7 @@ WORKER_PID = CONFIG_DIR / 'worker.pid'
 
 # -------------------------------------------------Inference Variables--------------------------------------------------
 
+INFERENCE_DIR = Path(os.getenv('INFERENCE_DIR', default=BASE_DIR / 'inference'))
 INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
 INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
 CUDA = os.getenv('CUDA', default='').lower() != 'false'
