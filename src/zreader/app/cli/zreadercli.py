@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import typer
 from typer import Typer, Argument, Option, Context
 
 from zreader.app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
-from zreader.config import var, log
+from zreader.config import var
 
 cli = Typer(name='Zreader-cli', add_completion=False)
 
@@ -94,6 +95,7 @@ def zread(data_path: Path = Argument(..., help='Path to file or dir for data', e
     from rich.progress import Progress, TextColumn
     from rich.text import Text
 
+    from zreader.config import log
     from zreader.utils.beam_search import beam_search, cli_interactive_loop
     from zreader.utils.cli import get_files_columns
     from zreader.utils.transform import files_columns_to_tensors
@@ -183,11 +185,21 @@ def cli_state_verification(ctx: Context,
 
     """
 
+    if ctx.invoked_subcommand == 'init':
+        return
+    elif not var.BASE_INIT.exists():
+        typer.echo(typer.style('You need to initialize the project environment.\n'
+                               'For more information use: zreader init --help',
+                               fg=typer.colors.RED))
+        ctx.exit(1)
+
+    from zreader.config import log
+
     if ctx.invoked_subcommand is None:
         log.project_console.print(ctx.get_help(), markup=False)
         ctx.exit(0)
 
-    if ctx.invoked_subcommand in ('up', 'down', 'status'):
+    if ctx.invoked_subcommand in ('up', 'down', 'status', 'attach'):
         from zreader.utils.docker import is_docker_running
         from zreader.utils.cli import parse_config
 
@@ -201,6 +213,40 @@ def cli_state_verification(ctx: Context,
 
         ctx.params['conf'] = parse_config(config_file)
         ctx.params['attach'] = attach_stream
+
+
+@cli.command(help="Initialize project's environment")
+def init(base: Path = Option(Path().absolute(), '--base', '-b', help="Path to the project's base directory"),
+         relocate: bool = Option(False, '--relocate', '-r', is_flag=True, help='Relocate an existing environment')
+         ) -> None:
+    # TODO docs
+
+    from shutil import move, Error
+
+    def rebase(src: Path, dst: Path) -> None:
+        try:
+            move(str(src), str(dst))
+        except (PermissionError, Error):
+            typer.echo(typer.style(f'Failed to relocate: {src}', fg=typer.colors.YELLOW))
+        else:
+            typer.echo(typer.style(f'Relocated: {src}', fg=typer.colors.BRIGHT_BLUE))
+
+    base.mkdir(parents=True, exist_ok=True)
+
+    with var.BASE_INIT.open(mode='w') as f:
+        f.write(base.as_posix())
+
+    typer.echo(typer.style("Project's environment is initialized.", fg=typer.colors.BRIGHT_BLUE))
+
+    if relocate:
+        if var.LOGS_DIR.exists():
+            rebase(var.LOGS_DIR, base)
+        if var.INFERENCE_DIR.exists():
+            rebase(var.INFERENCE_DIR, base)
+        if var.DATA_DIR.exists():
+            rebase(var.DATA_DIR, base)
+        if var.EXPERIMENTS_DIR.exists():
+            rebase(var.EXPERIMENTS_DIR, base)
 
 
 @cli.command(help='Start services')
@@ -309,6 +355,7 @@ def up(ctx: Context) -> None:
 
     """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container
     from zreader.utils.cli import check_service
 
@@ -368,7 +415,7 @@ def up(ctx: Context) -> None:
 def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
                               help='Prune all docker containers after exit.'),
          v: bool = Option(False, '--volume', '-v', is_flag=True,
-                          help='Remove the volumes associated with the all docker containers.')
+                          help='Remove the volumes associated with the all docker containers and the log files.')
          ) -> None:
     """
     Stop services: Dashboard, API, Worker, Broker, Backend.
@@ -379,12 +426,15 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
         Prune all docker containers after exit.
 
     v : bool, default=False
-        Remove the volumes associated with the all docker containers.
+        Remove the volumes associated with the all docker containers and the log files.
 
     """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container
     from zreader.utils.cli import stop_service
+
+    # TODO remove logfiles
 
     if var.DASHBOARD_PID.exists():
         stop_service(name='dashboard', pidfile=var.DASHBOARD_PID)
@@ -415,6 +465,7 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
 @cli.command(name='status', help='Display services status')
 def status() -> None:
     """ Display services status """
+
     from zreader.utils.cli import check_service
     from zreader.app.cli.broker import broker_status
     from zreader.app.cli.backend import backend_status
@@ -440,6 +491,7 @@ def attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
@@ -453,9 +505,11 @@ def attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    # try:
+    #     cli()
+    # except Exception as e:
+    #     log.project_logger.error(e)
+    #     log.project_console.print_exception(show_locals=True)
+    #     log.error_console.print_exception(show_locals=True)
+
+    cli()
