@@ -1,7 +1,5 @@
 from typer import Typer, Context, Option
 
-from zreader.config import log
-
 cli = Typer(name='Train-cli', add_completion=False, help='Manage training')
 
 
@@ -24,6 +22,7 @@ def local(ctx: Context,
 
     """
 
+    from zreader.config import log
     from zreader.train.local import train, get_parser
 
     if show_help:

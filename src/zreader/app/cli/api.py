@@ -1,6 +1,6 @@
 from typer import Typer, Option, Argument, Context
 
-from zreader.config import var, log
+from zreader.config import var
 
 cli = Typer(name='API-cli', add_completion=False, help='Manage API service')
 
@@ -17,6 +17,8 @@ def api_state_verification(ctx: Context) -> None:
         for the script execution at every single level.
 
     """
+
+    from zreader.config import log
 
     if var.API_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
@@ -50,6 +52,8 @@ def api_config(url: str = Option(var.FASTAPI_URL, help='API url'),
 
     import json
     import requests
+
+    from zreader.config import log
 
     if param:
         response = requests.get(url=f'{url}/config/{param}')
@@ -129,6 +133,7 @@ def api_zread(data_path: str = Argument(..., help='Path to file or dir for data'
     from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TimeElapsedColumn
     from rich.text import Text
 
+    from zreader.config import log
     from zreader.utils.cli import get_files_columns
     from zreader.utils.visualization import visualize_columns
 
@@ -246,6 +251,7 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import start_service
 
     argv = [
@@ -294,6 +300,7 @@ def api_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
@@ -304,9 +311,4 @@ def api_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()

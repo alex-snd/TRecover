@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context
 
-from zreader.config import var, log
+from zreader.config import var
 
 cli = Typer(name='Broker-cli', add_completion=False, help='Manage Broker service')
 
@@ -18,6 +18,7 @@ def broker_state_verification(ctx: Context) -> None:
 
    """
 
+    from zreader.config import log
     from zreader.utils.docker import is_docker_running, get_container
 
     if not is_docker_running():
@@ -67,8 +68,10 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
 
     """
 
-    from zreader.utils.docker import get_client, get_container, get_image, pull_image
     from rich.prompt import Confirm
+
+    from zreader.config import log
+    from zreader.utils.docker import get_client, get_container, get_image, pull_image
 
     if not (image := get_image(var.BROKER_IMAGE)):
         with log.project_console.screen(hide_cursor=False):
@@ -109,6 +112,7 @@ def broker_stop(prune: bool = Option(False, '--prune', '-p', is_flag=True,
                 ) -> None:
     """ Stop broker service. """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container
 
     get_container(var.BROKER_ID).stop()
@@ -138,6 +142,7 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container, get_volume
 
     container = get_container(var.BROKER_ID)
@@ -157,6 +162,7 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
 def broker_status() -> None:
     """ Display broker service status. """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container
 
     if (container := get_container(var.BROKER_ID)) and container.status == 'running':
@@ -169,6 +175,7 @@ def broker_status() -> None:
 def broker_attach() -> None:
     """ Attach local output stream to a running broker service. """
 
+    from zreader.config import log
     from zreader.utils.docker import get_container
 
     with log.project_console.screen(hide_cursor=True):
@@ -179,9 +186,4 @@ def broker_attach() -> None:
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()

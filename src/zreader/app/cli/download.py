@@ -1,7 +1,5 @@
 from typer import Typer, Argument, Option
 
-from zreader.config import log
-
 cli = Typer(name='Download-cli', add_completion=False, help='Download train data or pre-trained model')
 
 
@@ -50,9 +48,4 @@ def download_artifacts(sharing_link: str = Argument(..., help='Sharing link to t
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()

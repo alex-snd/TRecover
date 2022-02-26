@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context
 
-from zreader.config import var, log
+from zreader.config import var
 
 cli = Typer(name='Dashboard-cli', add_completion=False, help='Manage Dashboard service')
 
@@ -17,6 +17,9 @@ def dashboard_state_verification(ctx: Context) -> None:
         for the script execution at every single level.
 
    """
+
+    from zreader.config import log
+
     if var.DASHBOARD_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
             log.project_console.print(':rocket: The dashboard service is already started', style='bright_blue')
@@ -58,6 +61,7 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
 
     """
 
+    from zreader.config import log
     from zreader.app import dashboard
     from zreader.utils.cli import start_service
 
@@ -111,6 +115,7 @@ def dashboard_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
@@ -121,9 +126,4 @@ def dashboard_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()

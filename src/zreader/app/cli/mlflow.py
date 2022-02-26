@@ -1,6 +1,8 @@
+from typing import Optional
+
 from typer import Typer, Option, Context, BadParameter
 
-from zreader.config import train_var, log
+from zreader.config import var
 
 cli = Typer(name='Mlflow-cli', add_completion=False, help='Manage Mlflow service')
 
@@ -18,13 +20,15 @@ def mlflow_state_verification(ctx: Context) -> None:
 
    """
 
-    if train_var.MLFLOW_PID.exists():
+    from zreader.config import log, train_var
+
+    if var.MLFLOW_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
             log.project_console.print(':rocket: The mlflow service is already started', style='bright_blue')
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        mlflow_start(host=train_var.MLFLOW_HOST, port=train_var.MLFLOW_PORT, concurrency=train_var.MLFLOW_WORKERS,
+        mlflow_start(host=var.MLFLOW_HOST, port=var.MLFLOW_PORT, concurrency=var.MLFLOW_WORKERS,
                      registry=train_var.MLFLOW_REGISTRY_DIR.as_uri(), backend_uri=train_var.MLFLOW_BACKEND,
                      only_ui=False, attach=False)
 
@@ -34,13 +38,13 @@ def mlflow_state_verification(ctx: Context) -> None:
 
 
 @cli.command(name='start', help='Start service')
-def mlflow_start(host: str = Option(train_var.MLFLOW_HOST, '--host', '-h', help='Bind socket to this host.'),
-                 port: int = Option(train_var.MLFLOW_PORT, '--port', '-p', help='Bind socket to this port.'),
-                 concurrency: int = Option(train_var.MLFLOW_WORKERS, '-c',
+def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind socket to this host.'),
+                 port: int = Option(var.MLFLOW_PORT, '--port', '-p', help='Bind socket to this port.'),
+                 concurrency: int = Option(var.MLFLOW_WORKERS, '-c',
                                            help='The number of mlflow server workers.'),
-                 registry: str = Option(train_var.MLFLOW_REGISTRY_DIR.as_uri(), '--registry', '-r',
-                                        help='Path to local directory to store artifacts.'),
-                 backend_uri: str = Option(train_var.MLFLOW_BACKEND, '--backend', help='Backend uri.'),
+                 registry: Optional[str] = Option(None, '--registry', '-r',
+                                                  help='Path to local directory to store artifacts.'),
+                 backend_uri: Optional[str] = Option(None, '--backend', help='Backend uri.'),
                  only_ui: bool = Option(False, '--only-ui', is_flag=True, help='Launch only the Mlflow tracking UI'),
                  attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams')
                  ) -> None:
@@ -84,25 +88,29 @@ def mlflow_start(host: str = Option(train_var.MLFLOW_HOST, '--host', '-h', help=
     """
 
     import platform
+
+    from zreader.config import log, train_var
     from zreader.utils.cli import start_service
 
     if (is_windows := platform.system() == 'Windows') and concurrency != 1:
         raise BadParameter("Windows platform does not support concurrency option")
 
     command = 'ui' if only_ui else 'server'
+    registry = registry or str(train_var.MLFLOW_REGISTRY_DIR.as_uri())
+    backend_uri = backend_uri or str(train_var.MLFLOW_BACKEND)
 
     argv = [
         'mlflow', command,
         '--host', host,
         '--port', str(port),
-        '--default-artifact-root', str(backend_uri),
-        '--backend-store-uri', str(registry)
+        '--default-artifact-root', backend_uri,
+        '--backend-store-uri', registry
     ]
 
     if not only_ui and not is_windows:
         argv.extend(['--workers', str(concurrency)])
 
-    start_service(argv, name='mlflow', logfile=log.MLFLOW_LOG, pidfile=train_var.MLFLOW_PID)
+    start_service(argv, name='mlflow', logfile=log.MLFLOW_LOG, pidfile=var.MLFLOW_PID)
 
     if attach:
         mlflow_attach(live=False)
@@ -114,7 +122,7 @@ def mlflow_stop() -> None:
 
     from zreader.utils.cli import stop_service
 
-    stop_service(name='mlflow', pidfile=train_var.MLFLOW_PID)
+    stop_service(name='mlflow', pidfile=var.MLFLOW_PID)
 
 
 @cli.command(name='status', help='Display service status')
@@ -123,7 +131,7 @@ def mlflow_status() -> None:
 
     from zreader.utils.cli import check_service
 
-    check_service(name='mlflow', pidfile=train_var.MLFLOW_PID)
+    check_service(name='mlflow', pidfile=var.MLFLOW_PID)
 
 
 @cli.command(name='attach', help='Attach local output stream to a service')
@@ -140,6 +148,7 @@ def mlflow_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
@@ -150,9 +159,4 @@ def mlflow_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()

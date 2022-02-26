@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context, BadParameter
 
-from zreader.config import var, log
+from zreader.config import var
 
 cli = Typer(name='Worker-cli', add_completion=False, help='Manage Worker service')
 
@@ -17,6 +17,8 @@ def worker_state_verification(ctx: Context) -> None:
         for the script execution at every single level.
 
    """
+
+    from zreader.config import log
 
     if var.WORKER_PID.exists():
         if ctx.invoked_subcommand in ('start', None):
@@ -77,6 +79,8 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
     """
 
     import platform
+
+    from zreader.config import log
     from zreader.utils.cli import start_service
 
     if platform.system() == 'Windows' and pool != var.PoolType.solo:
@@ -131,6 +135,7 @@ def worker_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
     """
 
+    from zreader.config import log
     from zreader.utils.cli import stream
 
     with log.project_console.screen():
@@ -141,9 +146,4 @@ def worker_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    try:
-        cli()
-    except Exception as e:
-        log.project_logger.error(e)
-        log.project_console.print_exception(show_locals=True)
-        log.error_console.print_exception(show_locals=True)
+    cli()
