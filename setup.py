@@ -12,10 +12,10 @@ def get_requirements(filename: str) -> List[str]:
 
 
 essential_packages = get_requirements('essential.txt')
-api_srvice_packages = get_requirements('docker/api.txt')
-dashboard_srvice_packages = get_requirements('docker/dashboard.txt')
-standalone_srvice_packages = get_requirements('docker/standalone.txt')
-worker_srvice_packages = get_requirements('docker/worker.txt')
+api_service_packages = get_requirements('docker/api.txt')
+dashboard_service_packages = get_requirements('docker/dashboard.txt')
+standalone_service_packages = get_requirements('docker/standalone.txt')
+worker_service_packages = get_requirements('docker/worker.txt')
 
 test_packages = get_requirements('test.txt')
 train_packages = get_requirements('train.txt')
@@ -28,16 +28,15 @@ setup(
     author_email='alexandershulga.sh@gmail.com',
     python_requires='>=3.8',
     packages=find_packages(
-        where='src',
-        include=['zreader'],
+        where='src'
     ),
     package_dir={'': 'src'},
     install_requires=[essential_packages],
     extras_require={
-        'api': api_srvice_packages,
-        'dashboard': dashboard_srvice_packages,
-        'standalone': standalone_srvice_packages,
-        'worker': worker_srvice_packages,
+        'api': api_service_packages,
+        'dashboard': dashboard_service_packages,
+        'standalone': standalone_service_packages,
+        'worker': worker_service_packages,
         "test": test_packages,
         "train": train_packages,
     },
