@@ -1,7 +1,7 @@
 alembic==1.4.1
 celery[redis]==5.2.2
 fastapi==0.68.1
-mlflow==1.18.0
+mlflow==1.23.1
 numpy==1.19.5
 pydantic==1.8.2
 streamlit==1.2.0
