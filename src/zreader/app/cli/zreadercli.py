@@ -505,11 +505,4 @@ def attach(live: bool = Option(False, '--live', '-l', is_flag=True,
 
 
 if __name__ == '__main__':
-    # try:
-    #     cli()
-    # except Exception as e:
-    #     log.project_logger.error(e)
-    #     log.project_console.print_exception(show_locals=True)
-    #     log.error_console.print_exception(show_locals=True)
-
     cli()
