@@ -10,7 +10,8 @@ COPY ./requirements /workspace/requirements
 # Install packages
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
-    pip install --no-cache-dir -e /workspace/".[worker]"
+    pip install --no-cache-dir /workspace/".[worker]" && \
+    zreader init --base /workspace
 	
 
 # Stage 2: Runtime
@@ -19,10 +20,11 @@ FROM python:3.8-slim AS runtime
 ENV CUDA ${CUDA:-True}
 ENV CELERY_BROKER ${CELERY_BROKER:-pyamqp://guest@localhost:5672}
 ENV CELERY_BACKEND ${CELERY_BACKEND:-redis://localhost:6379}
+ENV CELERY_POOL_TYPE: ${CELERY_POOL_TYPE:-prefork}
 ENV CELERY_WORKERS: ${CELERY_WORKERS:-1}
 
 COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder ./workspace ./workspace
 
-CMD celery -A workspace.src.app.api.backend.celeryapp worker -l INFO -c ${CELERY_WORKERS}
+CMD zreader worker start --pool ${CELERY_POOL_TYPE} -c ${CELERY_WORKERS} --attach

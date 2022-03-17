@@ -58,6 +58,7 @@ services:
 
     environment:
       <<: *common-env
+      CELERY_POOL_TYPE: ${CELERY_POOL_TYPE:-prefork}
       CELERY_WORKERS: ${CELERY_WORKERS:-1}
 
     restart: always
