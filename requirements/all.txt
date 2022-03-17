@@ -9,9 +9,10 @@ pydantic==1.8.2
 python-dotenv==0.19.2
 requests==2.25.1
 rich==10.15.1
-streamlit==1.2.0
+streamlit==1.7.0
 toml==0.10.2
 torch==1.9.0
+pytorch-lightning==1.5.10
 typer[all]==0.4.0
 uvicorn==0.15.0
 wandb==0.12.7
