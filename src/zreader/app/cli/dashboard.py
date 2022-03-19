@@ -16,7 +16,7 @@ def dashboard_state_verification(ctx: Context) -> None:
         Typer (Click like) special internal object that holds state relevant
         for the script execution at every single level.
 
-   """
+    """
 
     from zreader.config import log
 
@@ -26,7 +26,8 @@ def dashboard_state_verification(ctx: Context) -> None:
             ctx.exit(0)
 
     elif ctx.invoked_subcommand is None:
-        dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=var.LogLevel.info, attach=False)
+        dashboard_start(host=var.STREAMLIT_HOST, port=var.STREAMLIT_PORT, loglevel=var.LogLevel.info, attach=False,
+                        no_daemon=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The dashboard service is not started', style='yellow')

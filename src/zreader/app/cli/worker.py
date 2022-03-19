@@ -28,7 +28,7 @@ def worker_state_verification(ctx: Context) -> None:
     elif ctx.invoked_subcommand is None:
         worker_start(name='ZReaderWorker', pool=var.PoolType.solo, loglevel=var.LogLevel.info,
                      concurrency=var.CELERY_WORKERS, broker_url=var.CELERY_BROKER,
-                     backend_url=var.CELERY_BACKEND, attach=False)
+                     backend_url=var.CELERY_BACKEND, attach=False, no_daemon=False)
 
     elif ctx.invoked_subcommand != 'start':
         log.project_console.print('The worker service is not started', style='yellow')

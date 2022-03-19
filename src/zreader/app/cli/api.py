@@ -27,7 +27,7 @@ def api_state_verification(ctx: Context) -> None:
 
     elif ctx.invoked_subcommand is None:
         api_start(host=var.FASTAPI_HOST, port=var.FASTAPI_PORT, loglevel=var.LogLevel.info,
-                  concurrency=var.FASTAPI_WORKERS, attach=False)
+                  concurrency=var.FASTAPI_WORKERS, attach=False, no_daemon=False)
 
     elif ctx.invoked_subcommand not in ('start', 'params', 'zread'):
         log.project_console.print('The API service is not started', style='yellow')
