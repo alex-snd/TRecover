@@ -43,7 +43,8 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
                  concurrency: int = Option(var.CELERY_WORKERS, '-c', help='The number of worker processes.'),
                  broker_url: str = Option(var.CELERY_BROKER, '--broker', help='Broker url.'),
                  backend_url: str = Option(var.CELERY_BACKEND, '--backend', help='Backend url.'),
-                 attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams')
+                 attach: bool = Option(False, '--attach', '-a', is_flag=True, help='Attach output and error streams'),
+                 no_daemon: bool = Option(False, '--no-daemon', is_flag=True, help='Do not run as a daemon process')
                  ) -> None:
     """
     Start API service.
@@ -71,6 +72,9 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
     attach : bool, default=False
         Attach output and error streams.
 
+    no_daemon : bool, default=False
+        Do not run as a daemon process.
+
     Raises
     ------
     typer.BadParameter
@@ -79,6 +83,7 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
     """
 
     import platform
+    from subprocess import run
 
     from zreader.config import log
     from zreader.utils.cli import start_service
@@ -97,10 +102,13 @@ def worker_start(name: str = Option('ZReaderWorker', '--name', '-n', help='Set c
         '--loglevel', loglevel
     ]
 
-    start_service(argv, name='worker', logfile=log.WORKER_LOG, pidfile=var.WORKER_PID)
+    if no_daemon:
+        run(argv)
+    else:
+        start_service(argv, name='worker', logfile=log.WORKER_LOG, pidfile=var.WORKER_PID)
 
-    if attach:
-        worker_attach(live=False)
+        if attach:
+            worker_attach(live=False)
 
 
 @cli.command(name='stop', help='Stop service')

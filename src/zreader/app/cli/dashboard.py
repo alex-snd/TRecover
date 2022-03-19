@@ -38,7 +38,8 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
                     port: int = Option(var.STREAMLIT_PORT, '--port', '-p', help='Bind socket to this port.'),
                     loglevel: var.LogLevel = Option(var.LogLevel.info, '--loglevel', '-l', help='Logging level.'),
                     attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                          help='Attach output and error streams')
+                                          help='Attach output and error streams'),
+                    no_daemon: bool = Option(False, '--no-daemon', is_flag=True, help='Do not run as a daemon process')
                     ) -> None:
     """
     Start dashboard service.
@@ -59,7 +60,12 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
     attach : bool, default=False
         Attach output and error streams.
 
+    no_daemon : bool, default=False
+        Do not run as a daemon process.
+
     """
+
+    from subprocess import run
 
     from zreader.config import log
     from zreader.app import dashboard
@@ -77,10 +83,13 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
             '--theme.textColor', '#157D96'
             ]
 
-    start_service(argv, name='dashboard', logfile=log.DASHBOARD_LOG, pidfile=var.DASHBOARD_PID)
+    if no_daemon:
+        run(argv)
+    else:
+        start_service(argv, name='dashboard', logfile=log.DASHBOARD_LOG, pidfile=var.DASHBOARD_PID)
 
-    if attach:
-        dashboard_attach(live=False)
+        if attach:
+            dashboard_attach(live=False)
 
 
 @cli.command(name='stop', help='Stop service')
