@@ -364,10 +364,12 @@ def up(ctx: Context) -> None:
     if var.DASHBOARD_PID.exists():
         check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
     else:
-        dashboard.dashboard_start(host=conf.dashboard.host,
-                                  port=conf.dashboard.port,
-                                  loglevel=conf.dashboard.loglevel,
-                                  attach=False)
+        pass
+    dashboard.dashboard_start(host=conf.dashboard.host,
+                              port=conf.dashboard.port,
+                              loglevel=conf.dashboard.loglevel,
+                              attach=False,
+                              no_daemon=False)
 
     if var.API_PID.exists():
         check_service(name='API', pidfile=var.API_PID)
@@ -376,7 +378,8 @@ def up(ctx: Context) -> None:
                       port=conf.api.port,
                       loglevel=conf.api.loglevel,
                       concurrency=conf.api.concurrency,
-                      attach=False)
+                      attach=False,
+                      no_daemon=False)
 
     if var.WORKER_PID.exists():
         check_service(name='worker', pidfile=var.WORKER_PID)
@@ -387,7 +390,8 @@ def up(ctx: Context) -> None:
                             concurrency=conf.worker.concurrency,
                             broker_url=conf.worker.broker_url,
                             backend_url=conf.worker.backend_url,
-                            attach=False)
+                            attach=False,
+                            no_daemon=False)
 
     if (container := get_container(var.BROKER_ID)) and container.status == 'running':
         log.project_console.print(':rocket: The broker status: running', style='bright_blue')

@@ -227,7 +227,8 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
               loglevel: var.LogLevel = Option(var.LogLevel.info, '--loglevel', '-l', help='Logging level.'),
               concurrency: int = Option(var.FASTAPI_WORKERS, '-c', help='The number of worker processes.'),
               attach: bool = Option(False, '--attach', '-a', is_flag=True,
-                                    help='Attach output and error streams')
+                                    help='Attach output and error streams'),
+              no_daemon: bool = Option(False, '--no-daemon', is_flag=True, help='Do not run as a daemon process')
               ) -> None:
     """
     Start API service.
@@ -249,7 +250,12 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
     attach : bool, default=False
         Attach output and error streams.
 
+    no_daemon : bool, default=False
+        Do not run as a daemon process.
+
     """
+
+    from subprocess import run
 
     from zreader.config import log
     from zreader.utils.cli import start_service
@@ -262,10 +268,13 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
         '--log-level', loglevel
     ]
 
-    start_service(argv, name='API', logfile=log.API_LOG, pidfile=var.API_PID)
+    if no_daemon:
+        run(argv)
+    else:
+        start_service(argv, name='API', logfile=log.API_LOG, pidfile=var.API_PID)
 
-    if attach:
-        api_attach(live=False)
+        if attach:
+            api_attach(live=False)
 
 
 @cli.command(name='stop', help='Stop service')
