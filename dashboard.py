@@ -8,7 +8,7 @@ def main() -> None:
         layout='wide',
         initial_sidebar_state='expanded')
 
-    st.info('Test - 2 GitHub actions')
+    st.info('Test - 3 GitHub actions')
 
 
 if __name__ == '__main__':
