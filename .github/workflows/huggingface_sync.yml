@@ -3,9 +3,6 @@ on:
   push:
     branches: [ huggingface ]
 
-  # to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 jobs:
   sync-to-hub:
 
@@ -14,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          ref: 'huggingface'
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://alex-snd:$HF_TOKEN@huggingface.co/spaces/alex-snd/ZReader huggingface:main
+        run: git push https://alex-snd:$HF_TOKEN@huggingface.co/spaces/alex-snd/ZReader HEAD:main
