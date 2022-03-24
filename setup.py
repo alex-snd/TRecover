@@ -45,4 +45,45 @@ setup(
             'zreader = zreader.app.cli.zreadercli:cli',
         ],
     },
+    classifiers=[
+        'Development Status :: 4 - Beta',
+
+        'Environment :: Console',
+        'Environment :: GPU :: NVIDIA CUDA',
+        'Environment :: Web Environment',
+
+        'Framework :: AsyncIO',
+        'Framework :: Celery',
+        'Framework :: FastAPI',
+        'Framework :: Jupyter',
+        'Framework :: Sphinx',
+
+        'Intended Audience :: Developers',
+        'Intended Audience :: Education',
+        'Intended Audience :: Science/Research',
+
+        'License :: OSI Approved :: Apache Software License',
+
+        'Natural Language :: English',
+
+        'Operating System :: MacOS',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: Unix',
+
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+
+        'Topic :: Education',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Security',
+        'Topic :: Security :: Cryptography',
+        'Topic :: Software Development',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
 )
