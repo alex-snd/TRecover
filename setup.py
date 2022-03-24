@@ -26,6 +26,20 @@ setup(
     license='Apache License 2.0',
     author='Alexander Shulga',
     author_email='alexandershulga.sh@gmail.com',
+    url='https://github.com/alex-snd/ZReader',
+    description='A Python library to train Transformer neural network for keyless reading task.',
+    keywords=[
+        'Deep Learning',
+        'Machine Learning',
+        'Transformers',
+        'NLP',
+        'Cryptography',
+        'Keyless Reading',
+        'ZReader',
+        'PyTorch',
+        '',
+    ]
+    ,
     python_requires='>=3.8',
     packages=find_packages(
         where='src'
@@ -56,7 +70,6 @@ setup(
         'Framework :: Celery',
         'Framework :: FastAPI',
         'Framework :: Jupyter',
-        'Framework :: Sphinx',
 
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
