@@ -37,9 +37,7 @@ setup(
         'Keyless Reading',
         'ZReader',
         'PyTorch',
-        '',
-    ]
-    ,
+    ],
     python_requires='>=3.8',
     packages=find_packages(
         where='src'
