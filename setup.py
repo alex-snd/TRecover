@@ -22,7 +22,7 @@ train_packages = get_requirements('train.txt')
 
 setup(
     name='zreader',
-    version='0.1.0',
+    version='0.1.1',
     license='Apache License 2.0',
     author='Alexander Shulga',
     author_email='alexandershulga.sh@gmail.com',
