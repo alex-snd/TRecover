@@ -25,6 +25,6 @@ def zreader(version: str = 'latest') -> ZReader:
                     num_layers=config['num_layers'], d_model=config['d_model'], n_heads=config['n_heads'],
                     d_ff=config['d_ff'], dropout=config['dropout'])
 
-    model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint_urls['model'], progress=False))
+    model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint_urls[version]['model'], progress=False))
 
     return model
