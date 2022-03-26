@@ -1,11 +1,6 @@
 """ Configuration for torch hub usage """
 
-import json
-from urllib.request import urlopen
-
 import torch
-
-from zreader.model import ZReader
 
 dependencies = ['torch', 'zreader']
 
@@ -17,7 +12,11 @@ checkpoint_urls = {
 }
 
 
-def zreader(version: str = 'latest') -> ZReader:
+def zreader(version: str = 'latest'):
+    import json
+    from urllib.request import urlopen
+    from zreader.model import ZReader
+
     with urlopen(checkpoint_urls[version]['config']) as url:
         config = json.loads(url.read().decode())
 
