@@ -12,7 +12,7 @@ checkpoint_urls = {
 }
 
 
-def zreader(version: str = 'latest'):
+def zreader(device: torch.device = torch.device('cpu'), version: str = 'latest'):
     import json
     from urllib.request import urlopen
     from zreader.model import ZReader
@@ -24,6 +24,8 @@ def zreader(version: str = 'latest'):
                     num_layers=config['num_layers'], d_model=config['d_model'], n_heads=config['n_heads'],
                     d_ff=config['d_ff'], dropout=config['dropout'])
 
-    model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint_urls[version]['model'], progress=False))
+    model.load_state_dict(torch.hub.load_state_dict_from_url(url=checkpoint_urls[version]['model'],
+                                                             progress=False,
+                                                             map_location=device))
 
     return model
