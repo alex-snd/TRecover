@@ -2,7 +2,6 @@ from typing import Tuple, List
 
 import streamlit as st
 import torch
-
 from zreader.config import var
 from zreader.utils.beam_search import beam_search, dashboard_loop
 from zreader.utils.inference import data_to_columns, create_noisy_columns
@@ -11,7 +10,7 @@ from zreader.utils.visualization import visualize_columns, visualize_target
 
 max_chars = 256
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = torch.hub.load('alex-snd/ZReader', model='zreader', version='latest').to(device)
+model = torch.hub.load('alex-snd/ZReader', model='zreader', device=device, version='latest')
 
 
 def main() -> None:
