@@ -265,6 +265,61 @@ def cli_interactive_loop(label: str = 'Processing'
     return inner_loop
 
 
+def dashboard_loop(src: Tensor,
+                   encoded_src: Tensor,
+                   z_reader: ZReader,
+                   width: int,
+                   device: torch.device
+                   ) -> List[Tuple[Tensor, float]]:
+    """
+    Beam search algorithm loop implementation for the dashboard interface.
+
+    Parameters
+    ----------
+    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+        Keyless reading columns that are passed to the ZReader encoder.
+    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+        Keyless reading columns that were encoded by ZReader encoder.
+    z_reader: ZReader
+        Trained model for keyless reading.
+    width: int
+        Number of candidates that can be selected at each step.
+    device: torch.device
+        Device on which to allocate the candidate chains.
+
+    Returns
+    -------
+    candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+        List of chains sorted in descending order of probabilities.
+        The number of candidates is set by the "width" parameter.
+
+    Notes
+    -----
+    Probability masks and beam widths values required for each step of the
+    beam search algorithm are calculated by the "get_steps_params" function using
+    keyless reading columns ("src") that are passed to the ZReader encoder.
+
+    An empty chain (zero token of shape [1, 1, TOKEN_SIZE]) with zero probability
+    is used as the first candidate for the algorithm.
+
+    At each step of the algorithm, the progress bar is updated and displayed on the dashboard.
+
+    """
+
+    import streamlit as st
+
+    step_masks, step_widths = get_steps_params(src)
+    candidates = [(torch.zeros(1, 1, z_reader.token_size, device=device), 0)]
+
+    progress = st.progress(0)
+
+    for i in range(encoded_src.shape[0]):
+        candidates = beam_step(candidates, step_masks[i], step_widths[i], encoded_src, z_reader, width, device)
+        progress.progress(i / encoded_src.shape[0])
+
+    return candidates
+
+
 def standard_loop(src: Tensor,
                   encoded_src: Tensor,
                   z_reader: ZReader,
