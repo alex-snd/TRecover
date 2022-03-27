@@ -1,3 +1,4 @@
+import platform
 from typing import Tuple, List
 
 import streamlit as st
@@ -29,6 +30,9 @@ def main() -> None:
 
     if 'columns' not in st.session_state:
         st.session_state.columns = None
+
+    if 'is_unix' not in st.session_state:
+        st.session_state.is_unix = platform.system() != 'Windows'
 
     sidebar()
 
