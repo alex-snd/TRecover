@@ -29,14 +29,11 @@ jobs:
         with:
           images: ${{ secrets.DOCKER_USERNAME }}/zreader-standalone
 
-      - name: Echo PWD
-        run: |
-          pwd
-
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
-          context: ./docker/file/standalone
+          context: ./docker/file
+          file: standalone
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
