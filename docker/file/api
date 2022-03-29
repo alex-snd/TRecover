@@ -10,7 +10,7 @@ COPY ./requirements /workspace/requirements
 RUN apt update && \
     apt install --no-install-recommends -y build-essential gcc && \
     pip install --no-cache-dir /workspace/".[api]" && \
-    zreader init --base /workspase
+    zreader init --base /workspace
 
 
 # Stage 2: Runtime
