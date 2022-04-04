@@ -13,9 +13,14 @@ checkpoint_urls = {
 
 
 def zreader(device: torch.device = torch.device('cpu'), version: str = 'latest'):
+    # TODO help docstring
+
     import json
     from urllib.request import urlopen
     from zreader.model import ZReader
+
+    if version not in checkpoint_urls:
+        version = 'latest'
 
     with urlopen(checkpoint_urls[version]['config']) as url:
         config = json.loads(url.read().decode())
