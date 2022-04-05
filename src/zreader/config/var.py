@@ -20,6 +20,15 @@ NUM2ALPHABET = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h', 
 COLORS = ('green', 'yellow', 'blue', 'magenta', 'cyan', 'bright_green', 'bright_yellow', 'bright_blue',
           'bright_magenta', 'bright_cyan', 'red')
 
+CHECKPOINT_URLS = {
+    'latest': {'model': 'https://github.com/alex-snd/ZReader/releases/download/v0.1.0/model.pt',
+               'config': 'https://github.com/alex-snd/ZReader/releases/download/v0.1.0/config.json'},
+    'v0.1.0': {'model': 'https://github.com/alex-snd/ZReader/releases/download/v0.1.0/model.pt',
+               'config': 'https://github.com/alex-snd/ZReader/releases/download/v0.1.0/config.json'},
+}
+
+TRAIN_DATA_URL = 'https://github.com/alex-snd/ZReader/releases/download/v0.1.0/data.zip'
+
 CONFIG_DIR = Path(__file__).parent.absolute()
 BASE_INIT = CONFIG_DIR / 'base.init'
 
@@ -34,7 +43,6 @@ DATA_DIR = BASE_DIR / 'data'
 EXPERIMENTS_DIR = BASE_DIR / 'experiments'
 
 load_dotenv(BASE_DIR / '.env')
-
 
 # --------------------------------------------------Mlflow Variables----------------------------------------------------
 
