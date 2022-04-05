@@ -82,8 +82,8 @@ WORKER_PID = CONFIG_DIR / 'worker.pid'
 # -------------------------------------------------Inference Variables--------------------------------------------------
 
 INFERENCE_DIR = Path(os.getenv('INFERENCE_DIR', default=BASE_DIR / 'inference'))
-INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'params.json'))
-INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'z_reader.pt'))
+INFERENCE_PARAMS_PATH = Path(os.getenv('INFERENCE_PARAMS_PATH', default=INFERENCE_DIR / 'config.json'))
+INFERENCE_WEIGHTS_PATH = Path(os.getenv('INFERENCE_WEIGHTS_PATH', default=INFERENCE_DIR / 'model.pt'))
 CUDA = os.getenv('CUDA', default='').lower() != 'false'
 MAX_NOISE = int(os.getenv('MAX_NOISE', default=13))
 
