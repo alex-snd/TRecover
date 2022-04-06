@@ -15,6 +15,46 @@ from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, Trans
 from zreader.config import var, log
 
 
+def download(direct_link: str, filepath: Path) -> None:
+    """
+    Download file.
+
+    Parameters
+    ----------
+    direct_link: str
+       Sharing link to the file on GutHub.
+
+    filepath: Path
+       Path to the downloaded file.
+
+   """
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    with filepath.open(mode='wb') as fw:
+        response = requests.get(direct_link, stream=True)
+        total_length = response.headers.get('content-length')
+
+        if total_length is None:  # no content length header
+            fw.write(response.content)
+        else:
+            data_stream = response.iter_content(chunk_size=4096)
+
+            with Progress(
+                    TextColumn('{task.description}', style='bright_blue'),
+                    BarColumn(complete_style='bright_blue'),
+                    DownloadColumn(),
+                    TransferSpeedColumn(),
+                    transient=True,
+                    console=log.project_console
+            ) as progress:
+                download_progress = progress.add_task('Downloading', total=int(total_length))
+
+                for data in data_stream:
+                    fw.write(data)
+                    progress.update(download_progress, advance=4096)
+
+
 def get_real_direct_link(sharing_link: str) -> str:
     """
     Get a direct download link.
@@ -48,7 +88,7 @@ def extract_filename(direct_link: str) -> Optional[str]:
 
 def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     """
-    Download file from Yandex disk
+    Download file from Yandex disk.
 
     Parameters
     ----------
@@ -72,55 +112,68 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     filename = extract_filename(direct_link) or 'downloaded_data'  # Try to recover the filename from the link
     filepath = Path(save_dir, filename)
 
-    with filepath.open(mode='wb') as fw:
-        response = requests.get(direct_link, stream=True)
-        total_length = response.headers.get('content-length')
-
-        if total_length is None:  # no content length header
-            fw.write(response.content)
-        else:
-            data_stream = response.iter_content(chunk_size=4096)
-
-            with Progress(
-                    TextColumn('{task.description}', style='bright_blue'),
-                    BarColumn(complete_style='bright_blue'),
-                    DownloadColumn(),
-                    TransferSpeedColumn(),
-                    transient=True,
-                    console=log.project_console
-            ) as progress:
-                download_progress = progress.add_task('Downloading', total=int(total_length))
-
-                for data in data_stream:
-                    fw.write(data)
-                    progress.update(download_progress, advance=4096)
+    download(direct_link=direct_link, filepath=filepath)
 
     log.project_console.print(f'Downloaded "{filename}" to {filepath.absolute()}', style='green')
 
     return filepath
 
 
-def download_archive_from_disk(sharing_link: str, save_dir: str) -> None:
+def download_from_github(direct_link: str, save_dir: str) -> Path:
     """
-    Download archive file from Yandex disk and extract it to save_dir.
+    Download file from GutHub assets.
 
     Parameters
     ----------
-    sharing_link: str
-        Sharing link to the archive file on Yandex disk
+    direct_link: str
+       Sharing link to the file on GutHub.
+
+    save_dir: str
+       Path where to store downloaded file.
+
+    Returns
+    -------
+    filepath: Path
+       Path to the downloaded file.
+
+   """
+
+    filename = direct_link.split('/')[-1]
+    filepath = Path(save_dir, filename)
+
+    download(direct_link=direct_link, filepath=filepath)
+
+    log.project_console.print(f'Downloaded "{filename}" to {filepath.absolute()}', style='green')
+
+    return filepath
+
+
+def download_archive(link: str, save_dir: str, yandex_disk: bool = False) -> None:
+    """
+    Download archive file and extract it to save_dir.
+
+    Parameters
+    ----------
+    link: str
+        Sharing link to the archive file on Yandex disk or GitHub assets.
 
     save_dir: str
         Path where to store extracted data
 
+    yandex_disk: bool, default=False
+        If the link is to Yandex disk.
+
     """
 
-    if filepath := download_from_disk(sharing_link, save_dir):
+    filepath = download_from_disk(link, save_dir) if yandex_disk else download_from_github(link, save_dir)
+
+    if filepath:
         with ZipFile(filepath) as zf:
             zf.extractall(path=Path(save_dir, filepath.stem))
 
         os.remove(filepath)
 
-    log.project_console.print(f'Archive extracted to {Path(save_dir, filepath.stem).absolute()}', style='green')
+        log.project_console.print(f'Archive extracted to {Path(save_dir, filepath.stem).absolute()}', style='green')
 
 
 def get_files_columns(inference_path: Path,
