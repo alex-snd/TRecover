@@ -86,7 +86,7 @@ def extract_filename(direct_link: str) -> Optional[str]:
     return None
 
 
-def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
+def download_from_disk(sharing_link: str, save_dir: Path) -> Optional[Path]:
     """
     Download file from Yandex disk.
 
@@ -95,7 +95,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     sharing_link: str
         Sharing link to the file on Yandex disk.
 
-    save_dir: str
+    save_dir: Path
         Path where to store downloaded file.
 
     Returns
@@ -110,7 +110,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
         return None
 
     filename = extract_filename(direct_link) or 'downloaded_data'  # Try to recover the filename from the link
-    filepath = Path(save_dir, filename)
+    filepath = save_dir / filename
 
     download(direct_link=direct_link, filepath=filepath)
 
@@ -119,7 +119,7 @@ def download_from_disk(sharing_link: str, save_dir: str) -> Optional[Path]:
     return filepath
 
 
-def download_from_github(direct_link: str, save_dir: str) -> Path:
+def download_from_github(direct_link: str, save_dir: Path) -> Path:
     """
     Download file from GutHub assets.
 
@@ -128,7 +128,7 @@ def download_from_github(direct_link: str, save_dir: str) -> Path:
     direct_link: str
        Sharing link to the file on GutHub.
 
-    save_dir: str
+    save_dir: Path
        Path where to store downloaded file.
 
     Returns
@@ -139,7 +139,7 @@ def download_from_github(direct_link: str, save_dir: str) -> Path:
    """
 
     filename = direct_link.split('/')[-1]
-    filepath = Path(save_dir, filename)
+    filepath = save_dir / filename
 
     download(direct_link=direct_link, filepath=filepath)
 
@@ -148,7 +148,7 @@ def download_from_github(direct_link: str, save_dir: str) -> Path:
     return filepath
 
 
-def download_archive(link: str, save_dir: str, yandex_disk: bool = False) -> None:
+def download_archive(link: str, save_dir: Path, yandex_disk: bool = False) -> None:
     """
     Download archive file and extract it to save_dir.
 
@@ -157,7 +157,7 @@ def download_archive(link: str, save_dir: str, yandex_disk: bool = False) -> Non
     link: str
         Sharing link to the archive file on Yandex disk or GitHub assets.
 
-    save_dir: str
+    save_dir: Path
         Path where to store extracted data
 
     yandex_disk: bool, default=False
@@ -169,11 +169,11 @@ def download_archive(link: str, save_dir: str, yandex_disk: bool = False) -> Non
 
     if filepath:
         with ZipFile(filepath) as zf:
-            zf.extractall(path=Path(save_dir, filepath.stem))
+            zf.extractall(path=save_dir)
 
         os.remove(filepath)
 
-        log.project_console.print(f'Archive extracted to {Path(save_dir, filepath.stem).absolute()}', style='green')
+        log.project_console.print(f'Archive extracted to {save_dir.absolute()}', style='green')
 
 
 def get_files_columns(inference_path: Path,

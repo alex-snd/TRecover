@@ -1,4 +1,6 @@
 from typer import Typer, Option
+from pathlib import Path
+
 
 from zreader.config import var, log
 
@@ -7,7 +9,7 @@ cli = Typer(name='Download-cli', add_completion=False, help='Download train data
 
 @cli.command(name='data', help='Download train data')
 def download_data(link: str = Option(var.TRAIN_DATA_URL, help='Link to the train data on Yandex disk or GitHub'),
-                  save_dir: str = Option(var.DATA_DIR, help='Path where to store downloaded data'),
+                  save_dir: Path = Option(var.DATA_DIR, help='Path where to store downloaded data'),
                   yandex_disk: bool = Option(False, is_flag=True, help='If the link is to Yandex disk')
                   ) -> None:
     """
@@ -18,7 +20,7 @@ def download_data(link: str = Option(var.TRAIN_DATA_URL, help='Link to the train
     link: str, default=var.TRAIN_DATA_URL
         Sharing link to the train data on Yandex disk or GitHub.
 
-    save_dir: str, default=var.DATA_DIR
+    save_dir: Path, default=var.DATA_DIR
         Path where to store downloaded data.
 
     yandex_disk: bool, default=False
@@ -34,7 +36,7 @@ def download_data(link: str = Option(var.TRAIN_DATA_URL, help='Link to the train
 @cli.command(name='artifacts', help='Download model artifacts by specified version or archive_link')
 def download_artifacts(version: str = Option('latest', help="Artifacts' version"),
                        archive_link: str = Option(None, help='Link to the artifacts archive on Yandex disk or GitHub'),
-                       save_dir: str = Option(var.INFERENCE_DIR, help='Path where to save downloaded artifacts'),
+                       save_dir: Path = Option(var.INFERENCE_DIR, help='Path where to save downloaded artifacts'),
                        yandex_disk: bool = Option(False, is_flag=True, help='If the archive_link is to Yandex disk'),
                        show: bool = Option(False, is_flag=True, help="Print available artifacts' versions")
                        ) -> None:
@@ -49,7 +51,7 @@ def download_artifacts(version: str = Option('latest', help="Artifacts' version"
     archive_link: str, default=None
         Sharing link to the model artifacts archive on Yandex disk or GitHub.
 
-    save_dir: str, default=var.INFERENCE_DIR
+    save_dir: Path, default=var.INFERENCE_DIR
         Path where to save downloaded artifacts.
 
     yandex_disk: bool, default=False
