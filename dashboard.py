@@ -3,15 +3,15 @@ from typing import Tuple, List
 
 import streamlit as st
 import torch
-from zreader.config import var
-from zreader.utils.beam_search import beam_search, dashboard_loop
-from zreader.utils.inference import data_to_columns, create_noisy_columns
-from zreader.utils.transform import columns_to_tensor, tensor_to_target
-from zreader.utils.visualization import visualize_columns, visualize_target
+from trecover.config import var
+from trecover.utils.beam_search import beam_search, dashboard_loop
+from trecover.utils.inference import data_to_columns, create_noisy_columns
+from trecover.utils.transform import columns_to_tensor, tensor_to_target
+from trecover.utils.visualization import visualize_columns, visualize_target
 
 max_chars = 256
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = torch.hub.load('alex-snd/ZReader', model='zreader', device=device, version='latest')
+model = torch.hub.load('alex-snd/TRecover', model='trecover', device=device, version='latest')
 
 
 def main() -> None:
@@ -142,12 +142,12 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     st.subheader('\n')
 
     placeholder = st.empty()
-    zread_field, regen_filed = placeholder.columns([.07, 1])
+    recover_field, regen_filed = placeholder.columns([.07, 1])
 
     if is_plain:
         regen_filed.button('Regenerate', on_click=set_regenerate)
 
-    if columns and zread_field.button('Zread'):
+    if columns and recover_field.button('Recover'):
         if st.session_state.is_unix:
             with placeholder.container():
                 progress_bar_placeholder = st.empty()

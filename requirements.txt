@@ -1,2 +1,2 @@
 torch==1.9.0
-zreader[worker]
+trecover[worker]
