@@ -1,5 +1,5 @@
 ---
-title: Keyless reading - ZReader
+title: Keyless reading - TRecover
 emoji: 🔮
 colorFrom: yellow
 colorTo: indigo
