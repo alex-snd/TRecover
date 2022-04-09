@@ -10,7 +10,7 @@ services:
 
   dashboard:
     container_name: dashboard
-    image: zreader-dashboard:latest
+    image: trecover-dashboard:latest
 
     build:
       context: ../..
@@ -35,7 +35,7 @@ services:
 
   api:
     container_name: api
-    image: zreader-api:latest
+    image: trecover-api:latest
 
     build:
       context: ../..
@@ -58,7 +58,7 @@ services:
 
 
   worker:
-    image: zreader-worker:latest
+    image: trecover-worker:latest
 
     build:
       context: ../..

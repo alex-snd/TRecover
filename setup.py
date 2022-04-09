@@ -21,12 +21,12 @@ test_packages = get_requirements('test.txt')
 train_packages = get_requirements('train.txt')
 
 setup(
-    name='zreader',
-    version='0.3.0',
+    name='trecover',
+    version='1.0.0',
     license='Apache License 2.0',
     author='Alexander Shulga',
     author_email='alexandershulga.sh@gmail.com',
-    url='https://github.com/alex-snd/ZReader',
+    url='https://github.com/alex-snd/TRecover',
     description='A Python library to train Transformer neural network for keyless reading task.',
     keywords=[
         'Deep Learning',
@@ -35,7 +35,8 @@ setup(
         'NLP',
         'Cryptography',
         'Keyless Reading',
-        'ZReader',
+        'TRecover',
+        'Text Recovery',
         'PyTorch',
     ],
     python_requires='>=3.8',
@@ -54,7 +55,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'zreader = zreader.app.cli.zreadercli:cli',
+            'trecover = trecover.app.cli.trecovercli:cli',
         ],
     },
     classifiers=[

@@ -4,7 +4,7 @@ services:
 
   standalone:
     container_name: standalone
-    image: ${ZREADER_STANDALONE_IMAGE:-alexsnd0/zreader-standalone:latest}
+    image: ${TRECOVER_STANDALONE_IMAGE:-alexsnd0/trecover-standalone:latest}
 
     environment:
       CUDA: ${CUDA:-True}

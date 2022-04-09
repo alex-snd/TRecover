@@ -10,7 +10,7 @@ services:
 
   dashboard:
     container_name: dashboard
-    image: ${ZREADER_DASHBOARD_IMAGE:-alexsnd0/zreader-dashboard:latest}
+    image: ${TRECOVER_DASHBOARD_IMAGE:-alexsnd0/trecover-dashboard:latest}
 
     build:
       context: ../..
@@ -35,7 +35,7 @@ services:
 
   api:
     container_name: api
-    image: ${ZREADER_API_IMAGE:-alexsnd0/zreader-api:latest}
+    image: ${TRECOVER_API_IMAGE:-alexsnd0/trecover-api:latest}
 
     environment:
       <<: *common-env
@@ -54,7 +54,7 @@ services:
 
 
   worker:
-    image: ${ZREADER_WORKER_IMAGE:-alexsnd0/zreader-worker:latest}
+    image: ${TRECOVER_WORKER_IMAGE:-alexsnd0/trecover-worker:latest}
 
     environment:
       <<: *common-env

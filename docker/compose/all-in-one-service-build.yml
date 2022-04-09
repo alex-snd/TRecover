@@ -4,7 +4,7 @@ services:
 
   standalone:
     container_name: standalone
-    image: zreader-standalone:latest
+    image: trecover-standalone:latest
 
     build:
       context: ../..
