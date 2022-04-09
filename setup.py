@@ -18,6 +18,7 @@ standalone_service_packages = get_requirements('docker/standalone.txt')
 worker_service_packages = get_requirements('docker/worker.txt')
 
 test_packages = get_requirements('test.txt')
+dev_packages = get_requirements('dev.txt')
 train_packages = get_requirements('train.txt')
 
 setup(
@@ -51,6 +52,7 @@ setup(
         'standalone': standalone_service_packages,
         'worker': worker_service_packages,
         "test": test_packages,
+        "dev": dev_packages,
         "train": train_packages,
     },
     entry_points={
