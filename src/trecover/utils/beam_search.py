@@ -554,7 +554,7 @@ def api_interactive_loop(queue: asyncio.Queue,
                                                encoded_src, model, width, device)
 
             intermediate_result = [
-                tensor_to_target((torch.argmax(chain.squeeze(), dim=-1)[1:]), score)
+                (tensor_to_target(torch.argmax(chain.squeeze(), dim=-1)[1:]), score)
                 for chain, score in candidates
             ]
 
