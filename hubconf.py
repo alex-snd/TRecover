@@ -1,4 +1,5 @@
 """ Configuration for torch hub usage """
+
 from typing import Callable
 
 import torch
@@ -9,10 +10,7 @@ dependencies = ['torch', 'trecover']
 def add_available_versions_to_docstring(handler: Callable[..., Callable]) -> Callable:
     from trecover.config import var
 
-    versions = '\n'.join([f'\t* {version}' for version in var.CHECKPOINT_URLS.keys()])
-    handler.__doc__ += f'Available Versions\n' \
-                       f'    ------------------\n' \
-                       f'{versions}'
+    handler.__doc__ += '\n'.join([f'\t* {version}' for version in var.CHECKPOINT_URLS.keys()])
 
     return handler
 
@@ -42,6 +40,8 @@ def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'
     Load the TRecover model:
         >>> torch.hub.load('alex-snd/TRecover', model='trecover', device=torch.device('cpu'), version='latest')
 
+    Available Versions
+    ------------------
     """
 
     import json
