@@ -364,12 +364,11 @@ def up(ctx: Context) -> None:
     if var.DASHBOARD_PID.exists():
         check_service(name='dashboard', pidfile=var.DASHBOARD_PID)
     else:
-        pass
-    dashboard.dashboard_start(host=conf.dashboard.host,
-                              port=conf.dashboard.port,
-                              loglevel=conf.dashboard.loglevel,
-                              attach=False,
-                              no_daemon=False)
+        dashboard.dashboard_start(host=conf.dashboard.host,
+                                  port=conf.dashboard.port,
+                                  loglevel=conf.dashboard.loglevel,
+                                  attach=False,
+                                  no_daemon=False)
 
     if var.API_PID.exists():
         check_service(name='API', pidfile=var.API_PID)
