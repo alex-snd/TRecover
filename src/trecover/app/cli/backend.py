@@ -149,7 +149,7 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
         if v and (volume := get_volume(var.BACKEND_VOLUME_ID)):
             volume.remove(force=force)
 
-        log.project_console.print('Backend service is pruned', style='bright_blue')
+        log.project_console.print('The backend service is pruned', style='bright_blue')
 
 
 @cli.command(name='status', help='Display service status')
