@@ -447,8 +447,6 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
     from trecover.utils.docker import get_container
     from trecover.utils.cli import stop_service
 
-    # TODO remove logfiles
-
     if var.DASHBOARD_PID.exists():
         stop_service(name='dashboard', pidfile=var.DASHBOARD_PID, logfile=log.DASHBOARD_LOG)
 
