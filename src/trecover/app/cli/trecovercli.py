@@ -219,7 +219,17 @@ def cli_state_verification(ctx: Context,
 def init(base: Path = Option(Path().absolute(), '--base', '-b', help="Path to the project's base directory"),
          relocate: bool = Option(False, '--relocate', '-r', is_flag=True, help='Relocate an existing environment')
          ) -> None:
-    # TODO docs
+    """
+    Initialize project's environment.
+
+    Parameters
+    ----------
+    base : Path, default='./'
+        Path to the project's base directory.
+    relocate : bool, default=False
+        Relocate an existing environment
+
+    """
 
     from shutil import move, Error
 
