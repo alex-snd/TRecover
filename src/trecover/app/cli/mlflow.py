@@ -120,9 +120,10 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
 def mlflow_stop() -> None:
     """ Stop dashboard service. """
 
+    from trecover.config import log
     from trecover.utils.cli import stop_service
 
-    stop_service(name='mlflow', pidfile=var.MLFLOW_PID)
+    stop_service(name='mlflow', pidfile=var.MLFLOW_PID, logfile=log.MLFLOW_LOG)
 
 
 @cli.command(name='status', help='Display service status')

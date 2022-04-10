@@ -440,13 +440,13 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
     # TODO remove logfiles
 
     if var.DASHBOARD_PID.exists():
-        stop_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+        stop_service(name='dashboard', pidfile=var.DASHBOARD_PID, logfile=log.DASHBOARD_LOG)
 
     if var.API_PID.exists():
-        stop_service(name='API', pidfile=var.API_PID)
+        stop_service(name='API', pidfile=var.API_PID, logfile=log.API_LOG)
 
     if var.WORKER_PID.exists():
-        stop_service(name='worker', pidfile=var.WORKER_PID)
+        stop_service(name='worker', pidfile=var.WORKER_PID, logfile=log.WORKER_LOG)
 
     if (container := get_container(var.BROKER_ID)) and container.status == 'running':
         container.stop()

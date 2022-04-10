@@ -1,6 +1,6 @@
 from typer import Typer, Option, Context
 
-from trecover.config import var
+from trecover.config import var, log
 
 cli = Typer(name='Dashboard-cli', add_completion=False, help='Manage Dashboard service')
 
@@ -99,7 +99,7 @@ def dashboard_stop() -> None:
 
     from trecover.utils.cli import stop_service
 
-    stop_service(name='dashboard', pidfile=var.DASHBOARD_PID)
+    stop_service(name='dashboard', pidfile=var.DASHBOARD_PID, logfile=log.DASHBOARD_LOG)
 
 
 @cli.command(name='status', help='Display service status')

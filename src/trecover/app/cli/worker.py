@@ -115,9 +115,10 @@ def worker_start(name: str = Option('TRecoverWorker', '--name', '-n', help='Set 
 def worker_stop() -> None:
     """ Stop worker service. """
 
+    from trecover.config import log
     from trecover.utils.cli import stop_service
 
-    stop_service(name='worker', pidfile=var.WORKER_PID)
+    stop_service(name='worker', pidfile=var.WORKER_PID, logfile=log.WORKER_LOG)
 
 
 @cli.command(name='status', help='Display service status')

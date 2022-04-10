@@ -1,5 +1,6 @@
-from trecover.config import var
 from typer import Typer, Option, Argument, Context
+
+from trecover.config import var
 
 cli = Typer(name='API-cli', add_completion=False, help='Manage API service')
 
@@ -280,9 +281,10 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
 def api_stop() -> None:
     """ Stop API service. """
 
+    from trecover.config import log
     from trecover.utils.cli import stop_service
 
-    stop_service(name='API', pidfile=var.API_PID)
+    stop_service(name='API', pidfile=var.API_PID, logfile=log.API_LOG)
 
 
 @cli.command(name='status', help='Display service status')

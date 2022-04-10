@@ -4,7 +4,7 @@ import time
 from argparse import Namespace
 from pathlib import Path
 from subprocess import Popen, STDOUT
-from typing import Optional, List, Tuple, Generator
+from typing import Optional, List, Tuple, Generator, Union
 from zipfile import ZipFile
 
 import psutil
@@ -271,7 +271,7 @@ def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> N
     log.project_console.print(f'The {name} service is started', style='bright_blue')
 
 
-def stop_service(name: str, pidfile: Path) -> None:
+def stop_service(name: str, pidfile: Path, logfile: Path) -> None:
     """
     Send an interrupt signal to the process with given pid.
 
@@ -281,6 +281,8 @@ def stop_service(name: str, pidfile: Path) -> None:
         Service name.
     pidfile: Path
         Service pidfile path.
+    logfile: Path
+        Service logfile path.
 
     """
 
@@ -295,6 +297,11 @@ def stop_service(name: str, pidfile: Path) -> None:
 
         if platform.system() != 'Windows':
             service.kill()
+
+        service.wait()
+
+        if logfile.exists():
+            os.remove(logfile)
 
     except ValueError:
         log.project_console.print(f'The {name} service could not be stopped correctly'
@@ -340,7 +347,7 @@ def check_service(name: str, pidfile: Path) -> None:
                                   ' because its PID file is corrupted', style='red')
 
 
-def stream(*services: Tuple[Tuple[str, Path]],
+def stream(*services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]],
            live: bool = False,
            period: float = 0.1
            ) -> Optional[Generator[str, None, None]]:
@@ -349,7 +356,7 @@ def stream(*services: Tuple[Tuple[str, Path]],
 
     Parameters
     ----------
-    services: Tuple[Tuple[str, Path]]
+    services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]]
         Sequence of services' names and logfile's paths.
     live: bool, default=False
         Yield only new services' logs.
