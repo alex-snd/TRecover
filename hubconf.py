@@ -64,7 +64,3 @@ def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'
                                                              map_location=device))
 
     return model
-
-
-if __name__ == '__main__':
-    help(trecover)
