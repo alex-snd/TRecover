@@ -11,7 +11,7 @@ from trecover.app.api.backend.tasks import predict, get_model_config
 from trecover.app.api.schemas import PredictPayload, PredictResponse, TaskResponse
 from trecover.config import log
 
-api = FastAPI(title='TRecoverAPI', description='Description will be here')  # TODO description
+api = FastAPI(title='TRecoverAPI', description='API for TRecover model')
 
 
 @api.on_event('startup')
