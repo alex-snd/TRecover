@@ -1,12 +1,48 @@
 """ Configuration for torch hub usage """
+from typing import Callable
 
 import torch
 
 dependencies = ['torch', 'trecover']
 
 
+def add_available_versions_to_docstring(handler: Callable[..., Callable]) -> Callable:
+    from trecover.config import var
+
+    versions = '\n'.join([f'\t* {version}' for version in var.CHECKPOINT_URLS.keys()])
+    handler.__doc__ += f'Available Versions\n' \
+                       f'    ------------------\n' \
+                       f'{versions}'
+
+    return handler
+
+
+@add_available_versions_to_docstring
 def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'):
-    # TODO help docstring
+    """
+    Load the TRecover model via torch.hub.
+
+    Parameters
+    ----------
+    device : torch.device, default=torch.device('cpu')
+        Device on which to allocate the model.
+    version : str, default='latest'
+        Model weights' version.
+
+    Returns
+    -------
+    model : TRecover
+        Model with specified weights' version.
+
+    Examples
+    --------
+    Show the docstring with available versions for the TRecover model:
+        >>> print(torch.hub.help(github='alex-snd/TRecover', model='trecover'))
+
+    Load the TRecover model:
+        >>> torch.hub.load('alex-snd/TRecover', model='trecover', device=torch.device('cpu'), version='latest')
+
+    """
 
     import json
     from urllib.request import urlopen
@@ -28,3 +64,7 @@ def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'
                                                              map_location=device))
 
     return model
+
+
+if __name__ == '__main__':
+    help(trecover)
