@@ -118,7 +118,7 @@ def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
 
 
 def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> None:
-    input_label = 'Insert plain data' if is_plain else 'Insert noisy columns separated by spaces'
+    input_label = 'Insert plain text' if is_plain else 'Insert noisy columns separated by spaces'
     st.subheader(input_label)
     data = st.text_input('', value=st.session_state.data, max_chars=max_chars)
 
