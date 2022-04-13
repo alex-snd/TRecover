@@ -19,6 +19,7 @@ worker_service_packages = get_requirements('docker/worker.txt')
 
 test_packages = get_requirements('test.txt')
 dev_packages = get_requirements('dev.txt')
+docs_packages = get_requirements('docs.txt')
 train_packages = get_requirements('train.txt')
 
 setup(
@@ -53,6 +54,7 @@ setup(
         'worker': worker_service_packages,
         "test": test_packages,
         "dev": dev_packages,
+        "docs": docs_packages,
         "train": train_packages,
     },
     entry_points={
