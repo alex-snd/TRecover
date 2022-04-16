@@ -1,0 +1,50 @@
+# Project information
+site_name: TRecover
+# site_url: https://trecover.com
+site_description: A Python library to train Transformer neural network for keyless reading task.
+site_author: Alexander Shulga
+
+# Repository
+repo_url: https://github.com/alex-snd/TRecover
+repo_name: alex-snd/TRecover
+edit_uri: "" #disables edit button
+
+# Copyright
+copyright: Copyright &copy; 2022
+
+# Social media
+extra:
+  social:
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/alex-snd
+    - icon: fontawesome/brands/telegram
+      link: https://t.me/alexsnd
+    - icon: fontawesome/solid/at
+      link: mailto:alexandershulga.sh@gmail.com
+    - icon: fontawesome/brands/github
+      link: https://github.com/alex-snd
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/u/alexsnd0
+
+# Configuration
+theme:
+  name: material
+  logo: static/images/logo.png
+  favicon: static/images/favicon.ico
+  font:
+    text: Georgia
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.expand
+    - toc.integrate
+  icon:
+    repo: fontawesome/brands/github
+
+# Extra CSS
+extra_css:
+  - static/css/custom.css
+
+# Page tree
+nav:
+  - Home: index.md
