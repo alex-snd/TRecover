@@ -134,7 +134,7 @@ data/
 weights/
 inference
 experiments
-images
+images/*
 *.bat
 *.pid
 *.init
