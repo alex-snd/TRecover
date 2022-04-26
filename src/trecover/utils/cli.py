@@ -22,10 +22,10 @@ def download(direct_link: str, filepath: Path) -> None:
     Parameters
     ----------
     direct_link: str
-       Sharing link to the file on GutHub.
+        Sharing link to the file on GutHub.
 
     filepath: Path
-       Path to the downloaded file.
+        Path to the downloaded file.
 
    """
 
@@ -66,7 +66,8 @@ def get_real_direct_link(sharing_link: str) -> str:
 
     Returns
     -------
-    Direct link if it converts, otherwise None.
+    str:
+        Direct link if it converts, otherwise None.
 
     """
 
@@ -126,15 +127,15 @@ def download_from_github(direct_link: str, save_dir: Path) -> Path:
     Parameters
     ----------
     direct_link: str
-       Sharing link to the file on GutHub.
+        Sharing link to the file on GutHub.
 
     save_dir: Path
-       Path where to store downloaded file.
+        Path where to store downloaded file.
 
     Returns
     -------
     filepath: Path
-       Path to the downloaded file.
+        Path to the downloaded file.
 
    """
 
@@ -356,7 +357,7 @@ def stream(*services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]],
 
     Parameters
     ----------
-    services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]]
+    *services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]]
         Sequence of services' names and logfile's paths.
     live: bool, default=False
         Yield only new services' logs.
@@ -365,7 +366,8 @@ def stream(*services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]],
 
     Returns
     -------
-    Generator that yields the services' stdout streams or None if services are stopped.
+    Optional[Generator[str, None, None]]:
+        Generator that yields the services' stdout streams or None if services are stopped.
 
     """
 

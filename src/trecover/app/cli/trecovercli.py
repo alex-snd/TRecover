@@ -64,8 +64,7 @@ def recover(data_path: Path = Argument(..., help='Path to file or dir for data',
 
     Examples
     --------
-
-    >>> "trecover recover examples/example_1.txt"
+    >>> trecover recover examples/example_1.txt
     ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
     │                                                        Columns                                                   │
     │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
@@ -77,9 +76,7 @@ def recover(data_path: Path = Argument(..., help='Path to file or dir for data',
     │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
     │                                                                                                                  │
     ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-
     Elapsed:   4.716 s
-
 
     Notes
     -----

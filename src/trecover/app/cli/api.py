@@ -100,8 +100,7 @@ def api_recover(data_path: str = Argument(..., help='Path to file or dir for dat
 
     Examples
     --------
-    >>> "trecover api recover examples/example_1.txt"
-
+    >>> trecover api recover examples/example_1.txt
     ╭──────────────────────────────────────────────────── example_1.txt ───────────────────────────────────────────────╮
     │                                                        Columns                                                   │
     │ ajocmbfeafodadbddciafqnahdfeihhkieeaacacafkdchddakhecmmlibfinaehbcbdiicejkeahnfemaeaadbkagacbdmahbibacfddfbbbca… │
@@ -113,7 +112,6 @@ def api_recover(data_path: str = Argument(..., help='Path to file or dir for dat
     │ enpeoplearoundthecountrywereintothestreetstickedatheconvictionsspewditnessesinpentlandboardeddytheirwindowsbyra… │
     │                                                                                                                  │
     ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-
     Elapsed:   4.716 s
 
 
