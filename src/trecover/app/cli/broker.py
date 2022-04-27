@@ -56,13 +56,10 @@ def broker_start(port: int = Option(var.BROKER_PORT, '--port', '-p',
     ----------
     port : int, default=ENV(BROKER_PORT) or 5672
         Bind broker socket to this port.
-
     ui_port : int, default=ENV(BROKER_UI_PORT) or 15672
         Bind UI socket to this port.
-
     auto_remove : bool, default=False
         Remove broker docker container after service exit.
-
     attach : bool, default=False
         Attach output and error streams.
 
@@ -136,7 +133,6 @@ def broker_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
     ----------
     force : bool, default=False
         Force the removal of a running container.
-
     v : bool, default=False
         Remove the volumes associated with the container.
 

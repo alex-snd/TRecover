@@ -78,7 +78,8 @@ def index(request: Request) -> Dict:
 
     Returns
     -------
-    OK phrase as a Dict response.
+    Dict:
+        OK phrase as a Dict response.
 
     """
 
@@ -101,7 +102,7 @@ def config(request: Request) -> Dict:
 
     Returns
     -------
-    response: Dict
+    response : Dict
         Response containing the values of the model configuration in the 'config' field.
 
     """
@@ -128,13 +129,12 @@ def config_param(request: Request, param: str) -> Dict:
     ----------
     request : Request
         Client request information.
-
     param : str
         Parameter name.
 
     Returns
     -------
-    response: Dict
+    response : Dict
         Response containing the value of the specific configuration parameter in
         the '<param>' field if it exists, otherwise 'Not found' value.
 
@@ -162,13 +162,12 @@ def recover(request: Request, payload: PredictPayload) -> Dict:
     ----------
     request : Request
         Client request information.
-
     payload : PredictPayload
         Data for keyless reading.
 
     Returns
     -------
-    response: TaskResponse
+    response : TaskResponse
         Response containing the id of the celery task in the 'task_id' field.
 
     """
@@ -198,13 +197,12 @@ def status(request: Request,
     ----------
     request : Request
         Client request information.
-
     task_id : str
         Celery task id.
 
     Returns
     -------
-    response: PredictResponse
+    response : PredictResponse
         Response containing the status of the celery task in the 'state' and 'progress'
         fields if it's still in process,
         error information in 'message' and 'status_code' fields if it's failed,
@@ -257,13 +255,12 @@ def delete_prediction(request: Request,
     ----------
     request : Request
         Client request information.
-
     task_id : str
         Task ID to delete its result from celery backend database.
 
     Returns
     -------
-    response: Dict
+    response : Dict
         OK phrase.
 
     """

@@ -276,55 +276,38 @@ def up(ctx: Context) -> None:
         The address where the server will listen for client and browser connections.
         Use this if you want to bind the server to a specific address. If set, the server
         will only be accessible from this address, and not from any aliases (like localhost).
-
     dashboard port : int, default=ENV(STREAMLIT_PORT) or 8000
         The port where the server will listen for browser connections.
-
     dashboard loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     api host : str, default=ENV(FASTAPI_HOST) or 'localhost'
         Bind socket to this host.
-
     api port : int, default=ENV(FASTAPI_PORT) or 8001
         Bind socket to this port.
-
     api loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     api concurrency : int, default=ENV(FASTAPI_WORKERS) or 1
         The number of worker processes.
-
     worker name : str, default='TRecoverWorker'
         Custom worker hostname.
-
     worker pool : str, {'prefork', 'eventlet', 'gevent', 'processes', 'solo'}, default='solo'
         Worker processes/threads pool type.
-
     worker loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     worker concurrency : int, default=ENV(CELERY_WORKERS) or 1
         The number of worker processes.
-
     worker broker_url : str, default=ENV(CELERY_BROKER) or 'pyamqp://guest@localhost'
         Broker url.
-
     worker backend_url : str, default=ENV(CELERY_BACKEND) or 'redis://localhost'
         Backend url.
-
     broker port : int, default=ENV(BROKER_PORT) or 5672
         Bind broker socket to this port.
-
     broker ui_port : int, default=ENV(BROKER_UI_PORT) or 15672
         Bind UI socket to this port.
-
     broker auto_remove : bool, default=False
         Remove broker docker container after service exit.
-
     backend port : int, default=ENV(BACKEND_PORT) or 6379
         Bind backend socket to this port.
-
     backend auto_remove : bool, default=False
         Remove backend docker container after service exit.
 
@@ -434,7 +417,6 @@ def down(prune: bool = Option(False, '--prune', '-p', is_flag=True,
     ----------
     prune : bool, default=False
         Prune all docker containers after exit.
-
     v : bool, default=False
         Remove the volumes associated with the all docker containers and the log files.
 

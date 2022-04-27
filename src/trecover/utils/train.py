@@ -74,11 +74,12 @@ def optimizer_to_str(optimizer: Optimizer) -> str:
 
     Parameters
     ----------
-    optimizer: Optimizer
+    optimizer : Optimizer
         Optimizer object for representation.
 
     Returns
     -------
+    str:
         Optimizer string representation.
 
     """
@@ -97,13 +98,14 @@ def transfer(tensors: Tuple[Optional[Tensor], ...], to_device: torch.device) -> 
 
     Parameters
     ----------
-    tensors: Tuple
+    tensors : Tuple
         Sequence of tensors to transfer.
-    to_device: torch.device
+    to_device : torch.device
         The desired device of returned tensors.
 
     Returns
     -------
+    Tuple[Optional[Tensor], ...]:
         Tuple of tensors allocated on the specified device.
 
     """

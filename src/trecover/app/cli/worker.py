@@ -53,31 +53,24 @@ def worker_start(name: str = Option('TRecoverWorker', '--name', '-n', help='Set 
     ----------
     name : str, default='TRecoverWorker'
         Custom worker hostname.
-
     pool : str, {'prefork', 'eventlet', 'gevent', 'processes', 'solo'}, default='solo'
         Worker processes/threads pool type.
-
     loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     concurrency : int, default=ENV(CELERY_WORKERS) or 1
         The number of worker processes.
-
     broker_url : str, default=ENV(CELERY_BROKER) or 'pyamqp://guest@localhost'
         Broker url.
-
     backend_url : str, default=ENV(CELERY_BACKEND) or 'redis://localhost'
         Backend url.
-
     attach : bool, default=False
         Attach output and error streams.
-
     no_daemon : bool, default=False
         Do not run as a daemon process.
 
     Raises
     ------
-    typer.BadParameter
+    typer.BadParameter:
         If non-solo pool type is selected for windows platform.
 
     """
@@ -140,7 +133,7 @@ def worker_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
     Parameters
     ----------
     live : bool, Default=False
-        Stream only fresh log records
+        Stream only fresh log records.
 
     """
 

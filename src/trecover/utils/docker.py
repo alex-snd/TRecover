@@ -48,12 +48,13 @@ def get_container(id_or_name: str) -> Optional[Container]:
 
     Parameters
     ----------
-    id_or_name:
+    id_or_name : str
         Docker container id or name.
 
     Returns
     -------
-    Container instance if it exists, otherwise None.
+    Optional[Container]:
+        Container instance if it exists, otherwise None.
 
     """
 
@@ -69,12 +70,13 @@ def get_volume(id_or_name: str) -> Optional[Volume]:
 
     Parameters
     ----------
-    id_or_name:
+    id_or_name : str
         Volume id or name.
 
     Returns
     -------
-    Volume instance if it exists, otherwise None.
+    Optional[Volume]:
+        Volume instance if it exists, otherwise None.
 
     """
 
@@ -90,12 +92,13 @@ def get_image(name: str) -> Optional[Image]:
 
     Parameters
     ----------
-    name:
+    name : str
         Docker image name.
 
     Returns
     -------
-    Image instance if it exists, otherwise None.
+    Optional[Image]:
+        Image instance if it exists, otherwise None.
 
     """
 
@@ -111,12 +114,13 @@ def pull_image(name: str) -> Image:
 
     Parameters
     ----------
-    name:
+    name : str
         Docker image name.
 
     Returns
     -------
-    Image instance of the pulled docker image.
+    Image:
+        Image instance of the pulled docker image.
 
     """
 

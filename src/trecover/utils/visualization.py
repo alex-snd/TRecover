@@ -7,16 +7,17 @@ def visualize_columns(columns: List[str], delimiter: str = '', as_rows=False) ->
 
     Parameters
     ----------
-    columns: List[str]
+    columns : List[str]
         Columns for keyless reading.
-    delimiter: str
+    delimiter : str
         Delimiter for columns visualization.
-    as_rows: bool
+    as_rows : bool
         Return visualization as a list of strings.
 
     Returns
     -------
-    Visualization as a string or list of strings.
+    Union[str, List[str]]:
+        Visualization as a string or list of strings.
 
     """
 
@@ -44,14 +45,15 @@ def visualize_target(target: List[str], delimiter: str = '') -> str:
 
     Parameters
     ----------
-    target: List[str]
+    target : List[str]
         List of correct symbols for each column.
-    delimiter: str
+    delimiter : str
         Delimiter for target visualization.
 
     Returns
     -------
-    Visualization as a string.
+    str:
+        Visualization as a string.
 
     """
 

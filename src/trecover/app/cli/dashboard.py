@@ -51,16 +51,12 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
         The address where the server will listen for client and browser connections.
         Use this if you want to bind the server to a specific address. If set, the server
         will only be accessible from this address, and not from any aliases (like localhost).
-
     port : int, default=ENV(STREAMLIT_PORT) or 8000
         The port where the server will listen for browser connections.
-
     loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     attach : bool, default=False
         Attach output and error streams.
-
     no_daemon : bool, default=False
         Do not run as a daemon process.
 

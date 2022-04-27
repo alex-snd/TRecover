@@ -57,32 +57,26 @@ def mlflow_start(host: str = Option(var.MLFLOW_HOST, '--host', '-h', help='Bind 
         The address where the server will listen for client and browser connections.
         Use this if you want to bind the server to a specific address. If set, the server
         will only be accessible from this address, and not from any aliases (like localhost).
-
     port : int, default=ENV(MLFLOW_PORT) or 8002
         The port where the server will listen for browser connections.
-
     concurrency : int, default=ENV(MLFLOW_WORKERS) or 1
         The number of mlflow server workers.
-
     registry : str, default=ENV(MLFLOW_REGISTRY_DIR) or 'file:///<BASE_DIR>/experiments/mlflow_registry'
         URI to which to persist experiment and run data. Acceptable URIs are SQLAlchemy-compatible
         database connection strings (e.g. 'sqlite:///path/to/file.db') or
         local filesystem URIs (e.g. 'file:///absolute/path/to/directory').
         By default, data will be logged to the ./mlruns directory.
-
     backend_uri : str, default=ENV(MLFLOW_BACKEND) or 'sqlite:///<BASE_DIR>/experiments/mlflow_registry/mlflow.db'
         Local or S3 URI to store artifacts, for new experiments. Note that this
         flag does not impact already-created experiments.
-
     only_ui : bool, default=False
         Launch only the Mlflow tracking UI.
-
     attach : bool, default=False
         Attach output and error streams.
 
     Raises
     ------
-    typer.BadParameter
+    typer.BadParameter:
         If concurrency option is not equal to one for windows platform.
 
     """
@@ -145,7 +139,7 @@ def mlflow_attach(live: bool = Option(False, '--live', '-l', is_flag=True,
     Parameters
     ----------
     live : bool, Default=False
-        Stream only fresh log records
+        Stream only fresh log records.
 
     """
 

@@ -16,16 +16,16 @@ def create_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]
 
     Parameters
     ----------
-    data: str
+    data : str
         Plain text.
-    min_noise: int
+    min_noise : int
         Minimum noise range value.
-    max_noise: int
+    max_noise : int
         Maximum noise range value.
 
     Returns
     -------
-    columns: List[str]
+    columns : List[str]
         Columns for keyless reading.
 
     """
@@ -53,18 +53,18 @@ def create_files_noisy_columns(files: List[Union[str, Path]],
 
     Parameters
     ----------
-    files: List[Union[str, Path]]
+    files : List[Union[str, Path]]
         Paths to files that contain plain data to create noised columns for keyless reading.
-    min_noise: int
+    min_noise : int
         Minimum noise range value.
-    max_noise: int
+    max_noise : int
         Maximum noise range value.
-    n_to_show: int, default=0
+    n_to_show : int, default=0
         Maximum number of columns. Zero means no restrictions.
 
     Returns
     -------
-    files_columns: List[List[str]]
+    files_columns : List[List[str]]
         Batch of columns for keyless reading.
 
     """
@@ -94,14 +94,15 @@ def data_to_columns(data: str, separator: str = ' ') -> List[str]:
 
     Parameters
     ----------
-    data: str
+    data : str
         Noised columns for keyless reading.
-    separator: str, default=' '
+    separator : str, default=' '
         Separator to split the data into columns.
 
     Returns
     -------
-    Columns for keyless reading.
+    List[str]:
+        Columns for keyless reading.
 
     """
 
@@ -117,16 +118,16 @@ def read_files_columns(files: List[Union[str, Path]], separator: str, n_to_show:
 
     Parameters
     ----------
-    files: List[Union[str, Path]]
+    files : List[Union[str, Path]]
         Paths to files that contain noised data for keyless reading.
-    separator: str
+    separator : str
         Separator to split the data into columns.
-    n_to_show: int, default=0
+    n_to_show : int, default=0
         Maximum number of columns. Zero means no restrictions.
 
     Returns
     -------
-    files_columns: List[List[str]]
+    files_columns : List[List[str]]
         Batch of columns for keyless reading.
 
     """

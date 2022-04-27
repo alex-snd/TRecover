@@ -17,13 +17,11 @@ def download_data(link: str = Option(var.TRAIN_DATA_URL, help='Link to the train
 
     Parameters
     ----------
-    link: str, default=var.TRAIN_DATA_URL
+    link : str, default=var.TRAIN_DATA_URL
         Sharing link to the train data on Yandex disk or GitHub.
-
-    save_dir: Path, default=var.DATA_DIR
+    save_dir : Path, default=var.DATA_DIR
         Path where to store downloaded data.
-
-    yandex_disk: bool, default=False
+    yandex_disk : bool, default=False
         If the link is to Yandex disk.
 
     """
@@ -45,19 +43,15 @@ def download_artifacts(version: str = Option('latest', help="Artifacts' version"
 
     Parameters
     ----------
-    version: str, default='latest'
+    version : str, default='latest'
         Artifacts' version.
-
-    archive_link: str, default=None
+    archive_link : str, default=None
         Sharing link to the model artifacts archive on Yandex disk or GitHub.
-
-    save_dir: Path, default=var.INFERENCE_DIR
+    save_dir : Path, default=var.INFERENCE_DIR
         Path where to save downloaded artifacts.
-
-    yandex_disk: bool, default=False
+    yandex_disk : bool, default=False
         If the link is to Yandex disk.
-
-    show: bool, default=False
+    show : bool, default=False
         Print available artifacts' versions.
 
     """

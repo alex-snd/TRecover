@@ -45,7 +45,7 @@ def api_config(url: str = Option(var.FASTAPI_URL, help='API url'),
     ----------
     url : str, default=ENV(FASTAPI_URL) or 'http://localhost:8001'
         API url.
-    param: str, default=None
+    param : str, default=None
         Param name whose value to receive. Receive all configuration values if None.
 
     """
@@ -113,7 +113,6 @@ def api_recover(data_path: str = Argument(..., help='Path to file or dir for dat
     │                                                                                                                  │
     ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
     Elapsed:   4.716 s
-
 
     Notes
     -----
@@ -235,19 +234,14 @@ def api_start(host: str = Option(var.FASTAPI_HOST, '--host', '-h', help='Bind so
     ----------
     host : str, default=ENV(FASTAPI_HOST) or 'localhost'
         Bind socket to this host.
-
     port : int, default=ENV(FASTAPI_PORT) or 8001
         Bind socket to this port.
-
     loglevel : {'debug', 'info', 'warning', 'error', 'critical'}, default='info'
         Level of logging.
-
     concurrency : int, default=ENV(FASTAPI_WORKERS) or 1
         The number of worker processes.
-
     attach : bool, default=False
         Attach output and error streams.
-
     no_daemon : bool, default=False
         Do not run as a daemon process.
 

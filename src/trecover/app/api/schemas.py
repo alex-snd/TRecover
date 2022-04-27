@@ -29,7 +29,7 @@ class PredictPayload(BaseModel):
 
         Raises
         ------
-        ValueError
+        ValueError:
             If at least one column is empty.
 
         """
@@ -56,7 +56,7 @@ class PredictPayload(BaseModel):
 
         Raises
         ------
-        ValueError
+        ValueError:
             If the beam width is out of range.
 
         """

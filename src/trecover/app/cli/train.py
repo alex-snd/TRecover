@@ -16,7 +16,6 @@ def local(ctx: Context,
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
         for the script execution at every single level.
-
     show_help : bool, default=False
         Show local train options.
 
@@ -50,7 +49,6 @@ def remote(ctx: Context,
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
         for the script execution at every single level.
-
     show_help : bool, default=False
         Show remote train options.
 

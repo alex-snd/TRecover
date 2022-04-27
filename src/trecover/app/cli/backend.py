@@ -54,10 +54,8 @@ def backend_start(port: int = Option(var.BACKEND_PORT, '--port', '-p',
     ----------
     port : int, default=ENV(BACKEND_PORT) or 6379
         Bind backend socket to this port.
-
     auto_remove : bool, default=False
         Remove backend docker container after service exit.
-
     attach : bool, default=False
         Attach output and error streams.
 
@@ -130,7 +128,6 @@ def backend_prune(force: bool = Option(False, '--force', '-f', is_flag=True,
     ----------
     force : bool, default=False
         Force the removal of a running container.
-
     v : bool, default=False
         Remove the volumes associated with the container.
 

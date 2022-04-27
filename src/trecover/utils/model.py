@@ -19,15 +19,16 @@ def get_recent_weights_path(exp_dir: Path,
 
     Parameters
     ----------
-    exp_dir: Path
+    exp_dir : Path
         Experiment directory path.
-    exp_mark: str
+    exp_mark : str
         Experiment folder mark.
-    weights_name: str, default=None
+    weights_name : str, default=None
         Weights filename.
 
     Returns
     -------
+    Optional[Path]:
         Recent weights path if it exists otherwise None object.
 
     """
@@ -63,30 +64,30 @@ def get_model(token_size: int,
 
     Parameters
     ----------
-    token_size: int
+    token_size : int
         Token (column) size.
-    pe_max_len: int
+    pe_max_len : int
         Positional encoding max length.
-    num_layers: int
+    num_layers : int
         Number of encoder and decoder blocks
-    d_model: int
+    d_model : int
         Model dimension - number of expected features in the encoder (decoder) input.
-    n_heads: int
+    n_heads : int
         Number of encoder and decoder attention heads.
-    d_ff: int
+    d_ff : int
         Dimension of the feedforward layer.
-    dropout: float,
+    dropout : float,
         Dropout range.
-    device: torch.device, default=torch.device('cpu')
+    device : torch.device, default=torch.device('cpu')
         Device on which to allocate the model.
-    weights: Path, default=None
+    weights : Path, default=None
         Model weights path for initialization.
-    silently: bool, default=False
+    silently : bool, default=False
         Initialize the model silently without any verbose information.
 
     Returns
     -------
-    model: TRecover
+    model : TRecover
         Initialized model.
 
     Raises
@@ -124,12 +125,13 @@ def load_params(model_params: Path) -> ExperimentParams:
 
     Parameters
     ----------
-    model_params: Path
+    model_params : Path
         Path to serialized experiment parameters.
 
     Returns
     -------
-        experiment parameters container as a ExperimentParams object.
+    ExperimentParams:
+        Experiment parameters container as a ExperimentParams object.
 
     """
 
@@ -142,13 +144,12 @@ def save_params(data: Dict, filepath: Path, sort=False) -> None:
 
     Parameters
     ----------
-    data: Dict
+    data : Dict
         Experiment parameters.
-    filepath: Path
+    filepath : Path
         File path for saving.
-    sort: bool, default=False
+    sort : bool, default=False
         Perform parameters keys sorting.
-
 
     """
 

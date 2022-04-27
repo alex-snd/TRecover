@@ -21,10 +21,9 @@ def download(direct_link: str, filepath: Path) -> None:
 
     Parameters
     ----------
-    direct_link: str
+    direct_link : str
         Sharing link to the file on GutHub.
-
-    filepath: Path
+    filepath : Path
         Path to the downloaded file.
 
    """
@@ -61,7 +60,7 @@ def get_real_direct_link(sharing_link: str) -> str:
 
     Parameters
     ----------
-    sharing_link:
+    sharing_link : str
         Sharing link to the file on Yandex disk.
 
     Returns
@@ -93,15 +92,14 @@ def download_from_disk(sharing_link: str, save_dir: Path) -> Optional[Path]:
 
     Parameters
     ----------
-    sharing_link: str
+    sharing_link : str
         Sharing link to the file on Yandex disk.
-
-    save_dir: Path
+    save_dir : Path
         Path where to store downloaded file.
 
     Returns
     -------
-    filepath: Optional[Path]
+    filepath : Optional[Path]
         Path to the file if download was successful, otherwise None.
 
     """
@@ -126,15 +124,14 @@ def download_from_github(direct_link: str, save_dir: Path) -> Path:
 
     Parameters
     ----------
-    direct_link: str
+    direct_link : str
         Sharing link to the file on GutHub.
-
-    save_dir: Path
+    save_dir : Path
         Path where to store downloaded file.
 
     Returns
     -------
-    filepath: Path
+    filepath : Path
         Path to the downloaded file.
 
    """
@@ -155,13 +152,11 @@ def download_archive(link: str, save_dir: Path, yandex_disk: bool = False) -> No
 
     Parameters
     ----------
-    link: str
+    link : str
         Sharing link to the archive file on Yandex disk or GitHub assets.
-
-    save_dir: Path
+    save_dir : Path
         Path where to store extracted data
-
-    yandex_disk: bool, default=False
+    yandex_disk : bool, default=False
         If the link is to Yandex disk.
 
     """
@@ -189,22 +184,22 @@ def get_files_columns(inference_path: Path,
 
     Parameters
     ----------
-    inference_path:
+    inference_path : Path
         Paths to folder with files that contain data to read or create noised columns for keyless reading.
-    separator: str
+    separator : str
         Separator to split the data into columns.
-    noisy: bool
+    noisy : bool
         Indicates that the data in the files is already noisy and contains columns for keyless reading.
-    min_noise: int
+    min_noise : int
         Minimum noise range value.
-    max_noise: int
+    max_noise : int
         Maximum noise range value.
-    n_to_show: int
+    n_to_show : int
         Maximum number of columns. Zero means no restrictions.
 
     Returns
     -------
-    (files, files_columns): Tuple[List[Path], List[List[str]]]
+    (files, files_columns) : Tuple[List[Path], List[List[str]]]
         List of paths and batch of columns for keyless reading.
 
     """
@@ -246,13 +241,13 @@ def start_service(argv: List[str], name: str, logfile: Path, pidfile: Path) -> N
 
     Parameters
     ----------
-    argv: List[str]
+    argv : List[str]
         New process command.
-    name: str
+    name : str
         Service name.
-    logfile: Path
+    logfile : Path
         Service logfile path.
-    pidfile: Path
+    pidfile : Path
         Service pidfile path.
 
     """
@@ -278,11 +273,11 @@ def stop_service(name: str, pidfile: Path, logfile: Path) -> None:
 
     Parameters
     ----------
-    name: str
+    name : str
         Service name.
-    pidfile: Path
+    pidfile : Path
         Service pidfile path.
-    logfile: Path
+    logfile : Path
         Service logfile path.
 
     """
@@ -324,9 +319,9 @@ def check_service(name: str, pidfile: Path) -> None:
 
     Parameters
     ----------
-    name: str
+    name : str
         Service name.
-    pidfile: Path
+    pidfile : Path
         Service pidfile path.
 
     """
@@ -357,11 +352,11 @@ def stream(*services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]],
 
     Parameters
     ----------
-    *services: Union[Tuple[str, Path], Tuple[Tuple[str, Path]]]
+    *services : Union[Tuple[str, Path], Tuple[Tuple[str, Path]]]
         Sequence of services' names and logfile's paths.
-    live: bool, default=False
+    live : bool, default=False
         Yield only new services' logs.
-    period: float, default=0.1
+    period : float, default=0.1
         Generator's delay.
 
     Returns

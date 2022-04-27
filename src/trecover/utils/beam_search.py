@@ -22,15 +22,15 @@ def get_steps_params(src: Tensor) -> Tuple[Tensor, List[int]]:
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
 
     Returns
     -------
-    steps_mask: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    steps_mask : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Probability masks that consists of zeros in the places that correspond to the letters allowed
         for selection in the column (src[i]) and values equal to minus infinity in all others.
-    steps_width: List[int]
+    steps_width : List[int]
         The beam width for each step of the algorithm.
 
     """
@@ -57,26 +57,26 @@ def beam_step(candidates: List[Tuple[Tensor, float]],
 
     Parameters
     ----------
-    candidates: List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
+    candidates : List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
         List of candidates from the previous step.
-    step_mask: Tensor[TOKEN_SIZE]
+    step_mask : Tensor[TOKEN_SIZE]
         Column's mask that consists of zeros in the places that correspond to the letters allowed
         for selection in the column and values equal to minus infinity in all others.
         Required so that only the letters in the column are selected as a candidates.
-    step_width: int
+    step_width : int
         Number of candidates that are contained in the step column.
-    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+    encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Columns for keyless reading that were encoded by TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    beam_width: int
+    beam_width : int
         Number of candidates that can be selected at the current step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
 
     Returns
     -------
-    step_candidates: List[Tuple[Tensor[1, STEP_NUMBER + 1, TOKEN_SIZE], float]]
+    step_candidates : List[Tuple[Tensor[1, STEP_NUMBER + 1, TOKEN_SIZE], float]]
         List of candidates of size "beam_width" for the current step
         sorted in descending order of their probabilities.
 
@@ -118,12 +118,12 @@ def celery_task_loop(task: celery.Task
 
     Parameters
     ----------
-    task: celery.Task
+    task : celery.Task
         Celery task base class.
 
     Returns
     -------
-    inner_loop: Callable[[Tensor, Tensor, TRecover, int, torch.device], List[Tuple[Tensor, float]]]
+    inner_loop : Callable[[Tensor, Tensor, TRecover, int, torch.device], List[Tuple[Tensor, float]]]
         Beam search algorithm loop function for the Celery task.
 
     """
@@ -139,20 +139,20 @@ def celery_task_loop(task: celery.Task
 
         Parameters
         ----------
-        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+        src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the TRecover encoder.
-        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+        encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by TRecover encoder.
-        model: TRecover
+        model : TRecover
             Trained model for keyless reading.
-        width: int
+        width : int
             Number of candidates that can be selected at each step.
-        device: torch.device
+        device : torch.device
             Device on which to allocate the candidate chains.
 
         Returns
         -------
-        candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+        candidates : List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
             List of chains sorted in descending order of probabilities.
             The number of candidates is set by the "width" parameter.
 
@@ -188,12 +188,12 @@ def cli_interactive_loop(label: str = 'Processing'
 
     Parameters
     ----------
-    label: str
+    label : str
         Label for the cli progress bar.
 
     Returns
     -------
-    inner_loop: Callable[[Tensor, Tensor, TRecover, int, torch.device], List[Tuple[Tensor, float]]]
+    inner_loop : Callable[[Tensor, Tensor, TRecover, int, torch.device], List[Tuple[Tensor, float]]]
         Beam search algorithm loop function for the cli interface.
 
     """
@@ -209,20 +209,20 @@ def cli_interactive_loop(label: str = 'Processing'
 
         Parameters
         ----------
-        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+        src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the TRecover encoder.
-        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+        encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by TRecover encoder.
-        model: TRecover
+        model : TRecover
             Trained model for keyless reading.
-        width: int
+        width : int
             Number of candidates that can be selected at each step.
-        device: torch.device
+        device : torch.device
             Device on which to allocate the candidate chains.
 
         Returns
         -------
-        candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+        candidates : List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
             List of chains sorted in descending order of probabilities.
             The number of candidates is set by the "width" parameter.
 
@@ -276,20 +276,20 @@ def dashboard_loop(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
-    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+    encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Keyless reading columns that were encoded by TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    width: int
+    width : int
         Number of candidates that can be selected at each step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+    candidates : List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -331,20 +331,20 @@ def standard_loop(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
-    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+    encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Keyless reading columns that were encoded by TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    width: int
+    width : int
         Number of candidates that can be selected at each step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+    candidates : List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -380,21 +380,21 @@ def beam_search(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    width: int
+    width : int
         Number of candidates that can be selected at each step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
-    beam_loop: Callable[[Tensor, Tensor, TRecover, int, torch.device],
+    beam_loop : Callable[[Tensor, Tensor, TRecover, int, torch.device],
                         List[Tuple[Tensor, float]]], default=standard_loop
         Beam search algorithm loop function.
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[SEQUENCE_LEN], float]]
+    candidates : List[Tuple[Tensor[SEQUENCE_LEN], float]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -431,26 +431,26 @@ async def async_beam_step(candidates: List[Tuple[Tensor, float]],
 
     Parameters
     ----------
-    candidates: List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
+    candidates : List[Tuple[Tensor[1, STEP_NUMBER, TOKEN_SIZE], float]]
         List of candidates from the previous step.
-    step_mask: Tensor[TOKEN_SIZE]
+    step_mask : Tensor[TOKEN_SIZE]
         Column's mask that consists of zeros in the places that correspond to the letters allowed
         for selection in the column and values equal to minus infinity in all others.
         Required so that only the letters in the column are selected as a candidates.
-    step_width: int
+    step_width : int
         Number of candidates that are contained in the step column.
-    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+    encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Columns for keyless reading that were encoded by TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    beam_width: int
+    beam_width : int
         Number of candidates that can be selected at the current step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
 
     Returns
     -------
-    step_candidates: List[Tuple[Tensor[1, STEP_NUMBER + 1, TOKEN_SIZE], float]]
+    step_candidates : List[Tuple[Tensor[1, STEP_NUMBER + 1, TOKEN_SIZE], float]]
         List of candidates of size "beam_width" for the current step
         sorted in descending order of their probabilities.
 
@@ -496,14 +496,14 @@ def api_interactive_loop(queue: asyncio.Queue,
 
     Parameters
     ----------
-    queue: asyncio.Queue
+    queue : asyncio.Queue
         Asynchronous queue for storing intermediate results.
     delimiter: str, default=''
         Delimiter for columns visualization.
 
     Returns
     -------
-    async_inner_loop: Callable[[Tensor, Tensor, TRecover, int, torch.device], Awaitable]
+    async_inner_loop : Callable[[Tensor, Tensor, TRecover, int, torch.device], Awaitable]
         Asynchronous beam search algorithm loop function for the API interface.
 
     """
@@ -519,15 +519,15 @@ def api_interactive_loop(queue: asyncio.Queue,
 
         Parameters
         ----------
-        src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+        src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
             Keyless reading columns that are passed to the TRecover encoder.
-        encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+        encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
             Keyless reading columns that were encoded by TRecover encoder.
-        model: TRecover
+        model : TRecover
             Trained model for keyless reading.
-        width: int
+        width : int
             Number of candidates that can be selected at each step.
-        device: torch.device
+        device : torch.device
             Device on which to allocate the candidate chains.
 
         Notes
@@ -576,20 +576,20 @@ async def standard_async_loop(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
-    encoded_src: Tensor[SEQUENCE_LEN, 1, D_MODEL]
+    encoded_src : Tensor[SEQUENCE_LEN, 1, D_MODEL]
         Keyless reading columns that were encoded by TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    width: int
+    width : int
         Number of candidates that can be selected at each step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
 
     Returns
     -------
-    candidates: List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
+    candidates : List[Tuple[Tensor[1, SEQUENCE_LEN + 1, TOKEN_SIZE], float]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
 
@@ -626,21 +626,21 @@ async def async_beam_search(src: Tensor,
 
     Parameters
     ----------
-    src: Tensor[SEQUENCE_LEN, TOKEN_SIZE]
+    src : Tensor[SEQUENCE_LEN, TOKEN_SIZE]
         Keyless reading columns that are passed to the TRecover encoder.
-    model: TRecover
+    model : TRecover
         Trained model for keyless reading.
-    width: int
+    width : int
         Number of candidates that can be selected at each step.
-    device: torch.device
+    device : torch.device
         Device on which to allocate the candidate chains.
-    beam_loop: Callable[[Tensor, Tensor, TRecover, int, torch.device],
+    beam_loop : Callable[[Tensor, Tensor, TRecover, int, torch.device],
                         List[Tuple[Tensor, float]]], default=standard_loop
         Beam search algorithm loop function.
 
     Returns
     -------
-    candidates: Optional[List[Tuple[Tensor[SEQUENCE_LEN], float]]]
+    candidates : Optional[List[Tuple[Tensor[SEQUENCE_LEN], float]]]
         List of chains sorted in descending order of probabilities.
         The number of candidates is set by the "width" parameter.
         Returns None if "api_interactive_loop" is used as a beam search loop function.

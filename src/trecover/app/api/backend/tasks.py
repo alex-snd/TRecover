@@ -11,7 +11,7 @@ def get_model_config(self: ModelConfigTask) -> Dict:
 
     Parameters
     ----------
-    self: ModelConfigTask
+    self : ModelConfigTask
         Celery task base class.
 
     Returns
@@ -35,13 +35,13 @@ def predict(self: PredictTask,
 
     Parameters
     ----------
-    self: ArtifactsTask
+    self : ArtifactsTask
         Celery task base class.
-    columns: List[str]
+    columns : List[str]
         Columns to keyless read.
-    beam_width: int
+    beam_width : int
         Width for beam search algorithm. Maximum value is alphabet size.
-    delimiter: str
+    delimiter : str
         Delimiter for columns visualization.
 
     Returns
@@ -51,7 +51,7 @@ def predict(self: PredictTask,
 
     Raises
     ------
-    AssertionError
+    AssertionError:
         If the number of columns is grater than self.model.pe_max_len.
 
     """
