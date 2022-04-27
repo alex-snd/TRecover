@@ -36,6 +36,7 @@ theme:
   features:
     - navigation.tabs
     - navigation.expand
+    - navigation.indexes
 #    - toc.integrate  # TODO for specific file
   icon:
     repo: fontawesome/brands/github
@@ -98,7 +99,7 @@ nav:
   - Home: index.md
   - Reference:
     - CLI:
-      - CLI : src/trecover/app/cli/trecovercli.md
+      - src/trecover/app/cli/index.md
       - Download : src/trecover/app/cli/download.md
       - Train : src/trecover/app/cli/train.md
       - Mlflow : src/trecover/app/cli/mlflow.md
@@ -108,15 +109,16 @@ nav:
       - Broker : src/trecover/app/cli/broker.md
       - Backend : src/trecover/app/cli/backend.md
     - API:
-      - API : src/trecover/app/api/trecoverapi.md
+      - src/trecover/app/api/index.md
+      - Schemas : src/trecover/app/api/schemas.md
       - Celery Tasks : src/trecover/app/api/backend/tasks.md
     - Utils:
-        Beam Search : src/trecover/utils/beam_search.md
-        CLI : src/trecover/utils/cli.md
-        Docker : src/trecover/utils/docker.md
-        Inference : src/trecover/utils/inference.md
-        Model : src/trecover/utils/model.md
-        Train : src/trecover/utils/train.md
-        Transform : src/trecover/utils/transform.md
-        Visualization : src/trecover/utils/visualization.md
+        - Beam Search : src/trecover/utils/beam_search.md
+        - CLI : src/trecover/utils/cli.md
+        - Docker : src/trecover/utils/docker.md
+        - Inference : src/trecover/utils/inference.md
+        - Model : src/trecover/utils/model.md
+        - Train : src/trecover/utils/train.md
+        - Transform : src/trecover/utils/transform.md
+        - Visualization : src/trecover/utils/visualization.md
 
