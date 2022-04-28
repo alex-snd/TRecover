@@ -1,8 +1,7 @@
 ---
-theme:
-  features:
-    - toc.integrate
-
+hide:
+  - navigation
+  - toc
 ---
 
 # Welcome to TRecover

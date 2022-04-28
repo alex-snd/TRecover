@@ -37,7 +37,7 @@ theme:
     - navigation.tabs
     - navigation.expand
     - navigation.indexes
-#    - toc.integrate  # TODO for specific file
+    - toc.follow
   icon:
     repo: fontawesome/brands/github
 
