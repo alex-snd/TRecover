@@ -142,7 +142,7 @@ def recover(data_path: Path = Argument(..., help='Path to file or dir for data',
                        overflow='ellipsis', end='\n\n') for (chain, _) in chains]
 
         columns = visualize_columns(tensor_to_columns(src), delimiter=delimiter, as_rows=True)
-        columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
+        columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True, justify='left') for row in columns)
 
         panel_group = Group(
             Text('Columns', style='magenta', justify='center'),
