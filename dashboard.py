@@ -17,7 +17,7 @@ model = torch.hub.load('alex-snd/TRecover', model='trecover', device=device, ver
 def main() -> None:
     st.set_page_config(
         page_title='TRecover',
-        page_icon='📜',
+        page_icon='🩹',
         layout='wide',
         initial_sidebar_state='expanded')
 

@@ -135,6 +135,7 @@ weights/
 inference
 experiments
 images
+logs/
 *.bat
 *.pid
 *.init
