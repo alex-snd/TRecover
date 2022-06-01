@@ -15,7 +15,7 @@ from trecover.utils.visualization import visualize_columns
 def main() -> None:
     st.set_page_config(
         page_title='TRecover',
-        page_icon='📜',
+        page_icon='🩹',
         layout='wide',
         initial_sidebar_state='expanded')
 
