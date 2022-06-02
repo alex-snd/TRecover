@@ -1,6 +1,6 @@
 <h1 align="center">Welcome to Text Recovery Project 👋</h1>
 <p align="center">
-  A python library for training a Transformer neural network to solve keyless reading task [link], widely known in the field of cryptography.
+  A python library for training a Transformer neural network to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.
 </p>
 
 ![Preview Animation](../assets/preview_animation.gif?raw=true)
