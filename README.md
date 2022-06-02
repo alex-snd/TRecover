@@ -23,19 +23,39 @@
 </p>
 
 
-## Goal of the project here
-about research and big enough model to solve "name" problem
+## 🚀 Goal of the project
+The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text in columns that can be compiled for a [Running Key Cipher](https://en.wikipedia.org/wiki/Running_key_cipher). You can read more about the problem [here].
+
+In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described below.<br>
+Let there be an original sentence:
+
+>Hello, my name is ***Zendaya*** Maree Stoermer Coleman but you can just call me ***Zendaya***.
+
+The columns for this sentence will be compiled in such a way that the last seven contain from ten to thirteen letters of the English alphabet, and all the others from two to five. Thus, the last seven characters will be much harder to "read" compared to the rest. However, we can guess from the meaning of the sentence that this is the name ***Zendaya***.
+
+In other words, the goal is also to train a model that can understand and correctly “read” the last word.
 
 
 
-## 👀 Usage
-demo (huggingface gif), installation, docker🐳 online, docker local (pull, build),
 
+## 👀 Demo
+demo (huggingface gif), docker🐳 online, docker local (pull, build),
+
+
+## ⚙ Installation
+trecover up command
+
+
+## 🗃️ Data
 
 
 ## 💪 Train
 About data (download, create custom), colab badge
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb)
+
+
+## ✔️ Related work
+what was done, tech stack
 
 
 ## 🤝 Contributing
