@@ -12,11 +12,11 @@
   <a href="https://alex-snd.github.io/TRecover">
     <img src="https://img.shields.io/badge/docs-MkDocs-blue.svg?color=%2348466D" alt="MkDocs link"/>
   </a>
+  <img src="https://img.shields.io/badge/python-v3.8.5-blue.svg?color=%2348466D" alt="Python version"/>
   <a href="https://badge.fury.io/py/trecover">
     <img src="https://img.shields.io/pypi/v/trecover?color=%2348466D" alt="PyPI version"/>
   </a>
-  <img src="https://img.shields.io/badge/python-v3.8.5-blue.svg?color=%2348466D" alt="Python version"/>
-  <img src="https://static.pepy.tech/personalized-badge/trecover?period=total&units=international_system&left_color=grey&right_color=%2348466D&left_text=Downloads" alt="Downloads"/>
+  <img src="https://static.pepy.tech/personalized-badge/trecover?period=total&units=international_system&left_color=grey&right_color=%2348466D&left_text=pypi downloads" alt="PyPi Downloads"/>
   <a href="https://github.com/alex-snd/TRecover/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg?color=%2348466D" alt="License Apache 2.0"/>
   </a>
@@ -26,7 +26,7 @@
 ## 🚀 Goal of the project
 The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text in columns that can be compiled for a [Running Key Cipher](https://en.wikipedia.org/wiki/Running_key_cipher). You can read more about the problem [here].
 
-In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described below.<br>
+In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described below.
 Let there be an original sentence:
 
 >Hello, my name is ***Zendaya*** Maree Stoermer Coleman but you can just call me ***Zendaya***.
