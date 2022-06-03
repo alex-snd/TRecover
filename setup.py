@@ -29,7 +29,8 @@ setup(
     author='Alexander Shulga',
     author_email='alexandershulga.sh@gmail.com',
     url='https://github.com/alex-snd/TRecover',
-    description='A Python library to train Transformer neural network for keyless reading task.',
+    description='A python library for training a Transformer neural network to solve the'
+                ' Running Key Cipher, widely known in the field of cryptography.',
     keywords=[
         'Deep Learning',
         'Machine Learning',
