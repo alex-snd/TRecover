@@ -13,6 +13,9 @@
     <img src="https://img.shields.io/badge/docs-MkDocs-blue.svg?color=%2348466D" alt="MkDocs link"/>
   </a>
   <img src="https://img.shields.io/badge/python-v3.8.5-blue.svg?color=%2348466D" alt="Python version"/>
+  <a href="https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg?color=%2348466D" alt="Open In Colab"/>
+  </a>
   <a href="https://badge.fury.io/py/trecover">
     <img src="https://img.shields.io/pypi/v/trecover?color=%2348466D" alt="PyPI version"/>
   </a>
@@ -21,7 +24,6 @@
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg?color=%2348466D" alt="License Apache 2.0"/>
   </a>
 </p>
-
 
 ## 🚀 Objective
 The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text in columns that can be compiled for a [Running Key Cipher](https://en.wikipedia.org/wiki/Running_key_cipher). You can read more about the problem [here](https://alex-snd.github.io/TRecover/objective/).
@@ -32,30 +34,121 @@ Let there be an original sentence:
 >Hello, my name is ***Zendaya*** Maree Stoermer Coleman but you can just call me ***Zendaya***.
 
 The columns for this sentence will be compiled in such a way that the last seven contain from ten to thirteen letters of the English alphabet, and all the others from two to five. Thus, the last seven characters will be much harder to "read" compared to the rest. However, we can guess from the meaning of the sentence that this is the name ***Zendaya***.
-
 In other words, the goal is also to train a model that can understand and correctly “read” the last word.
 
 
 
 
-## 👀 Demo
-demo (huggingface gif), docker🐳 online, docker local (pull, build),
-
-
 ## ⚙ Installation
-trecover up command
+Trecover requires Python 3.8 or higher and supports both Windows and Linux platforms.
+1. Clone the repository:
+```shell
+git clone https://github.com/alex-snd/TRecover.git  && cd trecover
+```
+
+2. Create a virtual environment:
+    * Windows:
+    ```shell
+    python -m venv venv
+    ```
+    * Linux:
+    ```shell
+    python3 -m venv venv
+    ```
+ 3. Install the package inside this virtual environment:
+    * Just to run the demo:
+    ```shell
+    pip install -e ".[demo]"
+    ```
+    * To train the Transformer:
+    ```shell
+    pip install -e ".[train]"
+    ```
+    * For development and trainig:
+    ```shell
+    pip install -e ".[dev]"
+    ```
+    
+ 4. Initialize project's environment:
+    ```shell
+    trecover init
+    ```
+    For more options use:
+    ```shell
+    trecover init --help
+    ```
+
+
+## 👀 Demo
+* 🤗 Hugging Face <br>
+  You can play with a pre-trained model hosted [here](https://huggingface.co/spaces/alex-snd/TRecover).
+* 🐳 Docker Compose<br>
+  * Pull from Docker Hub:
+    ```shell
+    docker-compose -f docker/compose/scalable-service.yml up
+    ```
+  * Build from source:
+    ```shell
+    docker-compose -f docker\compose\scalable-service-build.yml up
+    ```
+* 💻 Local (requires docker) <br>
+  * Download pretrained model:
+    ```shell
+    trecover download artifacts
+    ```
+  * Launch the service:
+    ```shell
+    trecover up
+    ```
+
 
 
 ## 🗃️ Data
+To train the model, the datasets [WikiText](https://huggingface.co/datasets/wikitext) and [WikiQA](https://huggingface.co/datasets/wiki_qa) were used, from which all characters except English letters were removed.<br>
+You can download the cleaned dataset:
+```shell
+trecover download data
+```
 
 
 ## 💪 Train
-About data (download, create custom), colab badge
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb)
+To quickly start training the model, open the [Jupyter Notebook](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb).
+
+
+* 🕸️ Distributed <br>
+  TODO
+* 💻 Local <br>
+  After the dataset is loaded, you can start training the model:
+  ```
+  trecover train local \
+  --project-name {project_name} \
+  --exp-mark {exp_mark} \
+  --train-dataset-size {train_dataset_size} \
+  --val-dataset-size {val_dataset_size} \
+  --vis-dataset-size {vis_dataset_size} \
+  --test-dataset-size {test_dataset_size} \
+  --batch-size {batch_size} \
+  --n-workers {n_workers} \
+  --min-noise {min_noise} \
+  --max-noise {max_noise} \
+  --lr {lr} \
+  --n-epochs {n_epochs} \
+  --epoch-seek {epoch_seek} \
+  --accumulation-step {accumulation_step} \
+  --penalty-coefficient {penalty_coefficient} \
+
+  --pe-max-len {pe_max_len} \
+  --n-layers {n_layers} \
+  --d-model {d_model} \
+  --n-heads {n_heads} \
+  --d-ff {d_ff} \
+  --dropout {dropout}
+  ```
+  For more information use `trecover train local --help`
 
 
 ## ✔️ Related work
-what was done, tech stack
+TODO: what was done, tech stack.
 
 
 ## 🤝 Contributing
