@@ -103,6 +103,7 @@ nav:
   - Home: index.md
   - Objective:
     - objective.md
+  - Demo: https://huggingface.co/spaces/alex-snd/TRecover
   - Reference:
     - CLI:
       - src/trecover/app/cli/index.md
