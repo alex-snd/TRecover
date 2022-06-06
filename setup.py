@@ -17,7 +17,7 @@ dashboard_service_packages = get_requirements('docker/dashboard.txt')
 standalone_service_packages = get_requirements('docker/standalone.txt')
 worker_service_packages = get_requirements('docker/worker.txt')
 
-test_packages = get_requirements('test.txt')
+demo_packages = get_requirements('demo.txt')
 dev_packages = get_requirements('dev.txt')
 docs_packages = get_requirements('docs.txt')
 train_packages = get_requirements('train.txt')
@@ -53,7 +53,7 @@ setup(
         'dashboard': dashboard_service_packages,
         'standalone': standalone_service_packages,
         'worker': worker_service_packages,
-        "test": test_packages,
+        "demo": demo_packages,
         "dev": dev_packages,
         "docs": docs_packages,
         "train": train_packages,
