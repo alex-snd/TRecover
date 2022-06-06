@@ -101,6 +101,7 @@ plugins:
 # Page tree
 nav:
   - Home: index.md
+  - Getting started: getting_started.md
   - Objective:
     - objective.md
   - Demo: https://huggingface.co/spaces/alex-snd/TRecover
