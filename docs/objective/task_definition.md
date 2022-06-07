@@ -1,8 +1,8 @@
 ---
-title: "🚀 Task definition"
+title: "💡 Task definition"
 ---
 
-# 🚀 Task definition
+# 💡 Task definition
 
 !!! important "Abstract"
 
