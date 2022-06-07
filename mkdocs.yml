@@ -104,10 +104,13 @@ plugins:
 # Page tree
 nav:
   - Home: index.md
-  - Getting started: getting_started.md
+  - Getting started:
+    - Installation: getting_started/installation.md
+    - Data: getting_started/data.md
+    - Train: getting_started/train.md
   - Objective:
-    - objective.md
-    - Related work: related_work.md
+    - Task definition: objective/task_definition.md
+    - Related work: objective/related_work.md
   - Demo: https://huggingface.co/spaces/alex-snd/TRecover
   - Reference:
     - CLI:
