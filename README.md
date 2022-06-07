@@ -74,7 +74,7 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
     ```shell
     pip install -e ".[train]"
     ```
-    * For development and trainig:
+    * For development and training:
     ```shell
     pip install -e ".[dev]"
     ```
