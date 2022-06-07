@@ -117,7 +117,7 @@ nav:
   - Objective:
     - Task definition: objective/task_definition.md
     - Related work: objective/related_work.md
-  - Demo: https://huggingface.co/spaces/alex-snd/TRecover
+  - Demo: demo.md
   - Reference:
     - CLI:
       - src/trecover/app/cli/index.md
