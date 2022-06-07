@@ -107,6 +107,7 @@ nav:
   - Getting started: getting_started.md
   - Objective:
     - objective.md
+    - Related work: related_work.md
   - Demo: https://huggingface.co/spaces/alex-snd/TRecover
   - Reference:
     - CLI:
