@@ -40,6 +40,8 @@ theme:
     - toc.follow
     - navigation.instant
     - navigation.tracking
+    - content.tabs.link
+    - navigation.top
   icon:
     repo: fontawesome/brands/github
 
@@ -55,6 +57,7 @@ extra_javascript:
 # Extensions
 markdown_extensions:
   - meta
+  - md_in_html
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
@@ -65,7 +68,8 @@ markdown_extensions:
   - pymdownx.inlinehilite # inline code highlights
   - pymdownx.keys # show keystroke symbols
   - pymdownx.snippets # insert content from other files
-  - pymdownx.tabbed # content tabs
+  - pymdownx.tabbed: # content tabs
+      alternate_style: true
   - footnotes
   - def_list
   - pymdownx.arithmatex: # mathjax
@@ -76,6 +80,7 @@ markdown_extensions:
   - codehilite
   - pymdownx.highlight:
       use_pygments: true
+      anchor_linenums: true
   - toc:
       toc_depth: 4
 
