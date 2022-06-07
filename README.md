@@ -55,7 +55,17 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
     ```shell
     python3 -m venv venv
     ```
- 3. Install the package inside this virtual environment:
+3. Activate the virtual environment:
+    * Windows:
+    ```shell
+    venv\Scripts\activate.bat
+    ```
+    * Linux:
+    ```shell
+    source venv/bin/activate
+    ```
+
+5. Install the package inside this virtual environment:
     * Just to run the demo:
     ```shell
     pip install -e ".[demo]"
@@ -69,14 +79,14 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
     pip install -e ".[dev]"
     ```
     
- 4. Initialize project's environment:
-    ```shell
-    trecover init
-    ```
-    For more options use:
-    ```shell
-    trecover init --help
-    ```
+6. Initialize project's environment:
+   ```shell
+   trecover init
+   ```
+   For more options use:
+   ```shell
+   trecover init --help
+   ```
 
 
 ## 👀 Demo
