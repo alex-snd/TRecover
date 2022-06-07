@@ -1,10 +1,10 @@
 ---
-title: " "
+title: "Home"
 hide:
   - navigation
   - toc
 ---
-<h1> </h1>
+<h1>     </h1>
 <div align="center">
     <h2 align="center">Welcome to Text Recovery Project 👋 </h2>
     <h3 align="center">A python library for training a Transformer neural network to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.</h3>
