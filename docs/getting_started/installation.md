@@ -63,6 +63,6 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
 ```shell
 trecover init
 ```
-For more information use ``trecover --help`` or read the 
-[reference](https://alex-snd.github.io/TRecover/src/trecover/app/cli/)
+:grey_question: For more information use ``trecover --help`` or read the 
+[reference](https://alex-snd.github.io/TRecover/src/trecover/app/cli/).
 
