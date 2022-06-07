@@ -114,7 +114,8 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
 
 
 ## 🗃️ Data
-To train the model, the datasets [WikiText](https://huggingface.co/datasets/wikitext) and [WikiQA](https://huggingface.co/datasets/wiki_qa) were used, from which all characters except English letters were removed.<br>
+The [WikiText](https://huggingface.co/datasets/wikitext) and [WikiQA](https://huggingface.co/datasets/wiki_qa) datasets 
+were used to train the model, from which all characters except English letters were removed.<br>
 You can download the cleaned dataset:
 ```shell
 trecover download data
