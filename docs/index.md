@@ -1,8 +1,10 @@
 ---
 title: "Home"
 hide:
-  - navigation
-  - toc
+
+- navigation
+- toc
+
 ---
 <h1>     </h1>
 <div align="center">
