@@ -1,5 +1,5 @@
 ---
-title: "Home"
+title: "🤷 About the project"
 hide:
 
 - navigation
