@@ -99,7 +99,7 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
     ```
   * Build from source:
     ```shell
-    docker-compose -f docker\compose\scalable-service-build.yml up
+    docker-compose -f docker/compose/scalable-service-build.yml up
     ```
 * 💻 Local (requires docker) <br>
   * Download pretrained model:
