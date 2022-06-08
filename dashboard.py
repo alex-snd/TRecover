@@ -72,13 +72,13 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
     st.sidebar.text('\n')
 
     if is_plain:
-        min_noise, max_noise = st.sidebar.slider('\nNoise range', 0, 25, key='noise_range',
+        min_noise, max_noise = st.sidebar.slider('\nNoise range', 0, 5, key='noise_range',
                                                  value=st.session_state.get('noise_range', (0, 5)),
                                                  on_change=set_regenerate)
     else:
         min_noise, max_noise = 0, 0
 
-    bw = st.sidebar.slider('Beam search width', 1, 26, key='beam_width',
+    bw = st.sidebar.slider('Beam search width', 1, 6, key='beam_width',
                            value=st.session_state.get('beam_width', 5))
 
     if max_noise > var.MAX_NOISE:
