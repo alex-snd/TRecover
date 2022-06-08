@@ -10,7 +10,7 @@ hide:
 
 #      
 
-!!! important "<font size="+2">👀 Play with demo</font>"
+!!! important "<font size="+1">👀 Play with demo</font>"
 
     === "🤗 Hugging Face"
         <font size="+1">You can play with a pre-trained model hosted [here](https://huggingface.co/spaces/alex-snd/TRecover).</font>
@@ -85,6 +85,6 @@ hide:
         ```
 
 
-??? question "<font size="+1">Do you want to challenge yourself ? 😉</font>"
+??? question "Do you want to challenge yourself ? 😉"
     :soon: TODO
 
