@@ -149,7 +149,7 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     st.subheader('\n')
 
     placeholder = st.empty()
-    recover_field, regen_filed = placeholder.columns([.07, 1])
+    recover_field, regen_filed = placeholder.columns([.085, 1])
 
     if is_plain:
         regen_filed.button('Regenerate', on_click=set_regenerate)
