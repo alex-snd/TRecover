@@ -23,8 +23,7 @@ def main() -> None:
         st.session_state.history = list()
 
     if 'data' not in st.session_state:
-        st.session_state.data = 'As people around the country went into the streets to cheer the conviction, ' \
-                                'some businesses in Portland boarded up their windows'
+        st.session_state.data = ''
 
     if 'regenerate' not in st.session_state:
         st.session_state.regenerate = False
