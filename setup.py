@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 BASE = Path(__file__).parent
 REQUIREMENTS_DIR = BASE / 'requirements'
-LONG_DESCRIPTION = (BASE / 'README.md').read_text()
+LONG_DESCRIPTION = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ""
 
 
 def get_requirements(filename: str) -> List[str]:
