@@ -3,7 +3,9 @@ from typing import List
 
 from setuptools import find_packages, setup
 
-REQUIREMENTS_DIR = Path(__file__).parent / 'requirements'
+BASE = Path(__file__).parent
+REQUIREMENTS_DIR = BASE / 'requirements'
+LONG_DESCRIPTION = (BASE / 'README.md').read_text()
 
 
 def get_requirements(filename: str) -> List[str]:
@@ -31,6 +33,8 @@ setup(
     url='https://github.com/alex-snd/TRecover',
     description='A python library for training a Transformer neural network to solve the'
                 ' Running Key Cipher, widely known in the field of cryptography.',
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/markdown',
     keywords=[
         'Deep Learning',
         'Machine Learning',
