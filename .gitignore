@@ -136,6 +136,7 @@ inference
 experiments
 images/
 logs/
+src/
 *.bat
 *.pid
 *.init
