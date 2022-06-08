@@ -42,7 +42,13 @@ hide:
                 docker-compose -f docker/compose/scalable-service-build.yml up --build
                 ```
         <br>
-        <font size="+1">:soon: TODO Play with docker</font>
+        <font size="+1">
+            You can also try the <a href="https://labs.play-with-docker.com/"> Play with Docker</a> service mentioned in
+            the official 
+            <a href="https://docs.docker.com/get-started/04_sharing_app/#run-the-image-on-a-new-instance">
+                docker documentation
+            </a>. 
+        </font>
 
     === "💻 Local"
         <font size="+1">
