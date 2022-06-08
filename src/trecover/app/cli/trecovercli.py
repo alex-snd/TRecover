@@ -164,8 +164,6 @@ def cli_state_verification(ctx: Context,
                            config_file: Path = Option(var.BASE_DIR / 'trecover-compose.toml', '--file', '-f',
                                                       file_okay=True,
                                                       help='Path to TRecover configuration file for "up" command'),
-                           attach_stream: bool = Option(False, '--attach', '-a', is_flag=True,
-                                                        help='Attach output and error streams for "up" command')
                            ) -> None:
     """
     Perform cli commands verification (state checking) and config file parsing.
@@ -177,9 +175,6 @@ def cli_state_verification(ctx: Context,
         for the script execution at every single level.
     config_file : Path, default=var.BASE_DIR / 'trecover-compose.toml'
         Path to TRecover configuration file for "up" command.
-    attach_stream : bool, default=False
-        Attach output and error streams for "up" command'.
-
     """
 
     if ctx.invoked_subcommand == 'init':
@@ -209,7 +204,6 @@ def cli_state_verification(ctx: Context,
             ctx.exit(1)
 
         ctx.params['conf'] = parse_config(config_file)
-        ctx.params['attach'] = attach_stream
 
 
 @cli.command(help="Initialize project's environment")
@@ -257,7 +251,10 @@ def init(base: Path = Option(Path().absolute(), '--base', '-b', help="Path to th
 
 
 @cli.command(help='Start services')
-def up(ctx: Context) -> None:
+def up(ctx: Context,
+       attach_stream: bool = Option(False, '--attach', '-a', is_flag=True,
+                                    help='Attach output and error streams')
+       ) -> None:
     """
     Start services: Dashboard, API, Worker, Broker, Backend.
 
@@ -269,6 +266,8 @@ def up(ctx: Context) -> None:
     ctx : Context
         Typer (Click like) special internal object that holds state relevant
         for the script execution at every single level.
+    attach_stream : bool, default=False
+        Attach output and error streams.
 
     Config Variables
     ----------------
@@ -414,7 +413,7 @@ def up(ctx: Context) -> None:
                               auto_remove=conf.backend.auto_remove,
                               attach=False)
 
-    if ctx.parent.params['attach']:
+    if attach_stream:
         try:
             attach(live=False)
         finally:
