@@ -1,6 +1,6 @@
 ---
 title: Keyless reading - TRecover
-emoji: 🔮
+emoji: 🩹
 colorFrom: yellow
 colorTo: indigo
 sdk: streamlit
