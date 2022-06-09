@@ -140,7 +140,7 @@ def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
 
 
 def get_input_data(examples: Dict[str, Optional[str]], max_chars: int) -> str:
-    input_field, examples_filed = st.columns([1, 0.17])
+    input_field, examples_filed = st.columns([1, 0.27])
 
     option = examples_filed.selectbox(label='', options=examples.keys())
 
@@ -175,7 +175,7 @@ def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> N
     st.subheader('\n')
 
     placeholder = st.empty()
-    recover_field, regen_filed = placeholder.columns([.085, 1])
+    recover_field, regen_filed = placeholder.columns([.11, 1])
 
     if is_plain:
         regen_filed.button('Regenerate', on_click=set_regenerate)
