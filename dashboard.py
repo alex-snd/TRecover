@@ -1,5 +1,5 @@
 import platform
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Optional
 
 import streamlit as st
 import torch
@@ -9,7 +9,27 @@ from trecover.utils.inference import data_to_columns, create_noisy_columns
 from trecover.utils.transform import columns_to_tensor, tensor_to_target
 from trecover.utils.visualization import visualize_columns, visualize_target
 
-max_chars = 256
+MAX_CHARS = 256
+
+PLAIN_EXAMPLES = {
+    'Select example': None,
+    'Example 1': 'As people around the country went into the streets to cheer the conviction, some businesses in '
+                 'Portland boarded up their windows once again.',
+    'Example 2': 'That night, a small group of activists wearing black approached a group of journalists, threatening'
+                 ' to smash the cameras of those who remained on scene.',
+    'Example 3': 'English as we know it today came to be exported to other parts of the world through British '
+                 'colonisation, and is now the dominant language in Britain'
+}
+
+NOISED_EXAMPLES = {
+    'Select example': None,
+    'Example 1': 'a ds fpziq ofe ngkhbo p pghl ue waq frlqjo o u dnxrm dgr yrtsco kho deuasm dhysc ao u nwzhy tle r '
+                 'yzpe xwabc gce nger klqto wiq nfprso t no tpgq tcfh ae twas tw ur re e t gyutsm t xgo rc ubhq e wle '
+                 'r ty h nwpeaq xdsc o dnhelm v thir ikcq tkuo i o twn ps frio mo oe b kuiqtb jsq zi tnye ge dgrqs s '
+                 'cioe ys whic wne wp thlo dnprsc xvpyrt hurlm kveaj nbfp dome pbeaj dusmo a r dzrqsm xace du nxkuai '
+                 'gpulcm tpi h pie uim r wbhrj ui n dwgp dkeio nkwhqs zs'
+}
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = torch.hub.load('alex-snd/TRecover', model='trecover', device=device, version='latest')
 
@@ -119,15 +139,21 @@ def get_noisy_columns(data: str, min_noise: int, max_noise: int) -> List[str]:
     return [''.join(set(c)) for c in columns]  # kinda shuffle columns
 
 
+def get_input_data(examples: Dict[str, Optional[str]], max_chars: int) -> str:
+    input_field, examples_filed = st.columns([1, 0.17])
+
+    option = examples_filed.selectbox(label='', options=examples.keys())
+
+    return input_field.text_input(label='', value=examples[option] or st.session_state.data, max_chars=max_chars)
+
+
 def inference_page(is_plain: bool, min_noise: int, max_noise: int, bw: int) -> None:
-    input_label = 'Insert plain text' if is_plain else 'Insert noisy columns separated by spaces'
-    st.subheader(input_label)
+    st.subheader('Insert plain text' if is_plain else 'Insert noisy columns separated by spaces')
 
     if is_plain:
-        data = st.text_input('', value=st.session_state.data, max_chars=max_chars)
+        data = get_input_data(PLAIN_EXAMPLES, max_chars=MAX_CHARS)
     else:
-        data = st.text_input('', value=st.session_state.data, max_chars=max_chars * 2,
-                             help='Type columns separated by spaces')
+        data = get_input_data(NOISED_EXAMPLES, max_chars=MAX_CHARS * 4)
 
     if not data:
         st.stop()
