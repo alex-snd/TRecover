@@ -105,7 +105,7 @@ def inference_sidebar() -> Tuple[bool, int, int, int]:
         min_noise, max_noise = 0, 0
 
     bw = st.sidebar.slider('Beam search width', 1, 6, key='beam_width',
-                           value=st.session_state.get('beam_width', 5))
+                           value=st.session_state.get('beam_width', 25))
 
     if max_noise > var.MAX_NOISE:
         st.sidebar.warning('Max noise value is too large. This will entail poor performance')
