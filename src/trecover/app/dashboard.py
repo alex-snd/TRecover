@@ -79,9 +79,17 @@ def unset_stop() -> None:
 
 
 def sidebar() -> None:
-    st.sidebar.header('Sections')
+    st.sidebar.markdown(body=
+                        """
+                        <h1 align="center"> 
+                            <font size="20">🤷</font>
+                            <a href="https://alex-snd.github.io/TRecover">About the Project</a>
+                        </h1>
+                        <br><br>
+                        """,
+                        unsafe_allow_html=True)
 
-    option = st.sidebar.radio('', ('Inference', 'Inference history'))
+    option = st.sidebar.radio('Sections', ('Inference', 'Inference history'))
 
     if option == 'Inference':
         is_plain, min_noise, max_noise, bw = inference_sidebar()
@@ -93,8 +101,6 @@ def sidebar() -> None:
 
 def inference_sidebar() -> Tuple[bool, int, int, int]:
     st.sidebar.text('\n')
-
-    st.sidebar.header('Data parameters')
 
     data_type = st.sidebar.radio('Input type', ('Plain text', 'Noisy columns'), key='data_type',
                                  index=0 if 'Plain text' == st.session_state.get('data_type', 'Plain text') else 1)
