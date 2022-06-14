@@ -52,7 +52,9 @@ hide:
 
     === "💻 Local"
         <font size="+1">
-            To run the service locally, docker must be installed.<br><br>
+            To run the service locally, 
+            <a href="https://alex-snd.github.io/TRecover/getting_started/installation/">trecover</a> and 
+            <a href="https://docs.docker.com/engine/install/">docker</a> must be installed.<br><br>
             First you need to download pretrained model:
         </font>
 
