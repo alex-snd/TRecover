@@ -16,15 +16,12 @@ from torch.utils.data import DataLoader
 
 from trecover.config import log
 from trecover.model import TRecover
-from trecover.train.monitor import BaseMonitor, IdentityMonitor
-from trecover.train.scheduler import BaseScheduler, IdentityScheduler
+from trecover.train.local.monitor import BaseMonitor, IdentityMonitor
+from trecover.train.local.scheduler import BaseScheduler, IdentityScheduler
 from trecover.utils.model import save_params
 from trecover.utils.train import ExperimentParams, optimizer_to_str, transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target
 from trecover.utils.visualization import visualize_columns, visualize_target
-
-
-# TODO docs after RemoteTrainer implementation using pytorch-lightning
 
 
 class LocalTrainer(object):
@@ -219,7 +216,7 @@ class LocalTrainer(object):
             tgt_out = tgt_out.reshape(-1, self.model.token_size)
             prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
 
-            for i in range(src.size(0)):
+            for i in range(src.shape[0]):
                 columns = tensor_to_columns(src[i, : self.n_columns_to_show])
                 columns = visualize_columns(columns, delimiter=self.delimiter, as_rows=True)
                 columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
@@ -334,7 +331,3 @@ class LocalTrainer(object):
 
     def save_html_log(self) -> None:
         self.console.save_html(str(self.log_file), clear=False)
-
-    # TODO find_batch_size
-    def find_batch_size(self):
-        pass

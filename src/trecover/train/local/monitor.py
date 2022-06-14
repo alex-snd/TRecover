@@ -42,7 +42,7 @@ class BaseMonitor(object):
     def __enter__(self) -> Union[Run, ActiveRun]:
         # TODO docs
 
-        return self.start(),
+        return self.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         # TODO docs
