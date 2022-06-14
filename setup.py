@@ -5,12 +5,18 @@ from setuptools import find_packages, setup
 
 BASE = Path(__file__).parent
 REQUIREMENTS_DIR = BASE / 'requirements'
-LONG_DESCRIPTION = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ""
 
 
 def get_requirements(filename: str) -> List[str]:
     with open(REQUIREMENTS_DIR / filename) as file:
         return [ln.strip() for ln in file.readlines()]
+
+
+def get_long_description() -> str:
+    long_description = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ""
+
+    return long_description.replace('../assets/preview_animation.gif?raw=true',
+                                    'https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true')
 
 
 essential_packages = get_requirements('essential.txt')
@@ -30,10 +36,15 @@ setup(
     license='Apache License 2.0',
     author='Alexander Shulga',
     author_email='alexandershulga.sh@gmail.com',
-    url='https://github.com/alex-snd/TRecover',
+    url='https://alex-snd.github.io/TRecover',
+    project_urls={
+        'Source Code': 'https://github.com/alex-snd/TRecover',
+        'Bug Tracker': 'https://github.com/alex-snd/TRecover/issues',
+
+    },
     description='A python library for training a Transformer neural network to solve the'
                 ' Running Key Cipher, widely known in the field of cryptography.',
-    long_description=LONG_DESCRIPTION,
+    long_description=get_long_description(),
     long_description_content_type='text/markdown',
     keywords=[
         'Deep Learning',
