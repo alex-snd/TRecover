@@ -7,7 +7,7 @@ cli = Typer(name='Train-cli', add_completion=False, help='Manage training')
              add_help_option=False,
              help='Start local training')
 def local(ctx: Context,
-          show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')):
+          show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')) -> None:
     """
     Start local training.
 
@@ -37,12 +37,12 @@ def local(ctx: Context,
 
 @cli.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
              add_help_option=False,
-             help='Start remote training')
-def remote(ctx: Context,
-           show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')
-           ):
+             help='Start colab training')
+def colab(ctx: Context,
+          show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')
+          ) -> None:
     """
-    Start remote training.
+    Start colab training.
 
     Parameters
     ----------
@@ -54,7 +54,32 @@ def remote(ctx: Context,
 
     """
 
-    pass
+    from trecover.train.colab import train
+
+    train(args=ctx.args)
+
+
+@cli.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+             add_help_option=False,
+             help='Start colab training monitor')
+def colab_monitor(ctx: Context,
+                  show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')
+                  ) -> None:
+    """
+    Start colab training monitor.
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level.
+    show_help : bool, default=False
+        Show remote train options.
+
+    """
+    from trecover.train.colab import monitor
+
+    monitor(args=ctx.args)
 
 
 if __name__ == '__main__':
