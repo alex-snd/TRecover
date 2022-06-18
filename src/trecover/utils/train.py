@@ -1,8 +1,8 @@
 import re
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple, Union, Optional
+from typing import Any, Dict, Tuple, List, Union, Optional
 
 import numpy as np
 import torch
@@ -59,6 +59,27 @@ def set_seeds(seed: int = 2531) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
+
+
+def get_experiment_params(parser: ArgumentParser, args: Optional[List[str]] = None) -> ExperimentParams:
+    """
+    Parse command line arguments as ExperimentParams object.
+
+    Parameters
+    ----------
+    parser : ArgumentParser
+        Object for parsing command line strings into Python objects.
+    args : Optional[List[str]], default=None
+        Command line arguments.
+
+    Returns
+    -------
+    ExperimentParams:
+        Parsed command line arguments as ExperimentParams object.
+
+    """
+
+    return ExperimentParams(parser.parse_args(args=args))
 
 
 def get_experiment_mark() -> str:

@@ -14,13 +14,13 @@ from trecover.train.colab import utils
 from trecover.train.colab.arguments import BaseTrainingArguments
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.utils.model import get_model, get_recent_weights_path
-from trecover.utils.train import ExperimentParams, set_seeds, get_experiment_mark
+from trecover.utils.train import set_seeds, get_experiment_mark
 
 
-def get_parser() -> ArgumentParser:
+def get_colab_parser() -> ArgumentParser:
     # TODO docs
 
-    parser = ArgumentParser()
+    parser = ArgumentParser('CollaborativeTrainer')
 
     # ------------------------------------------------GENERAL PARAMETERS------------------------------------------------
 
@@ -127,13 +127,8 @@ def get_parser() -> ArgumentParser:
     return parser
 
 
-def get_experiment_params(args: Optional[List[str]] = None) -> ExperimentParams:
-    # TODO docs
-
-    return ExperimentParams(get_parser().parse_args(args=args))
-
-
 def monitor(args: Optional[List[str]] = None) -> None:
+    # params = get_experiment_params(get_colab_parser(), args)
     params = BaseTrainingArguments()
 
     validators, local_public_key = utils.make_validators('trecover')

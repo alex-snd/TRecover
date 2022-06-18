@@ -13,13 +13,13 @@ from trecover.train.local.scheduler import WarmupScheduler
 from trecover.train.local.trainer import LocalTrainer
 from trecover.train.loss import CustomPenaltyLoss
 from trecover.utils.model import get_model, get_recent_weights_path
-from trecover.utils.train import ExperimentParams, set_seeds, get_experiment_mark
+from trecover.utils.train import set_seeds, get_experiment_params, get_experiment_mark
 
 
-def get_parser() -> ArgumentParser:
+def get_local_parser() -> ArgumentParser:
     # TODO docs
 
-    parser = ArgumentParser()
+    parser = ArgumentParser('LocalTrainer')
 
     # ------------------------------------------------GENERAL PARAMETERS------------------------------------------------
 
@@ -126,16 +126,10 @@ def get_parser() -> ArgumentParser:
     return parser
 
 
-def get_experiment_params(args: Optional[List[str]] = None) -> ExperimentParams:
-    # TODO docs
-
-    return ExperimentParams(get_parser().parse_args(args=args))
-
-
 def train(args: Optional[List[str]] = None) -> None:
     # TODO docs
 
-    params = get_experiment_params(args)
+    params = get_experiment_params(get_local_parser(), args)
 
     if params.n_columns_to_show > params.pe_max_len:
         log.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
