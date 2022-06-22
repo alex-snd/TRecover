@@ -1,1 +1,1 @@
-from .entrypoint import train, get_parser
+from .entrypoint import train, get_local_parser
