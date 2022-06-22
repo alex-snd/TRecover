@@ -22,10 +22,10 @@ def local(ctx: Context,
     """
 
     from trecover.config import log
-    from trecover.train.local import train, get_parser
+    from trecover.train.local import train, get_local_parser
 
     if show_help:
-        get_parser().print_help()
+        get_local_parser().print_help()
     else:
         try:
             train(args=ctx.args)
