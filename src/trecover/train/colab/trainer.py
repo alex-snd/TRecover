@@ -144,7 +144,6 @@ class Task:
 
 class LightningWrapper(pl.LightningModule):
     def __init__(self,
-                 task: Task,
                  data_args: DataArguments,
                  model_args: ModelArguments,
                  peer_args: BasePeerArguments,
@@ -153,7 +152,6 @@ class LightningWrapper(pl.LightningModule):
                  *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self.task = task
         self.data_args = data_args
         self.model_args = model_args
         self.peer_args = peer_args

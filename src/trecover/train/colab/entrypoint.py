@@ -165,13 +165,14 @@ def train(args: Optional[List[str]] = None) -> None:
                          max_epochs=1,
                          num_sanity_val_steps=0,
                          log_every_n_steps=1,
-                         auto_scale_batch_size=True)
+                         auto_scale_batch_size=True,
+                         enable_progress_bar=False)
 
-    task = Task(data_args, model_args, peer_args, trainer_args, collab_args)
+    # task = Task(data_args, model_args, peer_args, trainer_args, collab_args)
     # opt = task.optimizer
     # print('Optimizer is created in main process')
     print(f'Main process pid: {getpid()}')
-    model_wrapper = LightningWrapper(task, data_args, model_args, peer_args, trainer_args, collab_args)
+    model_wrapper = LightningWrapper(data_args, model_args, peer_args, trainer_args, collab_args)
 
     if not model_wrapper.batch_size:
         # Dict with scale_batch_size key
