@@ -1,9 +1,10 @@
+import argparse
 import re
-from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple, List, Union, Optional
+from typing import List, Dict, Any, Union, Tuple, Optional
 
+import argparse_dataclass
 import numpy as np
 import torch
 from torch import Tensor
@@ -13,10 +14,10 @@ from torch.optim import Optimizer
 class ExperimentParams(dict):
     """ Container for experiment parameters """
 
-    def __init__(self, params: Union[Namespace, Dict, None] = None):
+    def __init__(self, params: Union[argparse.Namespace, Dict, None] = None):
         super(ExperimentParams, self).__init__()
 
-        if isinstance(params, Namespace):
+        if isinstance(params, argparse.Namespace):
             self.__dict__.update(vars(params))
         if isinstance(params, dict):
             self.__dict__.update(params)
@@ -52,6 +53,16 @@ class ExperimentParams(dict):
         self.__dict__.update(*args, **kwargs)
 
 
+class ArgumentParser(argparse_dataclass.ArgumentParser):
+    def parse_known_args(self, *args, **kwargs) -> Tuple[argparse_dataclass.OptionsType, List[str]]:
+        """ Parse known arguments and return as the dataclass type. """
+
+        namespace, others = super().parse_known_args(*args, **kwargs)
+        kwargs = {k: v for k, v in vars(namespace).items() if v != argparse_dataclass.MISSING}
+
+        return self._options_type(**kwargs), others
+
+
 def set_seeds(seed: int = 2531) -> None:
     """ Set seeds for experiment reproducibility """
 
@@ -59,6 +70,12 @@ def set_seeds(seed: int = 2531) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
+
+
+def parse_dataclasses(*dataclasses: Union[Any, Tuple[Any, ...]],
+                      args: Optional[List[str]] = None
+                      ) -> Union[Any, Tuple[Any, ...]]:
+    return (ArgumentParser(dc).parse_known_args(args)[0] for dc in dataclasses)
 
 
 def get_experiment_params(parser: ArgumentParser, args: Optional[List[str]] = None) -> ExperimentParams:

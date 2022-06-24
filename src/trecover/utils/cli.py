@@ -223,7 +223,7 @@ def parse_config(file: Path) -> Namespace:
     """ Parse configuration file for 'trecover up' command. """
 
     conf = var.DEFAULT_CONFIG
-    parsed_conf = toml.load(file)
+    parsed_conf = toml.load(str(file.absolute()))
 
     for service, params in parsed_conf.items():
         for variable, value in params.items():
