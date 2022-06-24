@@ -13,7 +13,7 @@ def get_requirements(filename: str) -> List[str]:
 
 
 def get_long_description() -> str:
-    long_description = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ''
+    long_description = readme_file.read_text(encoding='utf-8') if (readme_file := BASE / 'README.md').exists() else ''
 
     return long_description.replace('../assets/preview_animation.gif?raw=true',
                                     'https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true')
