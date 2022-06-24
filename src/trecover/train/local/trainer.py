@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from trecover.config import log
 from trecover.model import TRecover
 from trecover.train.local.monitor import BaseMonitor, IdentityMonitor
-from trecover.train.local.scheduler import BaseScheduler, IdentityScheduler
+from trecover.train.scheduler import BaseScheduler, IdentityScheduler
 from trecover.utils.model import save_params
 from trecover.utils.train import ExperimentParams, optimizer_to_str, transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target

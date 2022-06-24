@@ -9,7 +9,7 @@ import torch
 from trecover.config import var, exp_var, log
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.local.monitor import WandbMonitor, MlflowMonitor
-from trecover.train.local.scheduler import WarmupScheduler
+from trecover.train.scheduler import WarmupScheduler
 from trecover.train.local.trainer import LocalTrainer
 from trecover.train.loss import CustomPenaltyLoss
 from trecover.utils.model import get_model, get_recent_weights_path
