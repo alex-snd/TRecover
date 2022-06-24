@@ -166,7 +166,9 @@ def train(args: Optional[List[str]] = None) -> None:
                          num_sanity_val_steps=0,
                          log_every_n_steps=1,
                          enable_progress_bar=False,
-                         strategy=collab_strategy)
+                         strategy=collab_strategy,
+                         auto_select_gpus=True,
+                         accelerator='auto')
 
     trainer.fit(wrapped_model)
 
