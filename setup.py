@@ -13,7 +13,7 @@ def get_requirements(filename: str) -> List[str]:
 
 
 def get_long_description() -> str:
-    long_description = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ""
+    long_description = readme_file.read_text() if (readme_file := BASE / 'README.md').exists() else ''
 
     return long_description.replace('../assets/preview_animation.gif?raw=true',
                                     'https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true')
@@ -29,6 +29,7 @@ demo_packages = get_requirements('demo.txt')
 dev_packages = get_requirements('dev.txt')
 docs_packages = get_requirements('docs.txt')
 train_packages = get_requirements('train.txt')
+collab_packages = get_requirements('collab.txt')
 
 setup(
     name='trecover',
@@ -68,10 +69,11 @@ setup(
         'dashboard': dashboard_service_packages,
         'standalone': standalone_service_packages,
         'worker': worker_service_packages,
-        "demo": demo_packages,
-        "dev": dev_packages,
-        "docs": docs_packages,
-        "train": train_packages,
+        'demo': demo_packages,
+        'dev': dev_packages,
+        'docs': docs_packages,
+        'train': train_packages,
+        'collab': train_packages + collab_packages,
     },
     entry_points={
         'console_scripts': [
