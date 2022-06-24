@@ -146,10 +146,10 @@ def train(args: Optional[List[str]] = None) -> None:
     if not trainer_args.batch_size:
         log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
-        trainer_args.batch_size = pl.Trainer(auto_scale_batch_size=True).tune(
-            model=LightningTuneWrapper(data_args, model_args, trainer_args),
-            scale_batch_size_kwargs={'init_val': 1, 'mode': 'binsearch'}
-        )['scale_batch_size']
+        trainer = pl.Trainer(auto_scale_batch_size=True, auto_select_gpus=True, accelerator='auto')
+        result = trainer.tune(model=LightningTuneWrapper(data_args, model_args, trainer_args),
+                              scale_batch_size_kwargs={'init_val': 1, 'mode': 'binsearch'})
+        trainer_args.batch_size = result['scale_batch_size']
 
         log.project_console.print(f'Found batch size: {trainer_args.batch_size}', style='green')
 
