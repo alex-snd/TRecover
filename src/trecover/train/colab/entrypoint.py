@@ -1,18 +1,23 @@
-# TODO docs
+import gc
 from argparse import ArgumentParser
-from os import getpid
 from typing import List, Optional
 
 import pytorch_lightning as pl
+from hivemind import get_dht_time
+from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import var, exp_var, log
-from trecover.train.colab import utils
 from trecover.train.colab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
                                             CollaborativeArguments)
-from trecover.train.colab.trainer import LightningWrapper, Task
+from trecover.train.colab.dht import DHTManager
+from trecover.train.colab.strategy import CollaborativeStrategy
+from trecover.train.colab.trainer import LightningWrapper, LightningTuneWrapper
+from trecover.utils.train import get_experiment_mark, parse_dataclasses
+
+rank_zero_only.rank = 1
 
 
-def get_colab_parser() -> ArgumentParser:
+def get_collab_parser() -> ArgumentParser:
     # TODO docs
 
     parser = ArgumentParser('LocalTrainer')
@@ -113,213 +118,57 @@ def get_colab_parser() -> ArgumentParser:
 
 
 def monitor(args: Optional[List[str]] = None) -> None:
-    import hivemind
-    from trecover.config.log import project_logger
-    from trecover.utils.train import get_experiment_mark
-    from hivemind import DHT, get_dht_time
+    data_args, model_args, peer_args, trainer_args, collab_args = parse_dataclasses(DataArguments,
+                                                                                    ModelArguments,
+                                                                                    TrainingPeerArguments,
+                                                                                    PLTrainerArguments,
+                                                                                    CollaborativeArguments,
+                                                                                    args=args)
+    dht_manager = DHTManager(peer_args)
 
-    params = TrainingPeerArguments()
-
-    validators, local_public_key = utils.make_validators('trecover')
-
-    dht = DHT(
-        start=True,
-        # client_mode=params.client_mode,
-        record_validators=validators,
-        # use_ipfs=params.use_ipfs,
-        # use_ipfs=True,
-        # host_maddrs=params.host_maddrs,
-        host_maddrs=["/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"],
-        # identity_path=params.identity_path,
-    )
-
-    project_logger.info(f'To join the training, use initial_peers:\n'
-                        f'{[str(addr) for addr in dht.get_visible_maddrs()]}')
-    project_logger.info(f'Global IP: {hivemind.utils.networking.choose_ip_address(dht.get_visible_maddrs())}')
-
-    dht.store('my_key', ('i', 'love', 'bees', get_experiment_mark()),
-              expiration_time=get_dht_time() + 6000)
+    dht_manager.dht.store('my_key', ('i', 'love', 'bees', get_experiment_mark()),
+                          expiration_time=get_dht_time() + 6000)
 
     while True:
         pass
 
 
 def train(args: Optional[List[str]] = None) -> None:
-    data_args, model_args, peer_args, trainer_args, collab_args = utils.parse_dataclasses(DataArguments,
-                                                                                          ModelArguments,
-                                                                                          TrainingPeerArguments,
-                                                                                          PLTrainerArguments,
-                                                                                          CollaborativeArguments,
-                                                                                          args=args)
+    data_args, model_args, peer_args, trainer_args, collab_args = parse_dataclasses(DataArguments,
+                                                                                    ModelArguments,
+                                                                                    TrainingPeerArguments,
+                                                                                    PLTrainerArguments,
+                                                                                    CollaborativeArguments,
+                                                                                    args=args)
 
     peer_args.initial_peers = [peer_args.initial_peers, ]
 
-    # parser = HfArgumentParser((DataArguments, ModelArguments, TrainingPeerArguments,
-    #                            PLTrainerArguments, CollaborativeArguments))
-    # data_args, model_args, peer_args, trainer_args, collab_args = parser.parse_args_into_dataclasses(args=args)
+    if not trainer_args.batch_size:
+        log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
-    log.project_logger.info(f'Found {len(peer_args.initial_peers)} '
-                            f'initial peers: {peer_args.initial_peers}')
+        trainer_args.batch_size = pl.Trainer(auto_scale_batch_size=True).tune(
+            model=LightningTuneWrapper(data_args, model_args, trainer_args),
+            scale_batch_size_kwargs={'init_val': 1, 'mode': 'binsearch'}
+        )['scale_batch_size']
+
+        log.project_console.print(f'Found batch size: {trainer_args.batch_size}', style='green')
+
+        gc.collect()
+
+    dht_manager = DHTManager(peer_args)
+    wrapped_model = LightningWrapper(data_args, model_args, trainer_args, dht_manager)
+    collab_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, dht_manager)
+
+    # callback = Callback()  # TODO validation and visualization as callback?
 
     trainer = pl.Trainer(default_root_dir=var.EXPERIMENTS_DIR,
                          max_epochs=1,
                          num_sanity_val_steps=0,
                          log_every_n_steps=1,
-                         auto_scale_batch_size=True,
-                         enable_progress_bar=False)
+                         enable_progress_bar=False,
+                         strategy=collab_strategy)
 
-    # task = Task(data_args, model_args, peer_args, trainer_args, collab_args)
-    # opt = task.optimizer
-    # print('Optimizer is created in main process')
-    print(f'Main process pid: {getpid()}')
-    model_wrapper = LightningWrapper(data_args, model_args, peer_args, trainer_args, collab_args)
-
-    if not model_wrapper.batch_size:
-        # Dict with scale_batch_size key
-        trainer.tune(model=model_wrapper, scale_batch_size_kwargs={"init_val": 1, "mode": "power"})
-
-    # while True:
-    #     pass
-
-    print(f'Fit model')
-    trainer.fit(model_wrapper)
-
-    # callback = Callback()
-
-    # trainer = PLTrainer()
-    # trainer(train)
-
-    # set_seeds(seed=params.seed)
-    # transformers.set_seed(trainer_args.seed)  # TODO move to trainer and print model param_count
-
-    # device = torch.device('cuda' if torch.cuda.is_available() and not params.no_cuda else 'cpu')
-    # batch_generation_device = device if params.allocate_on_device else None
-    #
-    # weights_path = get_recent_weights_path(Path(params.exp_dir), params.exp_mark,
-    #                                        params.weights_name)
-    #
-    # model = get_model(params.token_size, params.pe_max_len, params.n_layers, params.d_model, params.n_heads,
-    #                   params.d_ff, params.dropout, device=device, silently=False,
-    #                   weights=None)  # TODO weights path weights_path
-    #
-    # train_files = [Path(params.train_files, file) for file in Path(params.train_files).iterdir()]
-    # val_files = [Path(params.val_files, file) for file in Path(params.val_files).iterdir()]
-    # vis_files = [Path(params.vis_files, file) for file in Path(params.vis_files).iterdir()]
-    # test_files = [Path(params.test_files, file) for file in Path(params.test_files).iterdir()]
-    #
-    # train_dataset = WikiDataset(datafiles=train_files, min_threshold=params.min_threshold,
-    #                             max_threshold=params.max_threshold, dataset_size=params.train_dataset_size)
-    # val_dataset = WikiDataset(datafiles=val_files, min_threshold=params.min_threshold,
-    #                           max_threshold=params.max_threshold, dataset_size=params.val_dataset_size)
-    # vis_dataset = WikiDataset(datafiles=vis_files, min_threshold=params.min_threshold,
-    #                           max_threshold=params.max_threshold, dataset_size=params.vis_dataset_size)
-    # test_dataset = WikiDataset(datafiles=test_files, min_threshold=params.min_threshold,
-    #                            max_threshold=params.max_threshold, dataset_size=params.test_dataset_size)
-    #
-    # collate = StandardCollate(min_noise=params.min_noise, max_noise=params.max_noise, device=batch_generation_device)
-    #
-    # train_loader = train_dataset.create_dataloader(batch_size=params.per_device_train_batch_size, collate=collate,
-    #                                                num_workers=params.n_workers)
-    # val_loader = val_dataset.create_dataloader(batch_size=params.per_device_train_batch_size, collate=collate,
-    #                                            num_workers=params.n_workers)
-    # vis_loader = vis_dataset.create_dataloader(batch_size=params.per_device_train_batch_size, collate=collate,
-    #                                            num_workers=params.n_workers)
-    # test_loader = test_dataset.create_dataloader(batch_size=params.per_device_train_batch_size, collate=collate,
-    #                                              num_workers=params.n_workers)
-    #
-    # validators, local_public_key = utils.make_validators(params.run_id)
-    #
-    # dht = DHT(
-    #     start=True,
-    #     initial_peers=params.initial_peers,
-    #     # client_mode=params.client_mode,
-    #     record_validators=validators,
-    #     # use_ipfs=params.use_ipfs,
-    #     # use_ipfs=True,
-    #     # host_maddrs=params.host_maddrs,
-    #     host_maddrs=["/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"],
-    #     announce_maddrs=params.announce_maddrs,
-    #     # identity_path=params.identity_path,
-    # )
-    #
-    # project_logger.info(f'To join the training, use initial_peers:\n'
-    #                     f'{[str(addr) for addr in dht.get_visible_maddrs()]}')
-    # project_logger.info(f'Global IP: {hivemind.utils.networking.choose_ip_address(dht.get_visible_maddrs())}')
-
-    # criterion = CustomCrossEntropyLoss(ignore_index=-1)
-    #
-    # # We need to make such a lambda function instead of just an optimizer instance
-    # # to make hivemind.Optimizer(..., offload_optimizer=True) work
-    # unwrapped_optimizer = lambda parameters: torch.optim.Adam(
-    #     parameters,
-    #     lr=params.learning_rate,
-    #     betas=(params.adam_beta1, params.adam_beta2),
-    #     eps=params.adam_epsilon,
-    #     weight_decay=params.weight_decay,
-    # )
-    #
-    # no_decay = ["bias", "LayerNorm.weight"]
-    # model_parameters = [
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-    #         "weight_decay": params.weight_decay,
-    #     },
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-    #         "weight_decay": 0.0,
-    #     },
-    # ]
-    #
-    # scheduler = lambda opt: utils.get_linear_schedule_with_warmup(
-    #     opt, num_warmup_steps=params.warmup_steps, num_training_steps=params.total_steps
-    # )
-    #
-    # optimizer = Optimizer(
-    #     dht=dht,
-    #     run_id=params.run_id,
-    #     target_batch_size=params.target_batch_size,
-    #     batch_size_per_step=params.per_device_train_batch_size,
-    #     optimizer=unwrapped_optimizer,
-    #     params=model_parameters,
-    #     scheduler=scheduler,
-    #     matchmaking_time=params.matchmaking_time,
-    #     averaging_timeout=params.averaging_timeout,
-    #     offload_optimizer=True,
-    #     delay_optimizer_step=True,
-    #     delay_grad_averaging=True,
-    #     client_mode=params.client_mode,
-    #     grad_compression=Float16Compression(),
-    #     state_averaging_compression=Float16Compression(),
-    #     # averager_opts={"bandwidth": params.bandwidth, **asdict(params)},
-    #     # tracker_opts=asdict(tracker_args),
-    #     verbose=True,
-    # )
-    #
-    # experiment_mark = get_experiment_mark()
-    #
-    # with LocalTrainer(params=params,
-    #                   model=model,
-    #                   criterion=criterion,
-    #                   optimizer=optimizer,
-    #                   exp_dir=Path(params.exp_dir),
-    #                   scheduler=scheduler,
-    #                   monitor=monitor,
-    #                   device=device,
-    #                   accumulation_step=params.accumulation_step,
-    #                   log_interval=params.log_interval,
-    #                   saving_interval=params.saving_interval,
-    #                   vis_interval=params.vis_interval,
-    #                   n_columns_to_show=params.n_columns_to_show,
-    #                   delimiter=params.delimiter
-    #                   ) as (trainer, _):
-    #     trainer.train(params.n_epochs, train_loader, val_loader, vis_loader, params.epoch_seek)
-    #     trainer.test(test_loader=test_loader)
-    #
-    # dht.store('my_key', ('i', 'love', 'bees', experiment_mark),
-    #           expiration_time=get_dht_time() + 6000)
-    #
-    # while True:
-    #     pass
+    trainer.fit(wrapped_model)
 
 
 if __name__ == '__main__':
