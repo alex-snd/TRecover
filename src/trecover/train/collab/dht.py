@@ -1,10 +1,10 @@
 from typing import List, Dict, Tuple, Optional
 
 import hivemind
-from hivemind import choose_ip_address
 from hivemind.dht.crypto import RSASignatureValidator
 from hivemind.dht.schema import BytesWithPublicKey, SchemaValidator
 from hivemind.dht.validation import RecordValidatorBase
+from hivemind.utils.networking import choose_ip_address
 from multiaddr import Multiaddr
 from pydantic import BaseModel, StrictFloat, confloat, conint
 
