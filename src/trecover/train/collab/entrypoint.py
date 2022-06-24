@@ -7,11 +7,11 @@ from hivemind import get_dht_time
 from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import var, exp_var, log
-from trecover.train.colab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
-                                            CollaborativeArguments)
-from trecover.train.colab.dht import DHTManager
-from trecover.train.colab.strategy import CollaborativeStrategy
-from trecover.train.colab.trainer import LightningWrapper, LightningTuneWrapper
+from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
+                                             CollaborativeArguments)
+from trecover.train.collab.dht import DHTManager
+from trecover.train.collab.strategy import CollaborativeStrategy
+from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
 from trecover.utils.train import get_experiment_mark, parse_dataclasses
 
 rank_zero_only.rank = 1

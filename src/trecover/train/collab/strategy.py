@@ -15,8 +15,8 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config.log import project_console
-from trecover.train.colab.arguments import PLTrainerArguments, BasePeerArguments, CollaborativeArguments
-from trecover.train.colab.dht import DHTManager
+from trecover.train.collab.arguments import PLTrainerArguments, BasePeerArguments, CollaborativeArguments
+from trecover.train.collab.dht import DHTManager
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
 
 

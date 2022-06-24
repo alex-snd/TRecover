@@ -9,7 +9,7 @@ from multiaddr import Multiaddr
 from pydantic import BaseModel, StrictFloat, confloat, conint
 
 from trecover.config.log import project_console
-from trecover.train.colab.arguments import BasePeerArguments
+from trecover.train.collab.arguments import BasePeerArguments
 
 
 class LocalMetrics(BaseModel):

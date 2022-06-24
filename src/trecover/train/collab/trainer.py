@@ -13,8 +13,8 @@ from torch.utils.data import DataLoader
 
 from trecover.config.log import project_console
 from trecover.model import TRecover
-from trecover.train.colab.arguments import DataArguments, ModelArguments, PLTrainerArguments
-from trecover.train.colab.dht import DHTManager
+from trecover.train.collab.arguments import DataArguments, ModelArguments, PLTrainerArguments
+from trecover.train.collab.dht import DHTManager
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
 from trecover.utils.train import transfer
