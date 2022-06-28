@@ -1,10 +1,10 @@
 from dataclasses import asdict
-from typing import Any, Callable, Optional, Union
+from typing import Tuple, Dict, Any, Callable, Optional, Union
 
 import hivemind
 import pytorch_lightning as pl
 import torch
-from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
+from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization, DHT
 from pytorch_lightning.strategies.strategy import Strategy, TBroadcast
 from pytorch_lightning.utilities.data import extract_batch_size
 from pytorch_lightning.utilities.enums import PrecisionType
@@ -25,14 +25,17 @@ class CollaborativeStrategy(Strategy):
                  peer_args: BasePeerArguments,
                  trainer_args: PLTrainerArguments,
                  collab_args: CollaborativeArguments,
-                 dht_manager: DHTManager):
+                 dht_manager: Optional[DHTManager] = None,
+                 tune: bool = False):
         super().__init__()
 
         self.peer_args = peer_args
         self.trainer_args = trainer_args
         self.collab_args = collab_args
-
-        self.dht = dht_manager.dht
+        self.scale_batch_size = self.trainer_args.scale_batch_size_init_val
+        self.use_init_peers = not tune
+        self.verbose = not tune
+        self._dht_manager = dht_manager
         self._collab_opt = None
         self._collab_opt_initialized = False
         self._optimizer_zero_grad_original: Optional[Callable] = None
@@ -64,12 +67,22 @@ class CollaborativeStrategy(Strategy):
     def is_global_zero(self) -> bool:
         return True
 
+    @property
+    def dht(self) -> DHT:
+        if self._dht_manager is None:
+            self._init_dht()
+
+        return self._dht_manager.dht
+
     def setup(self, trainer: pl.Trainer) -> None:
         self.model_to_device()
         super().setup(trainer)
 
         if self.precision_plugin.precision in (PrecisionType.HALF, PrecisionType.MIXED):
             self.precision_plugin.scaler = hivemind.GradScaler()
+
+    def _init_dht(self) -> None:
+        self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
 
     def _init_collab_opt(self) -> None:
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
@@ -78,6 +91,7 @@ class CollaborativeStrategy(Strategy):
         params = local_optimizer.param_groups
         wrapped_scheduler = self._get_local_scheduler()
 
+        batch_size_per_step = self.trainer_args.batch_size_per_step or self.scale_batch_size
         averaging_compression = SizeAdaptiveCompression(
             threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
@@ -89,17 +103,18 @@ class CollaborativeStrategy(Strategy):
                                         offload_optimizer=True,
                                         delay_grad_averaging=False,
                                         delay_optimizer_step=True,
-                                        batch_size_per_step=self.trainer_args.batch_size_per_step,
+                                        batch_size_per_step=batch_size_per_step,
                                         grad_compression=averaging_compression,
                                         state_averaging_compression=averaging_compression,
                                         client_mode=self.peer_args.client_mode,
-                                        verbose=True,
+                                        verbose=self.verbose,
                                         **asdict(self.collab_args))
 
         collab_opt.load_state_from_peers()
 
         self.optimizers = [collab_opt]
         self._collab_opt = collab_opt
+        self._collab_opt_initialized = True
 
         if self.collab_args.reuse_grad_buffers:
             assert self.lightning_module is not None
@@ -127,13 +142,29 @@ class CollaborativeStrategy(Strategy):
 
         self.lightning_module.optimizer_zero_grad = None
 
-    def on_train_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
+                      *args, **kwargs
+                      ) -> Dict[str, Tensor]:
         if not self._collab_opt_initialized:
             if self.trainer_args.batch_size is None:
-                self.trainer_args.batch_size = extract_batch_size(batch)
+                self.scale_batch_size = extract_batch_size(batch)
 
             self._init_collab_opt()
-            self._collab_opt_initialized = True
+
+        with self.precision_plugin.train_step_context():
+            return self.model.training_step(batch, *args, **kwargs)
+
+    def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
+                        *args, **kwargs
+                        ) -> Dict[str, Tensor]:
+        if not self._collab_opt_initialized:
+            if self.trainer_args.batch_size is None:
+                self.scale_batch_size = extract_batch_size(batch)
+
+            self._init_collab_opt()
+
+        with self.precision_plugin.val_step_context():
+            return self.model.validation_step(batch, *args, **kwargs)
 
     def reduce(self, tensor: Union[Any, Tensor], *args: Any, **kwargs: Any) -> Union[Any, Tensor]:
         return tensor
@@ -157,10 +188,17 @@ class CollaborativeStrategy(Strategy):
             self.lightning_module.optimizer_zero_grad = self._optimizer_zero_grad_original
 
         if self._collab_opt:
-            project_console.print('Shutting down hivemind optimizer', style='magenta')
-            self._collab_opt.shutdown()
+            if self.verbose:
+                project_console.print('Shutting down hivemind optimizer', style='yellow')
 
-        project_console.print('Shutting down hivemind DHT', style='magenta')
+            self._collab_opt.shutdown()
+            self._collab_opt = None
+            self._collab_opt_initialized = False
+
+        if self.verbose:
+            project_console.print('Shutting down hivemind DHT', style='yellow')
+
         self.dht.shutdown()
+        self._dht_manager = None
 
         super().teardown()

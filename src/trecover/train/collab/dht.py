@@ -25,17 +25,18 @@ class MetricSchema(BaseModel):
 
 
 class DHTManager:
-    def __init__(self, peer_args: BasePeerArguments):
+    def __init__(self, peer_args: BasePeerArguments, use_init_peers: bool = True):
         self.peer_args = peer_args
+        self.use_init_peers = use_init_peers
         self.validators, self.local_public_key = self.make_validators()
 
-        if peer_args.initial_peers:
+        if peer_args.initial_peers and self.use_init_peers:
             project_console.print(f'Found {len(peer_args.initial_peers)} initial peers: ', style='bright_blue')
             project_console.print_json(data=peer_args.initial_peers)
 
         self.dht = hivemind.DHT(
             start=True,
-            initial_peers=self.peer_args.initial_peers,
+            initial_peers=self.peer_args.initial_peers if self.use_init_peers else None,
             client_mode=self.peer_args.client_mode,
             host_maddrs=self.peer_args.host_maddrs,
             announce_maddrs=self.peer_args.announce_maddrs,
@@ -48,7 +49,7 @@ class DHTManager:
 
         if self.peer_args.client_mode:
             project_console.print(f'Created client mode peer with peer_id={self.dht.peer_id}', style='bright_blue')
-        else:
+        elif self.use_init_peers:
             if initial_peers := self.get_initial_peers(as_str=True):
                 project_console.print(f'To connect other peers to this one over the Internet, use '
                                       f'--initial_peers {initial_peers}', style='bright_blue')

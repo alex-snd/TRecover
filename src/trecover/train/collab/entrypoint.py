@@ -1,4 +1,3 @@
-import gc
 from argparse import ArgumentParser
 from typing import List, Optional
 
@@ -143,21 +142,29 @@ def train(args: Optional[List[str]] = None) -> None:
 
     peer_args.initial_peers = [peer_args.initial_peers, ]
 
-    if not trainer_args.batch_size:
+    if trainer_args.batch_size is None:
         log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
-        trainer = pl.Trainer(auto_scale_batch_size=True, auto_select_gpus=True, accelerator='auto')
-        result = trainer.tune(model=LightningTuneWrapper(data_args, model_args, trainer_args),
-                              scale_batch_size_kwargs={'init_val': 1, 'mode': 'binsearch'})
+        tune_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, tune=True)
+        tune_model = LightningTuneWrapper(data_args, model_args, trainer_args)
+        trainer = pl.Trainer(default_root_dir=var.EXPERIMENTS_DIR,
+                             auto_scale_batch_size=True,
+                             auto_select_gpus=True,
+                             accelerator='auto',
+                             strategy=tune_strategy)
+
+        result = trainer.tune(model=tune_model,
+                              scale_batch_size_kwargs={
+                                  'init_val': trainer_args.scale_batch_size_init_val,
+                                  'mode': 'binsearch'
+                              })
         trainer_args.batch_size = result['scale_batch_size']
 
         log.project_console.print(f'Found batch size: {trainer_args.batch_size}', style='green')
 
-        gc.collect()
-
     dht_manager = DHTManager(peer_args)
     wrapped_model = LightningWrapper(data_args, model_args, trainer_args, dht_manager)
-    collab_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, dht_manager)
+    collab_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, dht_manager=dht_manager)
 
     # callback = Callback()  # TODO validation and visualization as callback?
 

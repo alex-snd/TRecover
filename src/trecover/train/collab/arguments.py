@@ -53,16 +53,20 @@ class PLTrainerArguments:
     num_sanity_val_steps: int = 0
     batch_size: int = None
     accumulate_grad_batches: int = 1
+    scale_batch_size_init_val: int = 1
 
     @property
-    def batch_size_per_step(self):
+    def batch_size_per_step(self) -> Optional[int]:
         """ Compute the number of training sequences contributed by each .step() from this peer """
 
-        total_batch_size_per_step = self.batch_size * self.accumulate_grad_batches
-        if torch.cuda.device_count() > 0:
-            total_batch_size_per_step *= torch.cuda.device_count()
+        if self.batch_size:
+            total_batch_size_per_step = self.batch_size * self.accumulate_grad_batches
+            if torch.cuda.device_count() > 0:
+                total_batch_size_per_step *= torch.cuda.device_count()
 
-        return total_batch_size_per_step
+            return total_batch_size_per_step
+
+        return None
 
     # Visualization step
     n_columns_to_show: int = 96
