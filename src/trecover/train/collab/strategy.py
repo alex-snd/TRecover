@@ -35,6 +35,7 @@ class CollaborativeStrategy(Strategy):
         self.scale_batch_size = self.trainer_args.scale_batch_size_init_val
         self.use_init_peers = not tune
         self.verbose = not tune
+        self.tune = tune
         self._dht_manager = dht_manager
         self._collab_opt = None
         self._collab_opt_initialized = False
@@ -110,7 +111,8 @@ class CollaborativeStrategy(Strategy):
                                         verbose=self.verbose,
                                         **asdict(self.collab_args))
 
-        collab_opt.load_state_from_peers()
+        if not self.tune:
+            collab_opt.load_state_from_peers()
 
         self.optimizers = [collab_opt]
         self._collab_opt = collab_opt
