@@ -27,6 +27,8 @@ CHECKPOINT_URLS = {
                'config': 'https://github.com/alex-snd/TRecover/releases/download/v0.1.0/config.json'},
 }
 
+BATCH_SIZE_SCALE_FACTOR = 20.5
+
 TRAIN_DATA_URL = 'https://github.com/alex-snd/TRecover/releases/download/v0.1.0/data.zip'
 
 CONFIG_DIR = Path(__file__).parent.absolute()

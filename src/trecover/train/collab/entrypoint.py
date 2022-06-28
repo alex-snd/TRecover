@@ -145,20 +145,23 @@ def train(args: Optional[List[str]] = None) -> None:
     if trainer_args.batch_size is None:
         log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
-        tune_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, tune=True)
-        tune_model = LightningTuneWrapper(data_args, model_args, trainer_args)
+        if trainer_args.tune_strategy:
+            tune_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, tune=True)
+        else:
+            tune_strategy = None
+
         trainer = pl.Trainer(default_root_dir=var.EXPERIMENTS_DIR,
                              auto_scale_batch_size=True,
                              auto_select_gpus=True,
                              accelerator='auto',
                              strategy=tune_strategy)
 
-        result = trainer.tune(model=tune_model,
+        result = trainer.tune(model=LightningTuneWrapper(data_args, model_args, trainer_args),
                               scale_batch_size_kwargs={
                                   'init_val': trainer_args.scale_batch_size_init_val,
                                   'mode': 'binsearch'
                               })
-        trainer_args.batch_size = result['scale_batch_size']
+        trainer_args.batch_size = int(result['scale_batch_size'] // var.BATCH_SIZE_SCALE_FACTOR)
 
         log.project_console.print(f'Found batch size: {trainer_args.batch_size}', style='green')
 
