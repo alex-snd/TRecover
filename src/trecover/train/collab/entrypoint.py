@@ -161,9 +161,10 @@ def train(args: Optional[List[str]] = None) -> None:
                                   'init_val': trainer_args.scale_batch_size_init_val,
                                   'mode': 'binsearch'
                               })
-        trainer_args.batch_size = int(result['scale_batch_size'] // var.BATCH_SIZE_SCALE_FACTOR)
-
+        trainer_args.batch_size = result['scale_batch_size']
         log.project_console.print(f'Found batch size: {trainer_args.batch_size}', style='green')
+
+        trainer_args.batch_size = int(trainer_args.batch_size // var.BATCH_SIZE_SCALE_FACTOR)
 
     dht_manager = DHTManager(peer_args)
     wrapped_model = LightningWrapper(data_args, model_args, trainer_args, dht_manager)
