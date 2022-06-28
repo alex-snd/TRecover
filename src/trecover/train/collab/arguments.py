@@ -47,7 +47,7 @@ class PLTrainerArguments:
     default_root_dir: Path = var.EXPERIMENTS_DIR
     enable_progress_bar: bool = True
     accelerator: str = 'auto'
-    dataloader_num_workers: int = 3
+    dataloader_num_workers: int = 2
     auto_select_gpus: bool = True
     max_steps: int = 10 ** 20
     num_sanity_val_steps: int = 0
