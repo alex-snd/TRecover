@@ -18,5 +18,6 @@ MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND',
                            default=f'sqlite:{(MLFLOW_REGISTRY_DIR.absolute() / "mlflow.db").as_uri()[5:]}')
 
 var.EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
+LIGHTNING_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 MLFLOW_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 WANDB_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
