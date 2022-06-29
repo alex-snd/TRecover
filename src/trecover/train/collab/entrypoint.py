@@ -150,7 +150,7 @@ def train(args: Optional[List[str]] = None) -> None:
         else:
             tune_strategy = None
 
-        trainer = pl.Trainer(default_root_dir=var.EXPERIMENTS_DIR,
+        trainer = pl.Trainer(default_root_dir=exp_var.LIGHTNING_REGISTRY_DIR,
                              auto_scale_batch_size=True,
                              auto_select_gpus=True,
                              accelerator='auto',
@@ -175,7 +175,7 @@ def train(args: Optional[List[str]] = None) -> None:
 
     # callback = Callback()  # TODO validation and visualization as callback?
 
-    trainer = pl.Trainer(default_root_dir=var.EXPERIMENTS_DIR,
+    trainer = pl.Trainer(default_root_dir=exp_var.LIGHTNING_REGISTRY_DIR,
                          max_epochs=1,
                          num_sanity_val_steps=0,
                          log_every_n_steps=1,
