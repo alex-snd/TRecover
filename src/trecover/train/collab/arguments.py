@@ -54,7 +54,9 @@ class PLTrainerArguments:
     batch_size: int = None
     accumulate_grad_batches: int = 1
     scale_batch_size_init_val: int = 1
+    tune_max_trials: int = 25
     tune_strategy: bool = False
+    scale_tuned_batch_size: bool = False
 
     @property
     def batch_size_per_step(self) -> Optional[int]:
