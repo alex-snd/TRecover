@@ -26,6 +26,8 @@ class CollaborativeStrategy(Strategy):
                  trainer_args: PLTrainerArguments,
                  collab_args: CollaborativeArguments,
                  dht_manager: Optional[DHTManager] = None,
+                 use_init_peers: Optional[bool] = None,
+                 verbose: Optional[bool] = None,
                  tune: bool = False):
         super().__init__()
 
@@ -33,13 +35,13 @@ class CollaborativeStrategy(Strategy):
         self.trainer_args = trainer_args
         self.collab_args = collab_args
         self.scale_batch_size = self.trainer_args.scale_batch_size_init_val
-        self.use_init_peers = not tune
-        self.verbose = not tune
+        self.use_init_peers = not tune if use_init_peers is None else use_init_peers
+        self.verbose = not tune if verbose is None else verbose
         self.tune = tune
-        self._dht_manager = dht_manager
-        self._collab_opt = None
-        self._collab_opt_initialized = False
+        self._dht_manager: Optional[DHTManager] = dht_manager
+        self._collab_opt: Optional[hivemind.Optimizer] = None
         self._optimizer_zero_grad_original: Optional[Callable] = None
+        self._collab_opt_initialized = False
 
     @property
     def num_peers(self) -> int:
@@ -112,6 +114,7 @@ class CollaborativeStrategy(Strategy):
                                         **asdict(self.collab_args))
 
         if not self.tune:
+            project_console.print('Load optimizer state from peers', style='magenta')
             collab_opt.load_state_from_peers()
 
         self.optimizers = [collab_opt]
