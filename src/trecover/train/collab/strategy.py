@@ -15,14 +15,14 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config.log import project_console
-from trecover.train.collab.arguments import PLTrainerArguments, BasePeerArguments, CollaborativeArguments
+from trecover.train.collab.arguments import PLTrainerArguments, TrainingPeerArguments, CollaborativeArguments
 from trecover.train.collab.dht import DHTManager
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
 
 
 class CollaborativeStrategy(Strategy):
     def __init__(self,
-                 peer_args: BasePeerArguments,
+                 peer_args: TrainingPeerArguments,
                  trainer_args: PLTrainerArguments,
                  collab_args: CollaborativeArguments,
                  dht_manager: Optional[DHTManager] = None,
@@ -87,6 +87,29 @@ class CollaborativeStrategy(Strategy):
     def _init_dht(self) -> None:
         self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
 
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.model.load_state_dict(state_dict['model'])
+        self._collab_opt.load_state_dict(state_dict['optimizer'])
+        self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
+        self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
+
+    def restore_from_backup(self, check_step: bool = False) -> None:
+        if self.peer_args.state_path.exists():
+            state_dict = torch.load(self.peer_args.state_path)
+            current_step = self._collab_opt.local_epoch
+            backup_step = state_dict['local_epoch']
+
+            if not check_step or backup_step >= current_step:
+                self.load_state_dict(state_dict)
+                project_console.print('CollaborativeStrategy: Collab sate is restored from backup.', style='green')
+
+            else:
+                project_console.print(
+                    'CollaborativeStrategy: Bypassed restoring collab state '
+                    'from local backup - backup state is too old.',
+                    style='yellow'
+                )
+
     def _init_collab_opt(self) -> None:
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
 
@@ -98,28 +121,31 @@ class CollaborativeStrategy(Strategy):
         averaging_compression = SizeAdaptiveCompression(
             threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
-        collab_opt = hivemind.Optimizer(dht=self.dht,
-                                        run_id=self.peer_args.experiment_prefix,
-                                        params=params,
-                                        optimizer=type(local_optimizer),
-                                        scheduler=wrapped_scheduler,
-                                        offload_optimizer=True,
-                                        delay_grad_averaging=False,
-                                        delay_optimizer_step=True,
-                                        batch_size_per_step=batch_size_per_step,
-                                        grad_compression=averaging_compression,
-                                        state_averaging_compression=averaging_compression,
-                                        client_mode=self.peer_args.client_mode,
-                                        verbose=self.verbose,
-                                        **asdict(self.collab_args))
+        self._collab_opt = hivemind.Optimizer(dht=self.dht,
+                                              run_id=self.peer_args.experiment_prefix,
+                                              params=params,
+                                              optimizer=type(local_optimizer),
+                                              scheduler=wrapped_scheduler,
+                                              offload_optimizer=True,
+                                              delay_grad_averaging=False,
+                                              delay_optimizer_step=True,
+                                              batch_size_per_step=batch_size_per_step,
+                                              grad_compression=averaging_compression,
+                                              state_averaging_compression=averaging_compression,
+                                              client_mode=self.peer_args.client_mode,
+                                              verbose=self.verbose,
+                                              **asdict(self.collab_args))
+
+        self.optimizers = [self._collab_opt]
+        self._collab_opt_initialized = True
 
         if not self.tune:
-            project_console.print('Load optimizer state from peers', style='magenta')
-            collab_opt.load_state_from_peers()
+            self.restore_from_backup()
 
-        self.optimizers = [collab_opt]
-        self._collab_opt = collab_opt
-        self._collab_opt_initialized = True
+            project_console.print('Load collab state from peers', style='magenta')
+            self._collab_opt.load_state_from_peers()
+
+            self.restore_from_backup(check_step=True)
 
         if self.collab_args.reuse_grad_buffers:
             assert self.lightning_module is not None
