@@ -1,4 +1,5 @@
 import argparse
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -97,6 +98,44 @@ def get_experiment_params(parser: ArgumentParser, args: Optional[List[str]] = No
     """
 
     return ExperimentParams(parser.parse_args(args=args))
+
+
+def load_params(model_params: Path) -> ExperimentParams:
+    """
+    Get experiment parameters container.
+
+    Parameters
+    ----------
+    model_params : Path
+        Path to serialized experiment parameters.
+
+    Returns
+    -------
+    ExperimentParams:
+        Experiment parameters container as a ExperimentParams object.
+
+    """
+
+    return ExperimentParams(json.load(model_params.open()))
+
+
+def save_params(data: Dict, filepath: Path, sort=False) -> None:
+    """
+    Save experiment parameters on disk.
+
+    Parameters
+    ----------
+    data : Dict
+        Experiment parameters.
+    filepath : Path
+        File path for saving.
+    sort : bool, default=False
+        Perform parameters keys sorting.
+
+    """
+
+    with filepath.open('w') as f:
+        json.dump(data, indent=2, fp=f, sort_keys=sort)
 
 
 def get_experiment_mark() -> str:

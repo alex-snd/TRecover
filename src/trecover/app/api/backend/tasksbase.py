@@ -20,7 +20,7 @@ class ModelConfigTask(celery.Task):
 
         if not self.config:
             import torch
-            from trecover.utils.model import load_params
+            from trecover.utils.train import load_params
 
             config = load_params(var.INFERENCE_PARAMS_PATH)
             config.cuda = var.CUDA and torch.cuda.is_available()
@@ -51,7 +51,8 @@ class PredictTask(celery.Task):
             self.device = torch.device(f'cuda' if var.CUDA and torch.cuda.is_available() else 'cpu')
 
         if not self.model:
-            from trecover.utils.model import get_model, load_params
+            from trecover.utils.model import get_model
+            from trecover.utils.train import load_params
 
             self.update_state(state='LOADING')
 

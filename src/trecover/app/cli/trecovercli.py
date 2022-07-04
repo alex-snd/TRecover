@@ -96,7 +96,8 @@ def recover(data_path: Path = Argument(..., help='Path to file or dir for data',
     from trecover.utils.beam_search import beam_search, cli_interactive_loop
     from trecover.utils.cli import get_files_columns
     from trecover.utils.transform import files_columns_to_tensors
-    from trecover.utils.model import get_model, load_params
+    from trecover.utils.model import get_model
+    from trecover.utils.train import load_params
     from trecover.utils.transform import tensor_to_columns, tensor_to_target
     from trecover.utils.visualization import visualize_columns, visualize_target
 

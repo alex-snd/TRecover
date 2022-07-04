@@ -1,13 +1,11 @@
-import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 import torch
 from rich.prompt import Confirm
 
 from trecover.config import log
 from trecover.model import TRecover
-from trecover.utils.train import ExperimentParams
 
 
 def get_recent_weights_path(exp_dir: Path,
@@ -117,41 +115,3 @@ def get_model(token_size: int,
         return model
     else:
         raise SystemExit
-
-
-def load_params(model_params: Path) -> ExperimentParams:
-    """
-    Get experiment parameters container.
-
-    Parameters
-    ----------
-    model_params : Path
-        Path to serialized experiment parameters.
-
-    Returns
-    -------
-    ExperimentParams:
-        Experiment parameters container as a ExperimentParams object.
-
-    """
-
-    return ExperimentParams(json.load(model_params.open()))
-
-
-def save_params(data: Dict, filepath: Path, sort=False) -> None:
-    """
-    Save experiment parameters on disk.
-
-    Parameters
-    ----------
-    data : Dict
-        Experiment parameters.
-    filepath : Path
-        File path for saving.
-    sort : bool, default=False
-        Perform parameters keys sorting.
-
-    """
-
-    with filepath.open('w') as f:
-        json.dump(data, indent=2, fp=f, sort_keys=sort)
