@@ -87,11 +87,27 @@ class CollaborativeStrategy(Strategy):
     def _init_dht(self) -> None:
         self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
 
+    def state_dict(self) -> Dict[str, Any]:
+        if self._collab_opt:
+            return {
+                'model': self.model.model.state_dict(),
+                'optimizer': self._collab_opt.state_dict(),
+                'scheduler': self._collab_opt.state_averager.scheduler.state_dict(),
+                'local_epoch': self._collab_opt.local_epoch,
+            }
+        else:
+            return {'model': self.model.model.state_dict(), 'optimizer': {}, 'scheduler': {}, 'local_epoch': {}}
+
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.model.model.load_state_dict(state_dict['model'])
-        self._collab_opt.load_state_dict(state_dict['optimizer'])
-        self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
-        self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
+
+        if self._collab_opt:
+            self._collab_opt.load_state_dict(state_dict['optimizer'])
+            self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
+            self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
+
+    def backup_state(self) -> None:
+        torch.save(self.state_dict(), self.peer_args.state_path)
 
     def restore_from_backup(self, check_step: bool = False) -> None:
         if self.peer_args.state_path.exists():
@@ -150,6 +166,10 @@ class CollaborativeStrategy(Strategy):
 
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
+
+            if not self.peer_args.state_path.exists():
+                project_console.print('Backup the collab state as it does not exist', style='magenta')
+                self.backup_state()
 
         if self.collab_args.reuse_grad_buffers:
             assert self.lightning_module is not None
