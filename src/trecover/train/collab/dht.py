@@ -17,6 +17,7 @@ class LocalMetrics(BaseModel):
     samples_per_second: confloat(ge=0.0, strict=True)
     samples_accumulated: conint(ge=0, strict=True)
     loss: StrictFloat
+    accuracy: StrictFloat
     mini_steps: conint(ge=0, strict=True)
 
 
