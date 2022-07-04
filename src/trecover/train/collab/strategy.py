@@ -88,7 +88,7 @@ class CollaborativeStrategy(Strategy):
         self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
 
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
-        self.model.load_state_dict(state_dict['model'])
+        self.model.model.load_state_dict(state_dict['model'])
         self._collab_opt.load_state_dict(state_dict['optimizer'])
         self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
         self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
