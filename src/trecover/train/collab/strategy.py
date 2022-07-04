@@ -110,6 +110,12 @@ class CollaborativeStrategy(Strategy):
                     style='yellow'
                 )
 
+        else:
+            project_console.print(
+                'CollaborativeStrategy: Backup does not exist.',
+                style='yellow'
+            )
+
     def _init_collab_opt(self) -> None:
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
 
@@ -142,10 +148,8 @@ class CollaborativeStrategy(Strategy):
         if not self.tune:
             self.restore_from_backup()
 
-            project_console.print('Load collab state from peers', style='magenta')
+            project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
-
-            self.restore_from_backup(check_step=True)
 
         if self.collab_args.reuse_grad_buffers:
             assert self.lightning_module is not None
