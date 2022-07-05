@@ -212,10 +212,6 @@ class AuxiliaryPeerArguments(BasePeerArguments):
         default=True,
         metadata={'help': 'If True, enables CheckpointHandler'}
     )
-    assist_in_averaging: bool = field(
-        default=False,
-        metadata={'help': 'If True, this peer will facilitate averaging for other (training) peers'}
-    )
     assist_refresh: float = field(
         default=1.0,
         metadata={'help': 'Period (in seconds) for trying to assist averaging'}
