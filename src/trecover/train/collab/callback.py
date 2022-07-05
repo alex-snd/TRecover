@@ -78,8 +78,9 @@ class CollabCheckpoint(Callback):
             log.project_console.print(f'Local loss: {self.loss / self.steps}')
             log.project_console.print(f'Local accuracy: {self.accuracy / self.steps}')
 
-            self.loss = 0
             self.steps = 0
+            self.loss = 0
+            self.accuracy = 0
 
             if self.optimizer.local_epoch == self.optimizer.tracker.global_epoch:
                 if not self.dht_manager.dht.store(
