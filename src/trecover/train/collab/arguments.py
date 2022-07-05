@@ -93,19 +93,19 @@ class CollaborativeArguments:
 
     target_batch_size: int = field(
         default=256,
-        metadata={"help": "Perform optimizer step after all peers collectively accumulate this many samples"},
+        metadata={'help': 'Perform optimizer step after all peers collectively accumulate this many samples'},
     )
     matchmaking_time: float = field(
-        default=15.0, metadata={"help": "Averaging group will wait for stragglers for at most this many seconds"}
+        default=15.0, metadata={'help': 'Averaging group will wait for stragglers for at most this many seconds'}
     )
     allreduce_timeout: float = field(
-        default=60, metadata={"help": "Give up on a given all-reduce round after this many seconds"}
+        default=60, metadata={'help': 'Give up on a given all-reduce round after this many seconds'}
     )
     averaging_timeout: float = field(
-        default=180, metadata={"help": "Give up on averaging step after this many seconds"}
+        default=180, metadata={'help': 'Give up on averaging step after this many seconds'}
     )
     reuse_grad_buffers: bool = field(default=True, metadata={
-        "help": "Whether or not to use model's .grad buffers for accumulating gradients across local steps. This "
+        'help': "Whether or not to use model's .grad buffers for accumulating gradients across local steps. This "
                 "optimization reduces GPU memory consumption but may result in incorrect gradients when using some "
                 "advanced techniques (e.g. applying custom loss scaler)"})
 
@@ -115,48 +115,48 @@ class BasePeerArguments:
     """Base arguments that are used for both trainers and for auxiliary peers such as training monitor"""
 
     experiment_prefix: str = field(
-        default="trecover",
-        metadata={"help": "A unique experiment name, used as prefix for all DHT keys"}
+        default='trecover',
+        metadata={'help': 'A unique experiment name, used as prefix for all DHT keys'}
     )
     cache_dir: Optional[str] = field(  # TODO change as checkpoint?
-        default="./cache",
-        metadata={"help": "Path to the cache"}
+        default='./cache',
+        metadata={'help': 'Path to the cache'}
     )
     client_mode: bool = field(
         default=False,
-        metadata={"help": "Of True, runs training without incoming connections, in a firewall-compatible mode"},
+        metadata={'help': 'Of True, runs training without incoming connections, in a firewall-compatible mode'},
     )
     # initial_peers: List[str] = field(
     initial_peers: str = field(
         default_factory=list,
         metadata={
-            "help": "Multiaddrs of the peers that will welcome you into the existing collaboration. "
-                    "Example: /ip4/203.0.113.1/tcp/31337/p2p/XXXX /ip4/203.0.113.2/udp/7777/quic/p2p/YYYY"
+            'help': 'Multiaddrs of the peers that will welcome you into the existing collaboration. '
+                    'Example: /ip4/203.0.113.1/tcp/31337/p2p/XXXX /ip4/203.0.113.2/udp/7777/quic/p2p/YYYY'
         },
     )
     use_ipfs: bool = field(
         default=False,
         metadata={
-            "help": "Use IPFS to find initial_peers. If enabled, you only need to provide /p2p/XXXX part of multiaddrs "
-                    "for the initial_peers (no need to specify a particular IPv4/IPv6 address and port)"
+            'help': 'Use IPFS to find initial_peers. If enabled, you only need to provide /p2p/XXXX part of multiaddrs '
+                    'for the initial_peers (no need to specify a particular IPv4/IPv6 address and port)'
         },
     )
     host_maddrs: List[str] = field(
-        default_factory=lambda: ["/ip4/0.0.0.0/tcp/0"],
+        default_factory=lambda: ['/ip4/0.0.0.0/tcp/0'],
         metadata={
-            "help": "Multiaddrs to listen for external connections from other p2p instances. "
-                    "Defaults to all IPv4 interfaces with TCP protocol: /ip4/0.0.0.0/tcp/0"
+            'help': 'Multiaddrs to listen for external connections from other p2p instances. '
+                    'Defaults to all IPv4 interfaces with TCP protocol: /ip4/0.0.0.0/tcp/0'
         },
     )
     announce_maddrs: List[str] = field(
         default_factory=list,
-        metadata={"help": "Visible multiaddrs the host announces for external connections from other p2p instances"},
+        metadata={'help': 'Visible multiaddrs the host announces for external connections from other p2p instances'},
     )
     identity_path: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Path to a pre-generated private key file. If defined, makes the peer ID deterministic. "
-                    "May be generated using ``./p2p-keygen`` from ``go-libp2p-daemon``."
+            'help': 'Path to a pre-generated private key file. If defined, makes the peer ID deterministic. '
+                    'May be generated using ``./p2p-keygen`` from ``go-libp2p-daemon``.'
         },
     )
 
@@ -165,16 +165,17 @@ class BasePeerArguments:
 class TrainingPeerArguments(BasePeerArguments):
     statistics_expiration: float = field(
         default=600,
-        metadata={"help": "Statistics will be removed if not updated in this many seconds"}
+        metadata={'help': 'Statistics will be removed if not updated in this many seconds'}
     )
-    backup_every_steps: Optional[int] = field(
-        default=None,
-        metadata={"help": "Update training state backup on disk once in this many global steps "
-                          "(default = do not update local state)"}
-    )
-    state_path: str = field(
-        default="state.zip",
-        metadata={"help": "Load this state upon init and when recovering from NaN parameters"})
+    # backup_every_step: Optional[int] = field(
+    #     default=None,
+    #     metadata={'help': 'Update training state backup on disk once in this many global steps '
+    #                       '(default = do not update local state)'}
+    # )
+    backup_every_step: int = None
+    state_path: Path = field(
+        default=exp_var.COLLAB_STATE_PATH,
+        metadata={'help': 'Load this state upon init and when recovering from NaN parameters'})
 
 
 @dataclass
@@ -185,37 +186,37 @@ class AuxiliaryPeerArguments(BasePeerArguments):
     """
     refresh_period: float = field(
         default=10,
-        metadata={"help": "Period (in seconds) for fetching the keys from DHT"}
+        metadata={'help': 'Period (in seconds) for fetching the keys from DHT'}
     )
     wandb_project: Optional[str] = field(
         default=None,
-        metadata={"help": "Name of Weights & Biases project to report the training progress to"}
+        metadata={'help': 'Name of Weights & Biases project to report the training progress to'}
     )
     save_checkpoint_step_interval: int = field(
         default=2,
-        metadata={"help": "Frequency (in steps) of fetching and saving state from peers"}
+        metadata={'help': 'Frequency (in steps) of fetching and saving state from peers'}
     )
     repo_url: Optional[str] = field(
         default=None,
-        metadata={"help": "URL of Hugging Face Hub repository to upload the model and optimizer states"}
+        metadata={'help': 'URL of Hugging Face Hub repository to upload the model and optimizer states'}
     )
     local_path: Optional[str] = field(
-        default="Repo",
-        metadata={"help": "Path to local repository to store the model and optimizer states"}
+        default='Repo',
+        metadata={'help': 'Path to local repository to store the model and optimizer states'}
     )
     upload_interval: Optional[float] = field(
         default=None,
-        metadata={"help": "Frequency (in seconds) of uploading the model to Hub"}
+        metadata={'help': 'Frequency (in seconds) of uploading the model to Hub'}
     )
     store_checkpoints: bool = field(
         default=True,
-        metadata={"help": "If True, enables CheckpointHandler"}
+        metadata={'help': 'If True, enables CheckpointHandler'}
     )
     assist_in_averaging: bool = field(
         default=False,
-        metadata={"help": "If True, this peer will facilitate averaging for other (training) peers"}
+        metadata={'help': 'If True, this peer will facilitate averaging for other (training) peers'}
     )
     assist_refresh: float = field(
         default=1.0,
-        metadata={"help": "Period (in seconds) for trying to assist averaging"}
+        metadata={'help': 'Period (in seconds) for trying to assist averaging'}
     )

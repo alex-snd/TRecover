@@ -183,8 +183,8 @@ class LightningWrapper(pl.LightningModule):
         start_time = time()
 
         src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out = self(batch)
-        loss = self.criterion(src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out).item()
-        accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)).item()
+        loss = self.criterion(src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out)
+        accuracy = ((torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0))
 
         self.log_dict({'val_loss': loss, 'val_accuracy': accuracy, 'val_time': time() - start_time},
                       batch_size=self.batch_size)
