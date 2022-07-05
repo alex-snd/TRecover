@@ -82,13 +82,14 @@ class CollabCheckpoint(Callback):
             self.steps = 0
 
             if self.optimizer.local_epoch == self.optimizer.tracker.global_epoch:
-                self.dht_manager.dht.store(
-                    key=self.optimizer.run_id + "_metrics",
-                    subkey=self.dht_manager.local_public_key,
-                    value=statistics.dict(),
-                    expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
-                    return_future=True,
-                )
+                if not self.dht_manager.dht.store(
+                        key=self.optimizer.run_id + "_metrics",
+                        subkey=self.dht_manager.local_public_key,
+                        value=statistics.dict(),
+                        expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
+                        # return_future=True,
+                ):
+                    log.project_console.print('Failed to store metrics', style='red')
 
             if not self._should_skip_saving_checkpoint(trainer):
                 log.project_console.print('Backup collab state', style='magenta')
