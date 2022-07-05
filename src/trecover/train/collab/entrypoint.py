@@ -133,36 +133,34 @@ def monitor(args: Optional[List[str]] = None) -> None:
             metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
             latest_step = max(item.step for item in metrics)
 
-            if latest_step == current_step:
-                continue
-            else:
+            if latest_step != current_step:
                 current_step = latest_step
 
-            log.project_console.print(metrics_entry.value)
+                log.project_console.print(metrics_entry.value)
 
-            sum_loss = 0
-            sum_acc = 0
-            num_samples = 0
-            sum_perf = 0
-            sum_mini_steps = 0
+                sum_loss = 0
+                sum_acc = 0
+                num_samples = 0
+                sum_perf = 0
+                sum_mini_steps = 0
 
-            for item in metrics:
-                sum_loss += item.loss
-                sum_acc += item.accuracy
-                sum_perf += item.samples_per_second
-                num_samples += item.samples_accumulated
-                sum_mini_steps += item.mini_steps
+                for item in metrics:
+                    sum_loss += item.loss
+                    sum_acc += item.accuracy
+                    sum_perf += item.samples_per_second
+                    num_samples += item.samples_accumulated
+                    sum_mini_steps += item.mini_steps
 
-            alive_peers = len(metrics)
-            current_loss = sum_loss / sum_mini_steps if sum_mini_steps else sum_loss
-            current_accuracy = sum_acc / sum_mini_steps if sum_mini_steps else sum_acc
+                alive_peers = len(metrics)
+                current_loss = sum_loss / sum_mini_steps if sum_mini_steps else sum_loss
+                current_accuracy = sum_acc / sum_mini_steps if sum_mini_steps else sum_acc
 
-            log.project_console.print(f'Step: {current_step}')
-            log.project_console.print(f'Peers alive: {alive_peers}')
-            log.project_console.print(f'Loss: {current_loss}')
-            log.project_console.print(f'Accuracy: {current_accuracy}')
-            log.project_console.print(f'Samples: {num_samples}')
-            log.project_console.print(f'Performance: {sum_perf}')
+                log.project_console.print(f'Step: {current_step}')
+                log.project_console.print(f'Peers alive: {alive_peers}')
+                log.project_console.print(f'Loss: {current_loss}')
+                log.project_console.print(f'Accuracy: {current_accuracy}')
+                log.project_console.print(f'Samples: {num_samples}')
+                log.project_console.print(f'Performance: {sum_perf}')
 
         log.project_console.print('Fetching', style='yellow')
 
