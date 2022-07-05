@@ -123,45 +123,21 @@ def monitor(args: Optional[List[str]] = None) -> None:
 
     dht_manager = DHTManager(peer_args)
 
-    # from typing import Tuple
-    # import hivemind
-    # from hivemind.dht.crypto import RSASignatureValidator
-    # from hivemind.dht.schema import SchemaValidator
-    # from hivemind.dht.validation import RecordValidatorBase
-    # from trecover.train.collab.dht import MetricSchema
-    #
-    # def make_validators() -> Tuple[List[RecordValidatorBase], bytes]:
-    #     signature_validator = RSASignatureValidator()
-    #     _validators = [SchemaValidator(MetricSchema, prefix=peer_args.experiment_prefix), signature_validator]
-    #
-    #     return _validators, signature_validator.local_public_key
-    #
-    # validators, local_public_key = make_validators()
-    #
-    # dht = hivemind.DHT(
-    #     start=True,
-    #     initial_peers=peer_args.initial_peers,
-    #     # client_mode=peer_args.client_mode,
-    #     # host_maddrs=peer_args.host_maddrs,
-    #     # announce_maddrs=peer_args.announce_maddrs,
-    #     # use_ipfs=peer_args.use_ipfs,
-    #     record_validators=validators,
-    #     # identity_path=peer_args.identity_path,
-    # )
-
-    # dht_manager.dht.store('my_key', ('i', 'love', 'bees', get_experiment_mark()),
-    #                       expiration_time=get_dht_time() + 6000)
+    current_step = -1
 
     while True:
         metrics_entry = dht_manager.dht.get(peer_args.experiment_prefix + "_metrics", latest=True)
-        log.project_console.print('Fetching', style='yellow')
 
-        if metrics_entry is not None:  # and len(metrics_entry.value) > 0
-            log.project_console.print(metrics_entry, style='blue')
-
+        if metrics_entry is not None and len(metrics_entry.value) > 0:
             metrics_dict = metrics_entry.value
             metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
-            # log.project_console.print('Parsed')
+            latest_step = max(item.step for item in metrics)
+
+            if latest_step == current_step:
+                continue
+            else:
+                current_step = latest_step
+
             log.project_console.print(metrics_entry.value)
 
             sum_loss = 0
@@ -178,15 +154,17 @@ def monitor(args: Optional[List[str]] = None) -> None:
                 sum_mini_steps += item.mini_steps
 
             alive_peers = len(metrics)
-            current_loss = sum_loss / sum_mini_steps
-            current_accuracy = sum_acc / sum_mini_steps
+            current_loss = sum_loss / sum_mini_steps if sum_mini_steps else sum_loss
+            current_accuracy = sum_acc / sum_mini_steps if sum_mini_steps else sum_acc
 
-            log.project_console.print(f'Step: {max(item.step for item in metrics)}')
+            log.project_console.print(f'Step: {current_step}')
             log.project_console.print(f'Peers alive: {alive_peers}')
             log.project_console.print(f'Loss: {current_loss}')
             log.project_console.print(f'Accuracy: {current_accuracy}')
             log.project_console.print(f'Samples: {num_samples}')
             log.project_console.print(f'Performance: {sum_perf}')
+
+        log.project_console.print('Fetching', style='yellow')
 
         time.sleep(3)
 
