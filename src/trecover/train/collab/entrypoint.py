@@ -2,19 +2,11 @@ import time
 from argparse import ArgumentParser
 from typing import List, Optional
 
-import pytorch_lightning as pl
-from pytorch_lightning.utilities import rank_zero_only
-
 from trecover.config import var, exp_var, log
 from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
                                              CollaborativeArguments)
-from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager, LocalMetrics
-from trecover.train.collab.strategy import CollaborativeStrategy
-from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
 from trecover.utils.train import parse_dataclasses
-
-rank_zero_only.rank = 1
 
 
 def get_collab_parser() -> ArgumentParser:
@@ -200,6 +192,15 @@ def monitor(args: Optional[List[str]] = None) -> None:
 
 
 def train(args: Optional[List[str]] = None) -> None:
+    from trecover.train.collab.callback import CollabCheckpoint
+    from trecover.train.collab.strategy import CollaborativeStrategy
+    from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
+
+    import pytorch_lightning as pl
+    from pytorch_lightning.utilities import rank_zero_only
+
+    rank_zero_only.rank = 1
+
     data_args, model_args, peer_args, trainer_args, collab_args = parse_dataclasses(DataArguments,
                                                                                     ModelArguments,
                                                                                     TrainingPeerArguments,
@@ -207,7 +208,10 @@ def train(args: Optional[List[str]] = None) -> None:
                                                                                     CollaborativeArguments,
                                                                                     args=args)
 
-    peer_args.initial_peers = [peer_args.initial_peers, ]
+    if peer_args.initial_peers:
+        peer_args.initial_peers = [peer_args.initial_peers, ]
+    else:
+        peer_args.initial_peers = []
 
     if trainer_args.batch_size is None:
         log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
