@@ -1,18 +1,18 @@
+import time
 from argparse import ArgumentParser
 from typing import List, Optional
 
 import pytorch_lightning as pl
-from hivemind import get_dht_time
 from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import var, exp_var, log
 from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
                                              CollaborativeArguments)
 from trecover.train.collab.callback import CollabCheckpoint
-from trecover.train.collab.dht import DHTManager
+from trecover.train.collab.dht import DHTManager, LocalMetrics
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
-from trecover.utils.train import get_experiment_mark, parse_dataclasses
+from trecover.utils.train import parse_dataclasses
 
 rank_zero_only.rank = 1
 
@@ -124,13 +124,79 @@ def monitor(args: Optional[List[str]] = None) -> None:
                                                                                     PLTrainerArguments,
                                                                                     CollaborativeArguments,
                                                                                     args=args)
+    if peer_args.initial_peers:
+        peer_args.initial_peers = [peer_args.initial_peers, ]
+    else:
+        peer_args.initial_peers = []
+
     dht_manager = DHTManager(peer_args)
 
-    dht_manager.dht.store('my_key', ('i', 'love', 'bees', get_experiment_mark()),
-                          expiration_time=get_dht_time() + 6000)
+    # from typing import Tuple
+    # import hivemind
+    # from hivemind.dht.crypto import RSASignatureValidator
+    # from hivemind.dht.schema import SchemaValidator
+    # from hivemind.dht.validation import RecordValidatorBase
+    # from trecover.train.collab.dht import MetricSchema
+    #
+    # def make_validators() -> Tuple[List[RecordValidatorBase], bytes]:
+    #     signature_validator = RSASignatureValidator()
+    #     _validators = [SchemaValidator(MetricSchema, prefix=peer_args.experiment_prefix), signature_validator]
+    #
+    #     return _validators, signature_validator.local_public_key
+    #
+    # validators, local_public_key = make_validators()
+    #
+    # dht = hivemind.DHT(
+    #     start=True,
+    #     initial_peers=peer_args.initial_peers,
+    #     # client_mode=peer_args.client_mode,
+    #     # host_maddrs=peer_args.host_maddrs,
+    #     # announce_maddrs=peer_args.announce_maddrs,
+    #     # use_ipfs=peer_args.use_ipfs,
+    #     record_validators=validators,
+    #     # identity_path=peer_args.identity_path,
+    # )
+
+    # dht_manager.dht.store('my_key', ('i', 'love', 'bees', get_experiment_mark()),
+    #                       expiration_time=get_dht_time() + 6000)
 
     while True:
-        pass
+        metrics_entry = dht_manager.dht.get(peer_args.experiment_prefix + "_metrics", latest=True)
+        log.project_console.print('Fetching', style='yellow')
+
+        if metrics_entry is not None:  # and len(metrics_entry.value) > 0
+            log.project_console.print(metrics_entry, style='blue')
+
+            metrics_dict = metrics_entry.value
+            metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
+            # log.project_console.print('Parsed')
+            log.project_console.print(metrics_entry.value)
+
+            sum_loss = 0
+            sum_acc = 0
+            num_samples = 0
+            sum_perf = 0
+            sum_mini_steps = 0
+
+            for item in metrics:
+                sum_loss += item.loss
+                sum_acc += item.accuracy
+                sum_perf += item.samples_per_second
+                num_samples += item.samples_accumulated
+                sum_mini_steps += item.mini_steps
+
+            alive_peers = len(metrics)
+            current_loss = sum_loss / sum_mini_steps
+            current_accuracy = sum_acc / sum_mini_steps
+
+            log.project_console.print(f'Step: {max(item.step for item in metrics)}')
+            log.project_console.print(f'Peers alive: {alive_peers}')
+            log.project_console.print(f'Loss: {current_loss}')
+            log.project_console.print(f'Accuracy: {current_accuracy}')
+            log.project_console.print(f'Samples: {num_samples}')
+            log.project_console.print(f'Performance: {sum_perf}')
+
+        time.sleep(3)
 
 
 def train(args: Optional[List[str]] = None) -> None:
