@@ -8,6 +8,7 @@ from pytorch_lightning.utilities import rank_zero_only
 from trecover.config import var, exp_var, log
 from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
                                              CollaborativeArguments)
+from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
@@ -173,17 +174,18 @@ def train(args: Optional[List[str]] = None) -> None:
     wrapped_model = LightningWrapper(data_args, model_args, trainer_args, dht_manager)
     collab_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, dht_manager=dht_manager)
 
-    # callback = Callback()  # TODO validation and visualization as callback?
+    collab_checkpoint = CollabCheckpoint(dht_manager, peer_args)
 
     trainer = pl.Trainer(default_root_dir=exp_var.LIGHTNING_REGISTRY_DIR,
-                         max_epochs=1,
+                         max_epochs=4,
                          num_sanity_val_steps=0,
                          log_every_n_steps=1,
                          enable_progress_bar=False,
                          strategy=collab_strategy,
                          auto_select_gpus=True,
-                         accelerator='auto')
-
+                         accelerator='auto',
+                         enable_checkpointing=False,
+                         callbacks=[collab_checkpoint])
     trainer.fit(wrapped_model)
 
 
