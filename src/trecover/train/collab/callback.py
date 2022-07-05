@@ -94,7 +94,7 @@ class CollabCheckpoint(Callback):
                 log.project_console.print('Backup collab state', style='magenta')
                 trainer.strategy.backup_state()
             else:
-                log.project_console.print('Backup failed', style='red')
+                log.project_console.print('Scip backup', style='red')
 
             self.last_reported_collaboration_step = current_step
 
