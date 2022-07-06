@@ -1,23 +1,20 @@
-from dataclasses import asdict
 from typing import Tuple, Dict, Any, Callable, Optional, Union
 
 import hivemind
 import pytorch_lightning as pl
 import torch
-from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization, DHT
+from hivemind import DHT
 from pytorch_lightning.strategies.strategy import Strategy, TBroadcast
 from pytorch_lightning.utilities.data import extract_batch_size
 from pytorch_lightning.utilities.enums import PrecisionType
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 from pytorch_lightning.utilities.model_helpers import is_overridden
 from torch import Tensor
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config.log import project_console
 from trecover.train.collab.arguments import PLTrainerArguments, TrainingPeerArguments, CollaborativeArguments
 from trecover.train.collab.dht import DHTManager
-from trecover.train.scheduler import get_linear_scheduler_with_warmup
+from trecover.train.collab.optim import create_collab_opt
 
 
 class CollaborativeStrategy(Strategy):
@@ -73,7 +70,7 @@ class CollaborativeStrategy(Strategy):
     @property
     def dht(self) -> DHT:
         if self._dht_manager is None:
-            self._init_dht()
+            self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
 
         return self._dht_manager.dht
 
@@ -84,79 +81,21 @@ class CollaborativeStrategy(Strategy):
         if self.precision_plugin.precision in (PrecisionType.HALF, PrecisionType.MIXED):
             self.precision_plugin.scaler = hivemind.GradScaler()
 
-    def _init_dht(self) -> None:
-        self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
-
-    def state_dict(self) -> Dict[str, Any]:
-        if self._collab_opt:
-            return {
-                'model': self.model.model.state_dict(),
-                'optimizer': self._collab_opt.state_dict(),
-                'scheduler': self._collab_opt.state_averager.scheduler.state_dict(),
-                'local_epoch': self._collab_opt.local_epoch,
-            }
-        else:
-            return {'model': self.model.model.state_dict(), 'optimizer': {}, 'scheduler': {}, 'local_epoch': {}}
-
-    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
-        self.model.model.load_state_dict(state_dict['model'])
-
-        if self._collab_opt:
-            self._collab_opt.load_state_dict(state_dict['optimizer'])
-            self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
-            self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
-
-    def backup_state(self) -> None:
-        torch.save(self.state_dict(), self.peer_args.state_path)
-
-    def restore_from_backup(self, check_step: bool = False) -> None:
-        if self.peer_args.state_path.exists():
-            state_dict = torch.load(self.peer_args.state_path)
-            current_step = self._collab_opt.local_epoch
-            backup_step = state_dict['local_epoch']
-
-            if not check_step or backup_step >= current_step:
-                self.load_state_dict(state_dict)
-                project_console.print('CollaborativeStrategy: Collab sate is restored from backup.', style='green')
-
-            else:
-                project_console.print(
-                    'CollaborativeStrategy: Bypassed restoring collab state '
-                    'from local backup - backup state is too old.',
-                    style='yellow'
-                )
-
-        else:
-            project_console.print(
-                'CollaborativeStrategy: Backup does not exist.',
-                style='yellow'
-            )
-
     def _init_collab_opt(self) -> None:
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
 
         local_optimizer = self.optimizers[0]
-        params = local_optimizer.param_groups
-        wrapped_scheduler = self._get_local_scheduler()
-
         batch_size_per_step = self.trainer_args.batch_size_per_step or self.scale_batch_size
-        averaging_compression = SizeAdaptiveCompression(
-            threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
-        self._collab_opt = hivemind.Optimizer(dht=self.dht,
-                                              run_id=self.peer_args.experiment_prefix,
-                                              params=params,
-                                              optimizer=type(local_optimizer),
-                                              scheduler=wrapped_scheduler,
-                                              offload_optimizer=True,
-                                              delay_grad_averaging=False,
-                                              delay_optimizer_step=True,
-                                              batch_size_per_step=batch_size_per_step,
-                                              grad_compression=averaging_compression,
-                                              state_averaging_compression=averaging_compression,
-                                              client_mode=self.peer_args.client_mode,
-                                              verbose=self.verbose,
-                                              **asdict(self.collab_args))
+        self._collab_opt = create_collab_opt(optimizer=local_optimizer,
+                                             dht=self.dht,
+                                             batch_size_per_step=batch_size_per_step,
+                                             experiment_prefix=self.peer_args.experiment_prefix,
+                                             collab_args=self.collab_args,
+                                             warmup_steps=self.trainer_args.warmup_steps,
+                                             total_steps=self.trainer_args.total_steps,
+                                             client_mode=self.peer_args.client_mode,
+                                             verbose=self.verbose)
 
         self.optimizers = [self._collab_opt]
         self._collab_opt_initialized = True
@@ -175,14 +114,6 @@ class CollaborativeStrategy(Strategy):
             assert self.lightning_module is not None
             self._optimizer_zero_grad_original = self.lightning_module.optimizer_zero_grad
             self._disable_zero_grad()
-
-    def _get_local_scheduler(self) -> Callable[[Optimizer, ], LambdaLR]:
-        def scheduler(optimizer: Optimizer) -> LambdaLR:
-            return get_linear_scheduler_with_warmup(optimizer=optimizer,
-                                                    num_warmup_steps=self.trainer_args.warmup_steps,
-                                                    num_training_steps=self.trainer_args.total_steps)
-
-        return scheduler
 
     def _disable_zero_grad(self) -> None:
         assert self.lightning_module is not None
@@ -236,6 +167,51 @@ class CollaborativeStrategy(Strategy):
 
     def broadcast(self, obj: TBroadcast, src: int = 0) -> TBroadcast:
         return obj
+
+    def state_dict(self) -> Dict[str, Any]:
+        if self._collab_opt:
+            return {
+                'model': self.model.model.state_dict(),
+                'optimizer': self._collab_opt.state_dict(),
+                'scheduler': self._collab_opt.state_averager.scheduler.state_dict(),
+                'local_epoch': self._collab_opt.local_epoch,
+            }
+        else:
+            return {'model': self.model.model.state_dict(), 'optimizer': {}, 'scheduler': {}, 'local_epoch': {}}
+
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.model.model.load_state_dict(state_dict['model'])
+
+        if self._collab_opt:
+            self._collab_opt.load_state_dict(state_dict['optimizer'])
+            self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
+            self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
+
+    def backup_state(self) -> None:
+        torch.save(self.state_dict(), self.peer_args.state_path)
+
+    def restore_from_backup(self, check_step: bool = False) -> None:
+        if self.peer_args.state_path.exists():
+            state_dict = torch.load(self.peer_args.state_path)
+            current_step = self._collab_opt.local_epoch
+            backup_step = state_dict['local_epoch']
+
+            if not check_step or backup_step >= current_step:
+                self.load_state_dict(state_dict)
+                project_console.print('CollaborativeStrategy: Collab sate is restored from backup.', style='green')
+
+            else:
+                project_console.print(
+                    'CollaborativeStrategy: Bypassed restoring collab state '
+                    'from local backup - backup state is too old.',
+                    style='yellow'
+                )
+
+        else:
+            project_console.print(
+                'CollaborativeStrategy: Backup does not exist.',
+                style='yellow'
+            )
 
     def teardown(self) -> None:
         # re-enable `optimizer_zero_grad`
