@@ -94,8 +94,8 @@ class WarmupScheduler(BaseScheduler):
 
 
 def get_linear_scheduler_with_warmup(optimizer: Optimizer,
-                                     num_warmup_steps: int,
-                                     num_training_steps: int,
+                                     warmup_steps: int,
+                                     total_steps: int,
                                      last_epoch: int = -1
                                      ) -> LambdaLR:
     """
@@ -106,9 +106,9 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
     ----------
     optimizer : Optimizer
         The optimizer for which to schedule the learning rate.
-    num_warmup_steps : inr
+    warmup_steps : inr
         The number of steps for the warmup phase.
-    num_training_steps : int
+    total_steps : int
         The total number of training steps.
     last_epoch : Optional[int], default=-1
         The index of the last epoch when resuming training.
@@ -121,10 +121,10 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
     """
 
     def lr_lambda(current_step: int) -> float:
-        if current_step < num_warmup_steps:
-            return float(current_step) / float(max(1, num_warmup_steps))
+        if current_step < warmup_steps:
+            return float(current_step) / float(max(1, warmup_steps))
         return max(
-            0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps))
+            0.0, float(total_steps - current_step) / float(max(1, total_steps - warmup_steps))
         )
 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
@@ -133,7 +133,7 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
 def get_wrapped_linear_scheduler_with_warmup(warmup_steps: int, total_steps: int) -> Callable[[Optimizer, ], LambdaLR]:
     def scheduler(optimizer: Optimizer) -> LambdaLR:
         return get_linear_scheduler_with_warmup(optimizer=optimizer,
-                                                num_warmup_steps=warmup_steps,
-                                                num_training_steps=total_steps)
+                                                warmup_steps=warmup_steps,
+                                                total_steps=total_steps)
 
     return scheduler
