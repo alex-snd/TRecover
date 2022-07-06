@@ -14,7 +14,6 @@ from torch.utils.data import DataLoader
 from trecover.config.log import project_console
 from trecover.model import TRecover
 from trecover.train.collab.arguments import DataArguments, ModelArguments, PLTrainerArguments
-from trecover.train.collab.dht import DHTManager
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
 from trecover.utils.train import transfer
@@ -126,7 +125,6 @@ class LightningWrapper(pl.LightningModule):
                  data_args: DataArguments,
                  model_args: ModelArguments,
                  trainer_args: PLTrainerArguments,
-                 dht_manager: DHTManager,
                  *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -134,7 +132,6 @@ class LightningWrapper(pl.LightningModule):
         self.model_args = model_args
         self.trainer_args = trainer_args
 
-        self.dht_manager = dht_manager
         self.model = TRecover(model_args.token_size, model_args.pe_max_len, model_args.n_layers, model_args.d_model,
                               model_args.n_heads, model_args.d_ff, model_args.dropout)
         self.criterion = CustomCrossEntropyLoss(ignore_index=-1)

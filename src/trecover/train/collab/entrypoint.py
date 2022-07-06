@@ -217,7 +217,7 @@ def train(args: Optional[List[str]] = None) -> None:
             log.project_console.print(f'Batch size was scaled to: {trainer_args.batch_size}', style='green')
 
     dht_manager = DHTManager(peer_args)
-    wrapped_model = LightningWrapper(data_args, model_args, trainer_args, dht_manager)
+    wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
     collab_strategy = CollaborativeStrategy(peer_args, trainer_args, collab_args, dht_manager=dht_manager)
 
     collab_checkpoint = CollabCheckpoint(dht_manager, peer_args)
