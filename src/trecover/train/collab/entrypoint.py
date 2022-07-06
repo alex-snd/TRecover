@@ -1,4 +1,3 @@
-import time
 from argparse import ArgumentParser
 from typing import List, Optional
 
@@ -9,7 +8,8 @@ from trecover.config import var, exp_var, log
 from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
                                              CollaborativeArguments)
 from trecover.train.collab.callback import CollabCheckpoint
-from trecover.train.collab.dht import DHTManager, LocalMetrics
+from trecover.train.collab.dht import DHTManager
+from trecover.train.collab.monitor import MetricsMonitor
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
 from trecover.utils.train import parse_dataclasses
@@ -131,48 +131,9 @@ def monitor(args: Optional[List[str]] = None) -> None:
 
     dht_manager = DHTManager(peer_args)
 
-    current_step = -1
+    metrics_monitor = MetricsMonitor(dht=dht_manager.dht, experiment_prefix=peer_args.experiment_prefix)
 
-    while True:
-        metrics_entry = dht_manager.dht.get(peer_args.experiment_prefix + "_metrics", latest=True)
-
-        if metrics_entry is not None and len(metrics_entry.value) > 0:
-            metrics_dict = metrics_entry.value
-            metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
-            latest_step = max(item.step for item in metrics)
-
-            if latest_step != current_step:
-                current_step = latest_step
-
-                log.project_console.print(metrics_entry.value)
-
-                sum_loss = 0
-                sum_acc = 0
-                num_samples = 0
-                sum_perf = 0
-                sum_mini_steps = 0
-
-                for item in metrics:
-                    sum_loss += item.loss
-                    sum_acc += item.accuracy
-                    sum_perf += item.samples_per_second
-                    num_samples += item.samples_accumulated
-                    sum_mini_steps += item.mini_steps
-
-                alive_peers = len(metrics)
-                current_loss = sum_loss / sum_mini_steps if sum_mini_steps else sum_loss
-                current_accuracy = sum_acc / sum_mini_steps if sum_mini_steps else sum_acc
-
-                log.project_console.print(f'Step: {current_step}')
-                log.project_console.print(f'Peers alive: {alive_peers}')
-                log.project_console.print(f'Loss: {current_loss}')
-                log.project_console.print(f'Accuracy: {current_accuracy}')
-                log.project_console.print(f'Samples: {num_samples}')
-                log.project_console.print(f'Performance: {sum_perf}')
-
-        log.project_console.print('Fetching', style='yellow')
-
-        time.sleep(3)
+    metrics_monitor.start()
 
 
 def train(args: Optional[List[str]] = None) -> None:
@@ -206,6 +167,7 @@ def train(args: Optional[List[str]] = None) -> None:
                          accelerator='auto',
                          enable_checkpointing=False,
                          callbacks=[collab_checkpoint])
+
     trainer.fit(wrapped_model)
 
 
