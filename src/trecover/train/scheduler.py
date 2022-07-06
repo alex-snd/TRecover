@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Callable
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
@@ -127,3 +128,12 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
         )
 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
+
+
+def get_wrapped_linear_scheduler_with_warmup(warmup_steps: int, total_steps: int) -> Callable[[Optimizer, ], LambdaLR]:
+    def scheduler(optimizer: Optimizer) -> LambdaLR:
+        return get_linear_scheduler_with_warmup(optimizer=optimizer,
+                                                num_warmup_steps=warmup_steps,
+                                                num_training_steps=total_steps)
+
+    return scheduler
