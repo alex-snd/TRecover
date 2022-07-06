@@ -218,3 +218,5 @@ class AuxiliaryPeerArguments(BasePeerArguments):
         default=1.0,
         metadata={'help': 'Period (in seconds) for trying to assist averaging'}
     )
+    use_optimizer: bool = False
+    verbose: bool = False

@@ -6,13 +6,14 @@ from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import var, exp_var, log
 from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArguments, PLTrainerArguments, DataArguments,
-                                             CollaborativeArguments)
+                                             CollaborativeArguments, AuxiliaryPeerArguments)
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import MetricsMonitor
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
 from trecover.utils.train import parse_dataclasses
+from trecover.train.collab.optim import create_collab_opt
 
 rank_zero_only.rank = 1
 
@@ -118,18 +119,31 @@ def get_collab_parser() -> ArgumentParser:
 
 
 def monitor(args: Optional[List[str]] = None) -> None:
-    data_args, model_args, peer_args, trainer_args, collab_args = parse_dataclasses(DataArguments,
-                                                                                    ModelArguments,
-                                                                                    TrainingPeerArguments,
-                                                                                    PLTrainerArguments,
-                                                                                    CollaborativeArguments,
-                                                                                    args=args)
+    data_args, model_args, peer_args, trainer_args, collab_args, aux_args = parse_dataclasses(DataArguments,
+                                                                                              ModelArguments,
+                                                                                              TrainingPeerArguments,
+                                                                                              PLTrainerArguments,
+                                                                                              CollaborativeArguments,
+                                                                                              AuxiliaryPeerArguments,
+                                                                                              args=args)
     if peer_args.initial_peers:
         peer_args.initial_peers = [peer_args.initial_peers, ]
     else:
         peer_args.initial_peers = []
 
     dht_manager = DHTManager(peer_args)
+
+    if aux_args.use_optimizer:
+        wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
+        optimizer = create_collab_opt(optimizer=wrapped_model.optimizers(use_pl_optimizer=False),
+                                      dht=dht_manager.dht,
+                                      batch_size_per_step=1,
+                                      experiment_prefix=peer_args.experiment_prefix,
+                                      collab_args=collab_args,
+                                      warmup_steps=trainer_args.warmup_steps,
+                                      total_steps=trainer_args.total_steps,
+                                      client_mode=peer_args.client_mode,
+                                      verbose=aux_args.verbose)
 
     metrics_monitor = MetricsMonitor(dht=dht_manager.dht, experiment_prefix=peer_args.experiment_prefix)
 
