@@ -4,6 +4,9 @@ import hivemind
 import pytorch_lightning as pl
 import torch.nn
 from pytorch_lightning.callbacks.base import Callback
+from rich.console import Group
+from rich.panel import Panel
+from rich.text import Text
 
 from trecover.config import log
 from trecover.train.collab.arguments import TrainingPeerArguments
@@ -72,11 +75,22 @@ class CollabCheckpoint(Callback):
                 mini_steps=self.steps,
             )
 
-            log.project_console.print(f'Current step: {current_step}')
-            log.project_console.print(f'Your current contribution: {self.total_samples_processed} samples')
-            log.project_console.print(f'Performance: {samples_per_second} samples/sec')
-            log.project_console.print(f'Local loss: {self.loss / self.steps}')
-            log.project_console.print(f'Local accuracy: {self.accuracy / self.steps}')
+            panel_group = Group(Text(f'Local loss: {self.loss / self.steps}',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Local accuracy: {self.accuracy / self.steps}',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Your current contribution: {self.total_samples_processed} samples',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Performance: {samples_per_second} samples/sec',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Peers alive: {trainer.strategy.num_peers}',
+                                     style='bright_blue', justify='left'))
+
+            log.project_console.print(
+                Panel(panel_group, title=f'Local step {current_step}',
+                      title_align='left', border_style='magenta'),
+                justify='full'
+            )
 
             self.steps = 0
             self.loss = 0
