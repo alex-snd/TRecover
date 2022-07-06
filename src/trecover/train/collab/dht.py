@@ -21,6 +21,14 @@ class LocalMetrics(BaseModel):
     mini_steps: conint(ge=0, strict=True)
 
 
+class GlobalMetrics(BaseModel):
+    samples_per_second: confloat(ge=0.0, strict=True)
+    samples_accumulated: conint(ge=0, strict=True)
+    loss: StrictFloat
+    accuracy: confloat(ge=0, le=1)
+    alive_peers: conint(ge=0, strict=True)
+
+
 class MetricSchema(BaseModel):
     metrics: Dict[BytesWithPublicKey, LocalMetrics]
 
