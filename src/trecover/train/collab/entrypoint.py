@@ -10,10 +10,10 @@ from trecover.train.collab.arguments import (ModelArguments, TrainingPeerArgumen
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import MetricsMonitor
+from trecover.train.collab.optim import create_collab_opt
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.trainer import LightningWrapper, LightningTuneWrapper
 from trecover.utils.train import parse_dataclasses
-from trecover.train.collab.optim import create_collab_opt
 
 rank_zero_only.rank = 1
 
@@ -134,8 +134,10 @@ def monitor(args: Optional[List[str]] = None) -> None:
     dht_manager = DHTManager(peer_args)
 
     if aux_args.use_optimizer:
+        log.project_console.print('Configure collab optimizer', style='yellow')
+
         wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
-        optimizer = create_collab_opt(optimizer=wrapped_model.optimizers(use_pl_optimizer=False),
+        optimizer = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
                                       dht=dht_manager.dht,
                                       batch_size_per_step=1,
                                       experiment_prefix=peer_args.experiment_prefix,
