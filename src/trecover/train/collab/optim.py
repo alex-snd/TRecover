@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import Optional
 
 import hivemind
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
@@ -10,11 +11,11 @@ from trecover.train.scheduler import get_wrapped_linear_scheduler_with_warmup
 
 def create_collab_opt(optimizer: Optimizer,
                       dht: hivemind.DHT,
-                      batch_size_per_step: int,
                       experiment_prefix: str,
                       collab_args: CollaborativeArguments,
                       warmup_steps: int,
                       total_steps: int,
+                      batch_size_per_step: Optional[int] = None,
                       client_mode: bool = False,
                       verbose: bool = True,
                       ) -> hivemind.Optimizer:

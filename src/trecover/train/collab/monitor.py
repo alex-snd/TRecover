@@ -1,5 +1,5 @@
 import time
-from typing import Generator, List
+from typing import Generator, List, Optional
 
 import hivemind
 from rich.console import Group
@@ -10,10 +10,12 @@ from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
 
 
+# TODO WandB log and optimizer initialization ?visualization? and loading_from_peers
 class MetricsMonitor(object):
-    def __init__(self, dht: hivemind.DHT, experiment_prefix: str):
+    def __init__(self, dht: hivemind.DHT, experiment_prefix: str, aux_optimizer: Optional[hivemind.Optimizer] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
+        self.aux_optimizer = aux_optimizer
         self.current_step = -1
         self.refresh_period = 2
 
@@ -54,6 +56,9 @@ class MetricsMonitor(object):
                         self.current_step = latest_step
 
                         yield self.average_peers_metrics(metrics)
+
+            if self.aux_optimizer:
+                self.aux_optimizer.step()
 
             log.project_console.print('Fetching metrics...', style='yellow', justify='right')
             time.sleep(self.refresh_period)

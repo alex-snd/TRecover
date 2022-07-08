@@ -132,22 +132,26 @@ def monitor(args: Optional[List[str]] = None) -> None:
         peer_args.initial_peers = []
 
     dht_manager = DHTManager(peer_args)
+    aux_optimizer = None
 
     if aux_args.use_optimizer:
-        log.project_console.print('Configure collab optimizer', style='yellow')
+        log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
+        collab_args.auxiliary = True
 
         wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
-        optimizer = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
-                                      dht=dht_manager.dht,
-                                      batch_size_per_step=1,
-                                      experiment_prefix=peer_args.experiment_prefix,
-                                      collab_args=collab_args,
-                                      warmup_steps=trainer_args.warmup_steps,
-                                      total_steps=trainer_args.total_steps,
-                                      client_mode=peer_args.client_mode,
-                                      verbose=aux_args.verbose)
+        aux_optimizer = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
+                                          dht=dht_manager.dht,
+                                          batch_size_per_step=None,
+                                          experiment_prefix=peer_args.experiment_prefix,
+                                          collab_args=collab_args,
+                                          warmup_steps=trainer_args.warmup_steps,
+                                          total_steps=trainer_args.total_steps,
+                                          client_mode=peer_args.client_mode,
+                                          verbose=aux_args.verbose)
 
-    metrics_monitor = MetricsMonitor(dht=dht_manager.dht, experiment_prefix=peer_args.experiment_prefix)
+    metrics_monitor = MetricsMonitor(dht=dht_manager.dht,
+                                     experiment_prefix=peer_args.experiment_prefix,
+                                     aux_optimizer=aux_optimizer)
 
     metrics_monitor.start()
 
