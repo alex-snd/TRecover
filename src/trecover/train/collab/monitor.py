@@ -58,7 +58,10 @@ class MetricsMonitor(object):
                         yield self.average_peers_metrics(metrics)
 
             if self.aux_optimizer:
-                self.aux_optimizer.step()
+                try:
+                    self.aux_optimizer.step()
+                except Exception as e:
+                    log.project_logger.exception(e, exc_info=True)
 
             log.project_console.print('Fetching metrics...', style='yellow', justify='right')
             time.sleep(self.refresh_period)
