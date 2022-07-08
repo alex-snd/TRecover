@@ -228,6 +228,6 @@ def tune(args: Optional[List[str]] = None) -> int:
 
     if trainer_args.scale_tuned_batch_size:
         batch_size = int(batch_size // var.BATCH_SIZE_SCALE_FACTOR)
-        log.project_console.print(f'Batch size was scaled to: {trainer_args.batch_size}', style='green')
+        log.project_console.print(f'Batch size was scaled to: {batch_size}', style='green')
 
     return batch_size
