@@ -108,7 +108,6 @@ class CollaborativeArguments:
         'help': "Whether or not to use model's .grad buffers for accumulating gradients across local steps. This "
                 "optimization reduces GPU memory consumption but may result in incorrect gradients when using some "
                 "advanced techniques (e.g. applying custom loss scaler)"})
-    auxiliary: bool = False
 
 
 @dataclass

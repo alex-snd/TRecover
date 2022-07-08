@@ -136,7 +136,6 @@ def monitor(args: Optional[List[str]] = None) -> None:
 
     if aux_args.use_optimizer:
         log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
-        collab_args.auxiliary = True
 
         wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
         aux_optimizer = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
