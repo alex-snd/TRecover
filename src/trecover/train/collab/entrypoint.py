@@ -140,7 +140,7 @@ def monitor(args: Optional[List[str]] = None) -> None:
         wrapped_model = LightningWrapper(data_args, model_args, trainer_args)
         aux_optimizer = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
                                           dht=dht_manager.dht,
-                                          batch_size_per_step=None,
+                                          batch_size_per_step=1,
                                           experiment_prefix=peer_args.experiment_prefix,
                                           collab_args=collab_args,
                                           warmup_steps=trainer_args.warmup_steps,
