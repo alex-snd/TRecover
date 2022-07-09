@@ -20,7 +20,7 @@ class CollabCheckpoint(Callback):
         self.optimizer: Optional[hivemind.Optimizer] = None
 
         self.statistics_expiration = peer_args.statistics_expiration
-        self.last_reported_collaboration_step = -1
+        self.last_reported_collaboration_step = None
         self.samples = 0
         self.steps = 0
         self.loss = 0
@@ -45,6 +45,7 @@ class CollabCheckpoint(Callback):
         if self.optimizer is None:
             assert len(trainer.strategy.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
             self.optimizer = trainer.strategy.optimizers[0]
+            self.last_reported_collaboration_step = self.optimizer.local_epoch
 
         if self.pl_module is None:
             self.pl_module = pl_module
@@ -67,7 +68,7 @@ class CollabCheckpoint(Callback):
             samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
 
             statistics = LocalMetrics(
-                step=current_step,
+                step=current_step - 1,
                 samples_per_second=samples_per_second,
                 samples_accumulated=self.samples,
                 loss=self.loss,
@@ -87,7 +88,7 @@ class CollabCheckpoint(Callback):
                                      style='bright_blue', justify='left'))
 
             log.project_console.print(
-                Panel(panel_group, title=f'Local step {current_step}',
+                Panel(panel_group, title=f'Local step {current_step - 1}',
                       title_align='left', border_style='magenta'),
                 justify='full'
             )
