@@ -218,7 +218,7 @@ def tune(args: Optional[List[str]] = None) -> int:
     result = trainer.tune(model=LightningTuneWrapper(data_args, model_args, trainer_args),
                           scale_batch_size_kwargs={
                               'init_val': trainer_args.scale_batch_size_init_val,
-                              'mode': 'binsearch',
+                              'mode': 'power',
                               'max_trials': trainer_args.tune_max_trials
                           })
 
