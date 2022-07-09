@@ -20,7 +20,7 @@ For a clearer explanation of the problem, let me introduce the following concept
    \(\alpha + \gamma = \beta \,\) notation will be understood as the modular addition of letter numbers from  
    \(\{ 0, \, 1, \, 2, \, ... \, , \, |A|- 1 \}\) modulo \(|A|\), where \(\alpha, \, \gamma, \, \beta \in A\). 
     That is, when encrypting <a href="https://en.wikipedia.org/wiki/Plaintext">plaintext</a>, we will identify letters 
-    with their numbers in the alphabet\(A\).
+    with their numbers in the alphabet \(A\).
 </p>
 
 ## Simple case
