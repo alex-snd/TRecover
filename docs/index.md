@@ -33,7 +33,7 @@ hide:
 <h3 align="justify">
     The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text 
     in columns that can be compiled for a <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>. 
-    You can read more about the problem <a href="https://alex-snd.github.io/TRecover/objective">here</a>.
+    You can read more about the problem <a href="https://alex-snd.github.io/TRecover/objective/task_definition">here</a>.
     In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described
     below.<br><br>
     Let there be an original sentence:
