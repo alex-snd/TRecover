@@ -13,19 +13,25 @@ from trecover.train.collab.arguments import BasePeerArguments
 
 
 class LocalMetrics(BaseModel):
-    step: conint(ge=0, strict=True)
-    samples_per_second: confloat(ge=0.0, strict=True)
-    samples_accumulated: conint(ge=0, strict=True)
     loss: StrictFloat
     accuracy: StrictFloat
+    lr: StrictFloat
+    min_noise: conint(ge=0, le=26, strict=True)
+    max_noise: conint(ge=0, le=26, strict=True)
+    samples_per_second: confloat(ge=0.0, strict=True)
+    samples_accumulated: conint(ge=0, strict=True)
     mini_steps: conint(ge=0, strict=True)
+    step: conint(ge=0, strict=True)
 
 
 class GlobalMetrics(BaseModel):
-    samples_per_second: confloat(ge=0.0, strict=True)
-    samples_accumulated: conint(ge=0, strict=True)
     loss: StrictFloat
     accuracy: confloat(ge=0, le=1)
+    lr: StrictFloat
+    min_noise: conint(ge=0, le=26, strict=True)
+    max_noise: conint(ge=0, le=26, strict=True)
+    samples_per_second: confloat(ge=0.0, strict=True)
+    samples_accumulated: conint(ge=0, strict=True)
     alive_peers: conint(ge=0, strict=True)
 
 

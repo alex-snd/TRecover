@@ -21,6 +21,8 @@ class CollabCheckpoint(Callback):
 
         self.statistics_expiration = peer_args.statistics_expiration
         self.last_reported_collaboration_step = None
+        self.min_noise = None
+        self.max_noise = None
         self.samples = 0
         self.steps = 0
         self.loss = 0
@@ -49,6 +51,8 @@ class CollabCheckpoint(Callback):
 
         if self.pl_module is None:
             self.pl_module = pl_module
+            self.min_noise = pl_module.data_args.min_noise
+            self.max_noise = pl_module.data_args.max_noise
 
         if not self.params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')
@@ -66,19 +70,27 @@ class CollabCheckpoint(Callback):
         if (current_step := self.optimizer.local_epoch) != self.last_reported_collaboration_step:
             self.total_samples_processed += self.samples
             samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
+            current_lr = self.optimizer.opt.param_groups[0]['lr']
 
             statistics = LocalMetrics(
-                step=current_step - 1,
-                samples_per_second=samples_per_second,
-                samples_accumulated=self.samples,
                 loss=self.loss,
                 accuracy=self.accuracy,
+                lr=current_lr,
+                min_noise=self.min_noise,
+                max_noise=self.max_noise,
+                samples_per_second=samples_per_second,
+                samples_accumulated=self.samples,
                 mini_steps=self.steps,
+                step=current_step - 1
             )
 
             panel_group = Group(Text(f'Local loss: {self.loss / self.steps}',
                                      style='bright_blue', justify='left'),
                                 Text(f'Local accuracy: {self.accuracy / self.steps}',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Learning rate: {current_lr}',
+                                     style='bright_blue', justify='left'),
+                                Text(f'Min-max noise range: {f"{self.min_noise}-{self.max_noise}"}',
                                      style='bright_blue', justify='left'),
                                 Text(f'Your current contribution: {self.total_samples_processed} samples',
                                      style='bright_blue', justify='left'),

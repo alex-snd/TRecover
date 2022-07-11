@@ -2,6 +2,7 @@ import time
 from typing import Generator, List, Optional
 
 import hivemind
+import numpy as np
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
@@ -21,28 +22,27 @@ class MetricsMonitor(object):
 
     @staticmethod
     def average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
-        loss = 0
-        accuracy = 0
-        samples_accumulated = 0
-        samples_per_second = 0
-        mini_steps = 0
-
-        for item in metrics:
-            loss += item.loss
-            accuracy += item.accuracy
-            samples_accumulated += item.samples_accumulated
-            samples_per_second += item.samples_per_second
-            mini_steps += item.mini_steps
+        loss = sum([item.loss for item in metrics])
+        accuracy = sum([item.accuracy for item in metrics])
+        lr = np.median([item.lr for item in metrics])
+        min_noise = min([item.min_noise for item in metrics])
+        max_noise = max([item.max_noise for item in metrics])
+        samples_accumulated = sum([item.samples_accumulated for item in metrics])
+        samples_per_second = sum([item.samples_per_second for item in metrics])
+        mini_steps = sum([item.mini_steps for item in metrics])
 
         if mini_steps:
             loss /= mini_steps
             accuracy /= mini_steps
 
         return GlobalMetrics(
-            samples_per_second=samples_per_second,
-            samples_accumulated=samples_accumulated,
             loss=loss,
             accuracy=accuracy,
+            lr=lr,
+            min_noise=min_noise,
+            max_noise=max_noise,
+            samples_per_second=samples_per_second,
+            samples_accumulated=samples_accumulated,
             alive_peers=len(metrics)
         )
 
@@ -71,6 +71,10 @@ class MetricsMonitor(object):
             panel_group = Group(
                 Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
                 Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
+                Text(f'Learning rate: {metrics.lr}',
+                     style='bright_blue', justify='left'),
+                Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
+                     style='bright_blue', justify='left'),
                 Text(f'Samples accumulated: {metrics.samples_accumulated}', style='bright_blue', justify='left'),
                 Text(f'Performance: {metrics.samples_per_second} samples/sec', style='bright_blue', justify='left'),
                 Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
