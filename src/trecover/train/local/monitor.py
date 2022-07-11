@@ -110,6 +110,7 @@ class WandbMonitor(BaseMonitor):
         return wandb.init(project=self.project_name,
                           name=self.experiment_name,
                           config=self.config,
+                          anonymous='allow',
                           dir=self.registry)
 
     def finish(self) -> None:
