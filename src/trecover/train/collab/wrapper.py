@@ -137,7 +137,7 @@ class PeerWrapper(BaseWrapper):
                                        self.data_args.train_dataset_size)
 
 
-class FullWrapper(pl.LightningModule):
+class FullWrapper(TuneWrapper, PeerWrapper):
     def __init__(self,
                  data_args: DataArguments,
                  model_args: ModelArguments,
