@@ -34,11 +34,13 @@ hide:
             
             === "standalone"
                 ```shell
+                trecover download artifacts
                 docker-compose -f docker/compose/all-in-one-service-duild.yml up --build
                 ```
 
             === "scallable"
                 ```shell
+                trecover download artifacts
                 docker-compose -f docker/compose/scalable-service-build.yml up --build
                 ```
         <br>
