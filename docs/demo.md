@@ -78,7 +78,7 @@ hide:
         <font size="+1">You can load the pre-trained model directly from the python script.</font>
         
         ```python
-        import pytorch
+        import torch
         
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = torch.hub.load('alex-snd/TRecover', model='trecover', device=device, version='latest')
@@ -87,7 +87,7 @@ hide:
         <font size="+1">To print a help message and available pre-trained models run this:</font>
         
         ```python
-        import pytorch
+        import torch
         
         print(torch.hub.help('alex-snd/TRecover', model='trecover', force_reload=True))
         ```
