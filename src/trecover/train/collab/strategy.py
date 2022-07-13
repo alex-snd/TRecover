@@ -1,3 +1,4 @@
+from argparse import Namespace
 from typing import Tuple, Dict, Any, Callable, Optional, Union
 
 import hivemind
@@ -12,30 +13,25 @@ from pytorch_lightning.utilities.model_helpers import is_overridden
 from torch import Tensor
 
 from trecover.config.log import project_console
-from trecover.train.collab.arguments import PLTrainerArguments, TrainingPeerArguments, CollaborativeArguments
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.optim import create_collab_opt
 
 
 class CollaborativeStrategy(Strategy):
     def __init__(self,
-                 peer_args: TrainingPeerArguments,
-                 trainer_args: PLTrainerArguments,
-                 collab_args: CollaborativeArguments,
-                 dht_manager: Optional[DHTManager] = None,
+                 args: Namespace,
+                 dht: Optional[hivemind.DHT] = None,
                  use_init_peers: Optional[bool] = None,
                  verbose: Optional[bool] = None,
                  tune: bool = False):
         super().__init__()
 
-        self.peer_args = peer_args
-        self.trainer_args = trainer_args
-        self.collab_args = collab_args
-        self.scale_batch_size = self.trainer_args.scale_batch_size_init_val
+        self.args = args
+        self.tune_batch_size = args.tune_batch_size_init
         self.use_init_peers = not tune if use_init_peers is None else use_init_peers
         self.verbose = not tune if verbose is None else verbose
         self.tune = tune
-        self._dht_manager: Optional[DHTManager] = dht_manager
+        self._dht: Optional[hivemind.DHT] = dht
         self._collab_opt: Optional[hivemind.Optimizer] = None
         self._optimizer_zero_grad_original: Optional[Callable] = None
         self._collab_opt_initialized = False
@@ -69,10 +65,10 @@ class CollaborativeStrategy(Strategy):
 
     @property
     def dht(self) -> DHT:
-        if self._dht_manager is None:
-            self._dht_manager = DHTManager(self.peer_args, self.use_init_peers)
+        if self._dht is None:
+            self._dht = DHTManager(self.args, self.use_init_peers).dht
 
-        return self._dht_manager.dht
+        return self._dht
 
     def setup(self, trainer: pl.Trainer) -> None:
         self.model_to_device()
@@ -85,17 +81,17 @@ class CollaborativeStrategy(Strategy):
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
 
         local_optimizer = self.optimizers[0]
-        batch_size_per_step = self.trainer_args.batch_size_per_step or self.scale_batch_size
+
+        if self.args.batch_size is None:
+            batch_size_per_step = self.tune_batch_size
+        else:
+            batch_size_per_step = self.args.batch_size * self.args.accumulate_batches
 
         self._collab_opt = create_collab_opt(optimizer=local_optimizer,
                                              dht=self.dht,
-                                             batch_size_per_step=batch_size_per_step,
-                                             experiment_prefix=self.peer_args.experiment_prefix,
-                                             collab_args=self.collab_args,
-                                             warmup_steps=self.trainer_args.warmup_steps,
-                                             total_steps=self.trainer_args.total_steps,
-                                             client_mode=self.peer_args.client_mode,
-                                             verbose=self.verbose)
+                                             args=self.args,
+                                             verbose=self.verbose,
+                                             batch_size_per_step=batch_size_per_step)
 
         self.optimizers = [self._collab_opt]
         self._collab_opt_initialized = True
@@ -106,11 +102,11 @@ class CollaborativeStrategy(Strategy):
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
 
-            if not self.peer_args.state_path.exists():
+            if not self.args.state_path.exists():
                 project_console.print('Backup the collab state as it does not exist', style='magenta')
                 self.backup_state()
 
-        if self.collab_args.reuse_grad_buffers:
+        if not self.args.no_reuse_grad_buffers:
             assert self.lightning_module is not None
             self._optimizer_zero_grad_original = self.lightning_module.optimizer_zero_grad
             self._disable_zero_grad()
@@ -132,8 +128,8 @@ class CollaborativeStrategy(Strategy):
                       *args, **kwargs
                       ) -> Dict[str, Tensor]:
         if not self._collab_opt_initialized:
-            if self.trainer_args.batch_size is None:
-                self.scale_batch_size = extract_batch_size(batch)
+            if self.args.batch_size is None:
+                self.tune_batch_size = extract_batch_size(batch)
 
             self._init_collab_opt()
 
@@ -144,8 +140,8 @@ class CollaborativeStrategy(Strategy):
                         *args, **kwargs
                         ) -> Dict[str, Tensor]:
         if not self._collab_opt_initialized:
-            if self.trainer_args.batch_size is None:
-                self.scale_batch_size = extract_batch_size(batch)
+            if self.args.batch_size is None:
+                self.tune_batch_size = extract_batch_size(batch)
 
             self._init_collab_opt()
 
@@ -188,11 +184,11 @@ class CollaborativeStrategy(Strategy):
             self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
 
     def backup_state(self) -> None:
-        torch.save(self.state_dict(), self.peer_args.state_path)
+        torch.save(self.state_dict(), self.args.state_path)
 
     def restore_from_backup(self, check_step: bool = False) -> None:
-        if self.peer_args.state_path.exists():
-            state_dict = torch.load(self.peer_args.state_path)
+        if self.args.state_path.exists():
+            state_dict = torch.load(self.args.state_path)
             current_step = self._collab_opt.local_epoch
             backup_step = state_dict['local_epoch']
 
@@ -226,10 +222,11 @@ class CollaborativeStrategy(Strategy):
             self._collab_opt = None
             self._collab_opt_initialized = False
 
-        if self.verbose:
-            project_console.print('Shutting down hivemind DHT', style='yellow')
+        if self._dht:
+            if self.verbose:
+                project_console.print('Shutting down hivemind DHT', style='yellow')
 
-        self.dht.shutdown()
-        self._dht_manager = None
+            self._dht.shutdown()
+            self._dht = None
 
         super().teardown()

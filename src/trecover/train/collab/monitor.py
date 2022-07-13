@@ -3,25 +3,76 @@ from typing import Generator, List, Optional
 
 import hivemind
 import numpy as np
+import wandb
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
 
 from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
+from trecover.train.collab.optim import AuxiliaryOptimizer
 
 
-# TODO WandB log and optimizer initialization ?visualization? and loading_from_peers
 class MetricsMonitor(object):
-    def __init__(self, dht: hivemind.DHT, experiment_prefix: str, aux_optimizer: Optional[hivemind.Optimizer] = None):
+    def __init__(self,
+                 dht: hivemind.DHT,
+                 experiment_prefix: str,
+                 wandb_key: Optional[str] = None,
+                 wandb_project: Optional[str] = None,
+                 wandb_registry: Optional[str] = None,
+                 aux_optimizer: Optional[AuxiliaryOptimizer] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
         self.aux_optimizer = aux_optimizer
+        self.wandb_report = wandb_key is not None
         self.current_step = -1
         self.refresh_period = 2
+        self.upload_every_step = 1
+
+        if self.wandb_report:
+            wandb.login(key=wandb_key)
+
+            wandb.init(
+                project=wandb_project,
+                # name=experiment_name,
+                # id='',  # wandb.util.generate_id()
+                dir=wandb_registry,
+                resume='allow',
+                anonymous='never'
+            )
+
+    def stream(self) -> Generator[GlobalMetrics, None, None]:
+        while True:
+            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
+                metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
+
+                if (latest_step := max(item.step for item in metrics)) != self.current_step:
+                    self.current_step = latest_step
+
+                    yield self._average_peers_metrics(
+                        [peer_metrics for peer_metrics in metrics if peer_metrics.step == latest_step]
+                    )
+
+            log.project_console.print('Fetching metrics...', style='yellow', justify='right')
+            time.sleep(self.refresh_period)
+
+    def start(self) -> None:
+        try:
+            for metrics in self.stream():
+                self._print_metrics(metrics)
+
+                if self.wandb_report:
+                    self._report(metrics)
+
+        except KeyboardInterrupt:
+            log.project_console.print('Interrupted', style='yellow')
+
+        finally:
+            if self.wandb_report:
+                wandb.finish()
 
     @staticmethod
-    def average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
+    def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
         loss = sum([item.loss for item in metrics])
         accuracy = sum([item.accuracy for item in metrics])
         lr = np.median([item.lr for item in metrics])
@@ -46,42 +97,31 @@ class MetricsMonitor(object):
             alive_peers=len(metrics)
         )
 
-    def stream(self) -> Generator[GlobalMetrics, None, None]:
-        while True:
-            if metrics_entry := self.dht.get(self.metrics_key, latest=True):
-                if metrics_dict := metrics_entry.value:
-                    metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
+    def _print_metrics(self, metrics: GlobalMetrics) -> None:
+        panel_group = Group(
+            Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
+            Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
+            Text(f'Learning rate: {metrics.lr}',
+                 style='bright_blue', justify='left'),
+            Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
+                 style='bright_blue', justify='left'),
+            Text(f'Samples accumulated: {metrics.samples_accumulated}', style='bright_blue', justify='left'),
+            Text(f'Performance: {metrics.samples_per_second} samples/sec', style='bright_blue', justify='left'),
+            Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
+        )
 
-                    if (latest_step := max(item.step for item in metrics)) != self.current_step:
-                        self.current_step = latest_step
+        log.project_console.print(
+            Panel(panel_group, title=f'Global step {self.current_step}',
+                  title_align='left', border_style='magenta'),
+            justify='full'
+        )
 
-                        yield self.average_peers_metrics(metrics)
+    def _report(self, metrics: GlobalMetrics) -> None:
+        wandb.log(metrics.json(), step=self.current_step)
 
-            if self.aux_optimizer:
-                try:
-                    self.aux_optimizer.step()
-                except Exception as e:
-                    log.project_logger.exception(e, exc_info=True)
+        if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
+            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+            self.aux_optimizer.backup_state()
 
-            log.project_console.print('Fetching metrics...', style='yellow', justify='right')
-            time.sleep(self.refresh_period)
-
-    def start(self) -> None:
-        for metrics in self.stream():
-            panel_group = Group(
-                Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
-                Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
-                Text(f'Learning rate: {metrics.lr}',
-                     style='bright_blue', justify='left'),
-                Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
-                     style='bright_blue', justify='left'),
-                Text(f'Samples accumulated: {metrics.samples_accumulated}', style='bright_blue', justify='left'),
-                Text(f'Performance: {metrics.samples_per_second} samples/sec', style='bright_blue', justify='left'),
-                Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
-            )
-
-            log.project_console.print(
-                Panel(panel_group, title=f'Global step {self.current_step}',
-                      title_align='left', border_style='magenta'),
-                justify='full'
-            )
+            log.project_console.print('Upload state...', style='purple', justify='right')
+            wandb.save(self.aux_optimizer.state_path)

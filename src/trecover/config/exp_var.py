@@ -12,7 +12,8 @@ VAL_DATA.mkdir(parents=True, exist_ok=True)
 VIS_DATA.mkdir(parents=True, exist_ok=True)
 
 LIGHTNING_REGISTRY_DIR = var.EXPERIMENTS_DIR / 'lightning_registry'
-COLLAB_STATE_PATH = LIGHTNING_REGISTRY_DIR / 'collaborative_state.pt'
+TRAIN_STATE_PATH = LIGHTNING_REGISTRY_DIR / 'train_state.pt'
+MONITOR_STATE_PATH = LIGHTNING_REGISTRY_DIR / 'monitor_state.pt'
 WANDB_REGISTRY_DIR = var.EXPERIMENTS_DIR / 'wandb_registry'
 MLFLOW_REGISTRY_DIR = var.EXPERIMENTS_DIR / 'mlflow_registry'
 MLFLOW_BACKEND = os.getenv('MLFLOW_BACKEND',

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, Dict, Any
 
 import hivemind
@@ -9,17 +10,19 @@ from rich.panel import Panel
 from rich.text import Text
 
 from trecover.config import log
-from trecover.train.collab.arguments import TrainingPeerArguments
 from trecover.train.collab.dht import DHTManager, LocalMetrics
 
 
 class CollabCheckpoint(Callback):
-    def __init__(self, dht_manager: DHTManager, peer_args: TrainingPeerArguments):
+    def __init__(self, dht_manager: DHTManager,
+                 statistics_expiration: float,
+                 backup_every_step: int,
+                 state_path: Path):
         self.dht_manager: DHTManager = dht_manager
         self.pl_module: Optional[pl.LightningModule] = None
         self.optimizer: Optional[hivemind.Optimizer] = None
 
-        self.statistics_expiration = peer_args.statistics_expiration
+        self.statistics_expiration = statistics_expiration
         self.last_reported_collaboration_step = None
         self.min_noise = None
         self.max_noise = None
@@ -31,8 +34,8 @@ class CollabCheckpoint(Callback):
         self.total_samples_processed = 0
         self.samples_per_second = 0
         self.alive_peers = 0
-        self.backup_every_step = peer_args.backup_every_step
-        self.state_path = peer_args.state_path
+        self.backup_every_step = backup_every_step
+        self.state_path = state_path
 
     def on_train_batch_end(self,
                            trainer: pl.Trainer,
@@ -47,8 +50,8 @@ class CollabCheckpoint(Callback):
 
         if self.pl_module is None:
             self.pl_module = pl_module
-            self.min_noise = pl_module.data_args.min_noise  # TODO as property or not, torch.hub.load?
-            self.max_noise = pl_module.data_args.max_noise
+            self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load?
+            self.max_noise = pl_module.args.max_noise
 
         if not self._params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')

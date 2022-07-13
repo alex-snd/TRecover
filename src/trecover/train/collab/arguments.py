@@ -1,222 +1,215 @@
-from dataclasses import dataclass, field
+from argparse import ArgumentParser
 from pathlib import Path
-from typing import List, Optional
-
-import torch
 
 from trecover.config import var, exp_var
 
 
-@dataclass
-class ModelArguments:
-    """ Model configuration """
+def get_model_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Model arguments', add_help=add_help)
 
-    token_size: int = len(var.ALPHABET)
-    pe_max_len: int = 256
-    n_layers: int = 12
-    d_model: int = 768
-    n_heads: int = 12
-    d_ff: int = 768
-    dropout: float = 0.1
+    parser.add_argument('--token-size', default=len(var.ALPHABET), type=int,
+                        help='Token size')
+    parser.add_argument('--pe-max-len', default=256, type=int,
+                        help='Positional encoding max length')
+    parser.add_argument('--n-layers', default=12, type=int,
+                        help='Number of encoder and decoder blocks')
+    parser.add_argument('--d-model', default=768, type=int,
+                        help='Model dimension - number of expected features in the encoder (decoder) input')
+    parser.add_argument('--n-heads', default=12, type=int,
+                        help='Number of encoder and decoder attention heads')
+    parser.add_argument('--d-ff', default=768, type=int,
+                        help='Dimension of the feedforward layer')
+    parser.add_argument('--dropout', default=0.1, type=float,
+                        help='Dropout range')
 
-
-@dataclass
-class DataArguments:
-    """ Arguments for dataloaders """
-
-    # seed: int = 2531
-    train_files: Path = exp_var.TRAIN_DATA
-    val_files: Path = exp_var.VAL_DATA
-    vis_files: Path = exp_var.VIS_DATA
-    test_files: Path = exp_var.VIS_DATA
-    min_threshold: int = 256
-    max_threshold: int = 256
-    train_dataset_size: int = 10
-    val_dataset_size: int = 10
-    vis_dataset_size: int = 5
-    test_dataset_size: int = 16
-    min_noise: int = 0
-    max_noise: int = 1
+    return parser
 
 
-@dataclass
-class PLTrainerArguments:
-    """ Arguments for pytorch-lightning trainer, optimizer, scheduler"""
+def get_data_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Data arguments', add_help=add_help)
 
-    # Pytorch-lightning Trainer
-    default_root_dir: Path = var.EXPERIMENTS_DIR
-    enable_progress_bar: bool = True
-    accelerator: str = 'auto'
-    dataloader_num_workers: int = 2
-    auto_select_gpus: bool = True
-    max_steps: int = 10 ** 20
-    num_sanity_val_steps: int = 0
-    batch_size: int = None
-    accumulate_grad_batches: int = 1
-    scale_batch_size_init_val: int = 1
-    tune_max_trials: int = 25
-    tune_strategy: bool = False
-    scale_tuned_batch_size: bool = False
+    parser.add_argument('--train-files', default=exp_var.TRAIN_DATA, type=str,
+                        help='Path to train files folder')
+    parser.add_argument('--val-files', default=exp_var.VAL_DATA, type=str,
+                        help='Path to validation files folder')
+    parser.add_argument('--vis-files', default=exp_var.VIS_DATA, type=str,
+                        help='Path to visualization files folder')
+    parser.add_argument('--test-files', default=exp_var.VIS_DATA, type=str,
+                        help='Path to test files folder')
+    parser.add_argument('--min-threshold', default=256, type=int,
+                        help='Min sentence lengths')
+    parser.add_argument('--max-threshold', default=256, type=int,
+                        help='Max sentence lengths')
+    parser.add_argument('--train-dataset-size', default=2000, type=int,
+                        help='Train dataset size')
+    parser.add_argument('--val-dataset-size', default=400, type=int,
+                        help='Validation dataset size')
+    parser.add_argument('--vis-dataset-size', default=5, type=int,
+                        help='Visualization dataset size')
+    parser.add_argument('--test-dataset-size', default=200, type=int,
+                        help='Test dataset size')
+    parser.add_argument('--min-noise', default=0, type=int,
+                        help='Min noise range')
+    parser.add_argument('--max-noise', default=0, type=int,
+                        help='Max noise range')
+    parser.add_argument('--n-workers', default=3, type=int,
+                        help='Number of processes for dataloaders')
 
-    @property
-    def batch_size_per_step(self) -> Optional[int]:
-        """ Compute the number of training sequences contributed by each .step() from this peer """
+    return parser
 
-        if self.batch_size:
-            total_batch_size_per_step = self.batch_size * self.accumulate_grad_batches
-            if torch.cuda.device_count() > 0:
-                total_batch_size_per_step *= torch.cuda.device_count()
 
-            return total_batch_size_per_step
+def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Optimization arguments', add_help=add_help)
 
-        return None
-
-    # Visualization step
-    n_columns_to_show: int = 96
-    delimiter: str = ''
-
-    # Optimizer
-    learning_rate: float = 0.0025
-    adam_beta1: float = 0.9
-    adam_beta2: float = 0.96
-    adam_epsilon: float = 1e-6
-    weight_decay: float = 0.045
+    parser.add_argument('--lr', default=0.0025, type=float,
+                        help='Learning rate value')
+    parser.add_argument('--adam-beta1', default=0.9, type=float,
+                        help='Coefficient for computing running averages of gradient and its square')
+    parser.add_argument('--adam-beta2', default=0.96, type=float,
+                        help='Coefficient for computing running averages of gradient and its square')
+    parser.add_argument('--adam-epsilon', default=1e-6, type=float,
+                        help='Term added to the denominator to improve numerical stability')
+    parser.add_argument('--weight-decay', default=0.045, type=float,
+                        help='Weight decay (L2 penalty)')
 
     # Scheduler
-    total_steps: int = 31250  # total number of collaborative SGD updates, used for learning rate schedule
-    warmup_steps: int = 3125
+    parser.add_argument('--warmup', default=3125, type=int,
+                        help='Warmup steps value for learning rate scheduler')
+    parser.add_argument('--total_steps', default=31250, type=int,
+                        help='Total number of collaborative optimizer updates, used for learning rate schedule')
+
+    # Collaborative optimizer
+    parser.add_argument('--batch-size', default=None, type=int,
+                        help='Batch size that fits into accelerator memory')
+    parser.add_argument('--accumulate-batches', default=1, type=int,
+                        help='Number of steps for gradients accumulation')
+    parser.add_argument('--target-batch-size', default=2048, type=int,
+                        help='Perform optimizer step after all peers collectively accumulate this many samples')
+    parser.add_argument('--matchmaking-time', default=15, type=float,
+                        help='Averaging group will wait for stragglers for at most this many seconds')
+    parser.add_argument('--allreduce-timeout', default=60, type=float,
+                        help='Give up on a given all-reduce round after this many seconds')
+    parser.add_argument('--averaging-timeout', default=180, type=float,
+                        help='Give up on averaging step after this many seconds')
+    parser.add_argument('--no-reuse-grad-buffers', action='store_true',
+                        help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
+                             " This optimization reduces GPU memory consumption but may result in incorrect gradients "
+                             "when using some advanced techniques (e.g. applying custom loss scaler)")
+
+    return parser
 
 
-@dataclass
-class CollaborativeArguments:
-    """ Configuration for Collaborative Optimizer and its internals """
+# TODO --no-args-sync
+def get_dht_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('DHT arguments', add_help=add_help)
 
-    target_batch_size: int = field(
-        default=256,
-        metadata={'help': 'Perform optimizer step after all peers collectively accumulate this many samples'},
-    )
-    matchmaking_time: float = field(
-        default=15.0, metadata={'help': 'Averaging group will wait for stragglers for at most this many seconds'}
-    )
-    allreduce_timeout: float = field(
-        default=60, metadata={'help': 'Give up on a given all-reduce round after this many seconds'}
-    )
-    averaging_timeout: float = field(
-        default=180, metadata={'help': 'Give up on averaging step after this many seconds'}
-    )
-    reuse_grad_buffers: bool = field(default=True, metadata={
-        'help': "Whether or not to use model's .grad buffers for accumulating gradients across local steps. This "
-                "optimization reduces GPU memory consumption but may result in incorrect gradients when using some "
-                "advanced techniques (e.g. applying custom loss scaler)"})
+    parser.add_argument('--experiment-prefix', default='trecover', type=str,
+                        help='A unique experiment name, used as prefix for all DHT keys')
+    parser.add_argument('--client-mode', action='store_true',
+                        help='If True, runs training without incoming connections, in a firewall-compatible mode')
+    parser.add_argument('--initial-peers', action='extend', type=str, nargs='+',
+                        help='Multiaddrs of the peers that will welcome you into the existing collaboration')
+    parser.add_argument('--use-ipfs', action='store_true',
+                        help='Use IPFS to find initial_peers. If enabled, you only need to provide '
+                             '/p2p/XXXX part of multiaddrs for the initial_peers (no need to specify '
+                             'a particular IPv4/IPv6 address and port)')
+    parser.add_argument('--host-maddrs', default=['/ip4/0.0.0.0/tcp/0', '/ip4/0.0.0.0/udp/0/quic'],
+                        action='extend', type=str, nargs='+',
+                        help='Multiaddrs to listen for external connections from other p2p instances. '
+                             'To specify, for example, tcp port use /ip4/0.0.0.0/tcp/<port number>')
+    parser.add_argument('--announce-maddrs', action='extend', type=str, nargs='+',
+                        help='Visible multiaddrs the host announces for external connections from other p2p instances')
+    parser.add_argument('--identity-path', type=Path,
+                        help='Path to a pre-generated private key file. If defined, makes the peer ID deterministic')
 
-
-@dataclass
-class BasePeerArguments:
-    """Base arguments that are used for both trainers and for auxiliary peers such as training monitor"""
-
-    experiment_prefix: str = field(
-        default='trecover',
-        metadata={'help': 'A unique experiment name, used as prefix for all DHT keys'}
-    )
-    cache_dir: Optional[str] = field(  # TODO change as checkpoint?
-        default='./cache',
-        metadata={'help': 'Path to the cache'}
-    )
-    client_mode: bool = field(
-        default=False,
-        metadata={'help': 'Of True, runs training without incoming connections, in a firewall-compatible mode'},
-    )
-    # initial_peers: List[str] = field(
-    initial_peers: str = field(
-        default_factory=list,
-        metadata={
-            'help': 'Multiaddrs of the peers that will welcome you into the existing collaboration. '
-                    'Example: /ip4/203.0.113.1/tcp/31337/p2p/XXXX /ip4/203.0.113.2/udp/7777/quic/p2p/YYYY'
-        },
-    )
-    use_ipfs: bool = field(
-        default=False,
-        metadata={
-            'help': 'Use IPFS to find initial_peers. If enabled, you only need to provide /p2p/XXXX part of multiaddrs '
-                    'for the initial_peers (no need to specify a particular IPv4/IPv6 address and port)'
-        },
-    )
-    host_maddrs: List[str] = field(
-        default_factory=lambda: ['/ip4/0.0.0.0/tcp/0', '/ip4/0.0.0.0/udp/0/quic'],
-        metadata={
-            'help': 'Multiaddrs to listen for external connections from other p2p instances. '
-                    'Defaults to all IPv4 interfaces with TCP protocol: /ip4/0.0.0.0/tcp/0'
-        },
-    )
-    announce_maddrs: List[str] = field(
-        default_factory=list,
-        metadata={'help': 'Visible multiaddrs the host announces for external connections from other p2p instances'},
-    )
-    # identity_path: Optional[str] = field(
-    #     default=None,
-    #     metadata={
-    #         'help': 'Path to a pre-generated private key file. If defined, makes the peer ID deterministic. '
-    #                 'May be generated using ``./p2p-keygen`` from ``go-libp2p-daemon``.'
-    #     },
-    # )
-
-    identity_path: str = None
+    return parser
 
 
-@dataclass
-class TrainingPeerArguments(BasePeerArguments):
-    statistics_expiration: float = field(
-        default=600,
-        metadata={'help': 'Statistics will be removed if not updated in this many seconds'}
-    )
-    # backup_every_step: Optional[int] = field(
-    #     default=None,
-    #     metadata={'help': 'Update training state backup on disk once in this many global steps '
-    #                       '(default = do not update local state)'}
-    # )
-    backup_every_step: int = None
-    state_path: Path = field(
-        default=exp_var.COLLAB_STATE_PATH,
-        metadata={'help': 'Load this state upon init and when recovering from NaN parameters'})
+def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('DHT arguments', add_help=add_help,
+                            parents=[
+                                get_dht_parser(add_help=False),
+                                get_model_parser(add_help=False),
+                                get_data_parser(add_help=False),
+                                get_optimization_parser(add_help=False)
+                            ])
+
+    parser.add_argument('--refresh-period', default=3, type=float,
+                        help='Period (in seconds) for fetching the metrics from DHT')
+    parser.add_argument('--wandb-project', default='TRecover', type=str,
+                        help='Name of Weights & Biases project to report the training progress to')
+    parser.add_argument('--wandb-key', default=None, type=str,
+                        help='Weights & Biases credentials token to log in')
+    parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,
+                        help='Default path for Weights & Biases logs and weights')
+    parser.add_argument('--monitor-state-path', default=exp_var.MONITOR_STATE_PATH, type=Path,
+                        help='Path to state backup file')
+    parser.add_argument('--upload-every-step', default=None, type=int,
+                        help='Upload to Weights & Biases and backup on disk training state '
+                             'once in this many global steps. Default: do not upload')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Whether to show collaborative optimizer logs')
+    parser.add_argument('--assist-in-averaging', action='store_true',
+                        help='If True, this peer will facilitate averaging for other (training) peers')
+    parser.add_argument('--assist-refresh', default=1, type=float,
+                        help='Period (in seconds) for trying to assist averaging')
+
+    return parser
 
 
-@dataclass
-class AuxiliaryPeerArguments(BasePeerArguments):
-    """
-    Arguments for run_aux_peer.py that is responsible for connecting peers to one another, tracking
-    learning curves, assisting in all-reduce and uploading checkpoints to the hub
-    """
-    refresh_period: float = field(
-        default=10,
-        metadata={'help': 'Period (in seconds) for fetching the keys from DHT'}
-    )
-    wandb_project: Optional[str] = field(
-        default=None,
-        metadata={'help': 'Name of Weights & Biases project to report the training progress to'}
-    )
-    save_checkpoint_step_interval: int = field(
-        default=2,
-        metadata={'help': 'Frequency (in steps) of fetching and saving state from peers'}
-    )
-    repo_url: Optional[str] = field(
-        default=None,
-        metadata={'help': 'URL of Hugging Face Hub repository to upload the model and optimizer states'}
-    )
-    local_path: Optional[str] = field(
-        default='Repo',
-        metadata={'help': 'Path to local repository to store the model and optimizer states'}
-    )
-    upload_interval: Optional[float] = field(
-        default=None,
-        metadata={'help': 'Frequency (in seconds) of uploading the model to Hub'}
-    )
-    store_checkpoints: bool = field(
-        default=True,
-        metadata={'help': 'If True, enables CheckpointHandler'}
-    )
-    assist_refresh: float = field(
-        default=1.0,
-        metadata={'help': 'Period (in seconds) for trying to assist averaging'}
-    )
-    use_optimizer: bool = False
-    verbose: bool = False
+def get_tune_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Tune arguments', add_help=add_help)
+
+    parser.add_argument('--tune-mode', default='power', type=str, choices=['power', 'binsearch'],
+                        help='Tuning algorithm type')
+    parser.add_argument('--tune-batch-size-init', default=1, type=int,
+                        help='Initial value for batch size tune algorithm')
+    parser.add_argument('--tune-trials', default=25, type=int,
+                        help='Number of tune algorithm trials')
+    parser.add_argument('--tune-strategy', action='store_true',
+                        help='Whether to use a collaborative strategy for batch size tuning')
+    parser.add_argument('--scale-tuned-batch-size', action='store_true',
+                        help='Whether to scale the tuned batch size')
+    parser.add_argument('--batch-size-scale-factor', default=var.BATCH_SIZE_SCALE_FACTOR, type=float,
+                        help='Factor for scaling tuned batch size')
+
+    return parser
+
+
+def get_train_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Train loop arguments', add_help=add_help,
+                            parents=[
+                                get_dht_parser(add_help=False),
+                                get_model_parser(add_help=False),
+                                get_data_parser(add_help=False),
+                                get_optimization_parser(add_help=False),
+                                get_tune_parser(add_help=False)
+                            ])
+
+    parser.add_argument('--pl-registry', default=exp_var.LIGHTNING_REGISTRY_DIR, type=Path,
+                        help='Default path for pytorch-lightning logs and weights')
+    parser.add_argument('--accelerator', default='auto', type=str, choices=['cpu', 'gpu', 'tpu', 'ipu', 'hpu', 'auto'],
+                        help='Train accelerator type')
+    parser.add_argument('--n-epochs', default=10 ** 20, type=int,
+                        help='Number of epochs for training')
+    parser.add_argument('--statistics-expiration', default=600, type=float,
+                        help='Statistics will be removed if not updated in this many seconds')
+    parser.add_argument('--backup-every-step', default=None, type=int,
+                        help='Update training state backup on disk once in this many global steps. '
+                             'Default: do not update local state')
+    parser.add_argument('--state-path', default=exp_var.TRAIN_STATE_PATH, type=Path,
+                        help='Path to state backup file. Load this state upon init and when '
+                             'recovering from NaN parameters')
+
+    return parser
+
+
+def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Visualization arguments', add_help=add_help)
+
+    parser.add_argument('--n-columns-to-show', default=96, type=int,
+                        help='Number of visualization columns to show')
+    parser.add_argument('--delimiter', default='', type=str,
+                        help='Visualization columns delimiter')
+
+    return parser

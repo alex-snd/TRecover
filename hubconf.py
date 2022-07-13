@@ -1,6 +1,6 @@
 """ Configuration for torch hub usage """
 
-from typing import Callable
+from typing import Callable, Dict, Any
 
 import torch
 
@@ -64,3 +64,14 @@ def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'
                                                              map_location=device))
 
     return model
+
+
+def collab_args() -> Dict[str, Any]:
+    return {
+        'initial_peers': [
+            '/ip4/95.216.202.215/tcp/42123/p2p/QmcEakWA757aDP1b5iTzsmHEXUoQVcPa8YYrqwq6aYJkP5',
+        ],
+        'target_batch_size': 256,
+        'min_noise': 0,
+        'max_noise': 1,
+    }

@@ -28,7 +28,7 @@ def local(ctx: Context,
         get_local_parser().print_help()
     else:
         try:
-            train(args=ctx.args)
+            train(cli_args=ctx.args)
         except Exception as e:
             log.project_logger.error(e)
             log.project_console.print_exception()
@@ -55,8 +55,12 @@ def collab(ctx: Context,
     """
 
     from trecover.train.collab import train
+    from trecover.train.collab.arguments import get_train_parser
 
-    train(args=ctx.args)
+    if show_help:
+        get_train_parser().print_help()
+    else:
+        train(cli_args=ctx.args)
 
 
 @cli.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
@@ -78,8 +82,12 @@ def collab_monitor(ctx: Context,
 
     """
     from trecover.train.collab import monitor
+    from trecover.train.collab.arguments import get_monitor_parser
 
-    monitor(args=ctx.args)
+    if show_help:
+        get_monitor_parser().print_help()
+    else:
+        monitor(cli_args=ctx.args)
 
 
 if __name__ == '__main__':
