@@ -67,7 +67,7 @@ class DHTManager:
         elif self.use_init_peers:
             if initial_peers := self.get_initial_peers(as_str=True):
                 project_console.print(f'To connect other peers to this one over the Internet, use '
-                                      f'--initial_peers {initial_peers}', style='bright_blue')
+                                      f'--initial-peers {initial_peers}', style='bright_blue')
 
             project_console.print(f'Full list of visible multi addresses: ', style='bright_blue')
             project_console.print_json(data=[str(addr) for addr in self.visible_maddrs])
