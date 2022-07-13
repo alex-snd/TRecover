@@ -30,7 +30,7 @@ class AuxiliaryOptimizer(object):
     def start_assistant(self) -> None:
         def assist_averaging_in_background(lock: threading.Lock,
                                            collab_opt: hivemind.Optimizer,
-                                           assist_refresh: int,
+                                           assist_refresh: float,
                                            finished: threading.Event):
             while not finished.is_set():
                 try:
