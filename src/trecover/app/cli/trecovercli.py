@@ -3,13 +3,13 @@ from pathlib import Path
 import typer
 from typer import Typer, Argument, Option, Context
 
-from trecover.app.cli import download, train, mlflow, dashboard, api, worker, broker, backend
+from trecover.app.cli import download, collab, mlflow, dashboard, api, worker, broker, backend
 from trecover.config import var
 
 cli = Typer(name='TRecover-cli', add_completion=False)
 
 cli.add_typer(download.cli, name='download')
-cli.add_typer(train.cli, name='train')
+cli.add_typer(collab.cli, name='collab')
 cli.add_typer(mlflow.cli, name='mlflow')
 cli.add_typer(dashboard.cli, name='dashboard')
 cli.add_typer(api.cli, name='api')
@@ -158,6 +158,31 @@ def recover(data_path: Path = Argument(..., help='Path to file or dir for data',
         )
 
         log.project_console.print(f'\nElapsed: {time() - start_time:>7.3f} s\n', style='bright_blue')
+
+
+@cli.command(add_help_option=False, help='Start local training', context_settings={'allow_extra_args': True,
+                                                                                   'ignore_unknown_options': True})
+def train(ctx: Context,
+          show_help: bool = Option(False, '--help', '-h', is_flag=True, help='Show help message and exit.')) -> None:
+    """
+    Start local training.
+
+    Parameters
+    ----------
+    ctx : Context
+        Typer (Click like) special internal object that holds state relevant
+        for the script execution at every single level.
+    show_help : bool, default=False
+        Show local train options.
+
+    """
+
+    from trecover.train.local import train, get_local_parser
+
+    if show_help:
+        get_local_parser().print_help()
+    else:
+        train(cli_args=ctx.args)
 
 
 @cli.callback(invoke_without_command=True, help='')
@@ -340,7 +365,7 @@ def up(ctx: Context,
         [api]
         host = "localhost"
         port = 8001
-        loglevel = 'info'
+        loglevel = "info"
         concurrency = 1
 
         [worker]

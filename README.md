@@ -132,7 +132,7 @@ To quickly start training the model, open the [Jupyter Notebook](https://colab.r
 * 💻 Local <br>
   After the dataset is loaded, you can start training the model:
   ```
-  trecover train local \
+  trecover train \
   --project-name {project_name} \
   --exp-mark {exp_mark} \
   --train-dataset-size {train_dataset_size} \

@@ -100,9 +100,9 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
     return batch_size
 
 
-def auxiliary() -> None:
+def auxiliary(cli_args: Optional[List[str]] = None) -> None:
     pass
 
 
-def visualize() -> None:
+def visualize(cli_args: Optional[List[str]] = None) -> None:
     pass
