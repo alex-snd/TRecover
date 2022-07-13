@@ -126,10 +126,10 @@ def get_local_parser() -> ArgumentParser:
     return parser
 
 
-def train(args: Optional[List[str]] = None) -> None:
+def train(cli_args: Optional[List[str]] = None) -> None:
     # TODO docs
 
-    params = get_experiment_params(get_local_parser(), args)
+    params = get_experiment_params(get_local_parser(), cli_args)
 
     if params.n_columns_to_show > params.pe_max_len:
         log.project_logger.error(f'[red]Parameter n_to_show={params.n_columns_to_show} '
