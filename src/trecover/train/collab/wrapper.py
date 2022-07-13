@@ -36,8 +36,6 @@ class BaseWrapper(pl.LightningModule):
                 ) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor, Tensor]:
         src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = batch
 
-        log.project_console.print(f'Forward with: {src.shape}')
-
         tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
         tgt_out = tgt_out.reshape(-1, self.model.token_size)
         tgt = tgt.view(-1)
