@@ -50,7 +50,7 @@ def get_data_parser(add_help: bool = True) -> ArgumentParser:
                         help='Test dataset size')
     parser.add_argument('--min-noise', default=0, type=int,
                         help='Min noise range')
-    parser.add_argument('--max-noise', default=0, type=int,
+    parser.add_argument('--max-noise', default=1, type=int,
                         help='Max noise range')
     parser.add_argument('--n-workers', default=3, type=int,
                         help='Number of processes for dataloaders')
