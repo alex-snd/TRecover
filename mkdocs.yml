@@ -122,7 +122,7 @@ nav:
     - CLI:
       - src/trecover/app/cli/index.md
       - Download : src/trecover/app/cli/download.md
-      - Train : src/trecover/app/cli/train.md
+      - Collab : src/trecover/app/cli/collab.md
       - Mlflow : src/trecover/app/cli/mlflow.md
       - Dashboard : src/trecover/app/cli/dashboard.md
       - API : src/trecover/app/cli/api.md
