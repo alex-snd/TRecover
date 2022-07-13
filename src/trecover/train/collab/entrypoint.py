@@ -1,16 +1,17 @@
+import time
 from typing import List, Optional
 
 import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import log
-from trecover.train.collab.arguments import get_monitor_parser, get_train_parser
+from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import MetricsMonitor
-from trecover.train.collab.optim import AuxiliaryOptimizer
+from trecover.train.collab.optim import AuxiliaryOptimizer, create_collab_opt
 from trecover.train.collab.strategy import CollaborativeStrategy
-from trecover.train.collab.wrapper import PeerWrapper
+from trecover.train.collab.wrapper import BaseWrapper, PeerWrapper
 
 rank_zero_only.rank = 1
 
@@ -101,7 +102,29 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
 
 
 def auxiliary(cli_args: Optional[List[str]] = None) -> None:
-    pass
+    args = get_auxiliary_parser().parse_args(cli_args)
+    args.assist_in_averaging = True
+
+    dht_manager = DHTManager(args)
+
+    log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
+    wrapped_model = BaseWrapper(args)
+    collab_opt = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
+                                   dht=dht_manager.dht,
+                                   args=args,
+                                   assist_in_averaging=args.assist_in_averaging,
+                                   verbose=args.verbose,
+                                   batch_size_per_step=None)
+
+    log.project_console.print('Start assistant for gradient averaging', style='yellow')
+    try:
+        while True:
+            collab_opt.step()
+
+            log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
+            time.sleep(args.assist_refresh)
+    except KeyboardInterrupt:
+        log.project_console.print('Interrupted', style='yellow')
 
 
 def visualize(cli_args: Optional[List[str]] = None) -> None:

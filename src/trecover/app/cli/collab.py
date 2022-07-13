@@ -135,10 +135,10 @@ def aux(ctx: Context,
     """
 
     from trecover.train.collab import auxiliary
-    from trecover.train.collab.arguments import get_train_parser
+    from trecover.train.collab.arguments import get_auxiliary_parser
 
     if show_help:
-        get_train_parser().print_help()
+        get_auxiliary_parser().print_help()
     else:
         auxiliary(cli_args=ctx.args)
 

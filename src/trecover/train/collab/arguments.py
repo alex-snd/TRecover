@@ -204,6 +204,23 @@ def get_train_parser(add_help: bool = True) -> ArgumentParser:
     return parser
 
 
+def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
+                            parents=[
+                                get_dht_parser(add_help=False),
+                                get_model_parser(add_help=False),
+                                get_data_parser(add_help=False),
+                                get_optimization_parser(add_help=False)
+                            ])
+
+    parser.add_argument('--verbose', action='store_true',
+                        help='Whether to show collaborative optimizer logs')
+    parser.add_argument('--assist-refresh', default=1, type=float,
+                        help='Period (in seconds) for trying to assist averaging')
+
+    return parser
+
+
 def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Visualization arguments', add_help=add_help)
 
