@@ -126,4 +126,4 @@ class MetricsMonitor(object):
             self.aux_optimizer.backup_state()
 
             log.project_console.print('Upload state...', style='purple', justify='right')
-            wandb.save(self.aux_optimizer.state_path)
+            wandb.save(str(self.aux_optimizer.state_path.absolute()))
