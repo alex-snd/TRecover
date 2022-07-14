@@ -19,6 +19,10 @@ rank_zero_only.rank = 1
 def monitor(cli_args: Optional[List[str]] = None) -> None:
     args = get_monitor_parser().parse_args(cli_args)
 
+    if args.assist_in_averaging and args.client_mode:
+        log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
+        return
+
     dht_manager = DHTManager(args)
     aux_optimizer = None
 
@@ -104,6 +108,10 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
 def auxiliary(cli_args: Optional[List[str]] = None) -> None:
     args = get_auxiliary_parser().parse_args(cli_args)
     args.assist_in_averaging = True
+
+    if args.client_mode:
+        log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
+        return
 
     dht_manager = DHTManager(args)
 
