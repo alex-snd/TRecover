@@ -17,6 +17,8 @@ class MetricsMonitor(object):
     def __init__(self,
                  dht: hivemind.DHT,
                  experiment_prefix: str,
+                 refresh_period: int = 2,
+                 upload_every_step: Optional[int] = None,
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
@@ -26,15 +28,15 @@ class MetricsMonitor(object):
         self.aux_optimizer = aux_optimizer
         self.wandb_report = wandb_key is not None
         self.current_step = -1
-        self.refresh_period = 2
-        self.upload_every_step = 1
+        self.refresh_period = refresh_period
+        self.upload_every_step = upload_every_step
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
 
             wandb.init(
                 project=wandb_project,
-                name='fiery-darkness-3',
+                # name='fiery-darkness-3',
                 # id='',  # wandb.util.generate_id()
                 dir=wandb_registry,
                 resume='allow',

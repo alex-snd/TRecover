@@ -36,6 +36,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     try:
         metrics_monitor = MetricsMonitor(dht=dht_manager.dht,
                                          experiment_prefix=args.experiment_prefix,
+                                         refresh_period=args.refresh_period,
+                                         upload_every_step=args.upload_every_step,
                                          wandb_key=args.wandb_key,
                                          wandb_project=args.wandb_project,
                                          wandb_registry=args.wandb_registry,
