@@ -7,6 +7,7 @@ import wandb
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
+from wandb.util import generate_id
 
 from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
@@ -21,6 +22,7 @@ class MetricsMonitor(object):
                  upload_every_step: Optional[int] = None,
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
+                 wandb_id: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
                  aux_optimizer: Optional[AuxiliaryOptimizer] = None):
         self.dht = dht
@@ -34,10 +36,13 @@ class MetricsMonitor(object):
         if self.wandb_report:
             wandb.login(key=wandb_key)
 
+            if wandb_id is None:
+                wandb_id = generate_id()
+
             wandb.init(
                 project=wandb_project,
-                name='test_run',
-                # id='',  # wandb.util.generate_id()
+                name=wandb_id,
+                id=wandb_id,
                 dir=wandb_registry,
                 resume='allow',
                 anonymous='never'
