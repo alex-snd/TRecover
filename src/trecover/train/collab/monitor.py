@@ -44,7 +44,7 @@ class MetricsMonitor(object):
             )
 
             if self.upload_every_step:
-                wandb.save(str(self.aux_optimizer.state_path.absolute()))
+                wandb.save(f'{self.aux_optimizer.state_path.absolute()}*')
 
     def stream(self) -> Generator[GlobalMetrics, None, None]:
         while True:
@@ -126,4 +126,4 @@ class MetricsMonitor(object):
 
         if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
             log.project_console.print('Sync state with other peers and upload...', style='salmon1', justify='right')
-            self.aux_optimizer.backup_state()
+            self.aux_optimizer.backup_state()  # TODO in different thread
