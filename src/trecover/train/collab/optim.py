@@ -23,9 +23,9 @@ class AuxiliaryOptimizer(object):
         self.collab_opt = create_collab_opt(optimizer=self.wrapped_model.configure_optimizers(),
                                             dht=dht,
                                             args=args,
-                                            assist_in_averaging=args.assist_in_averaging,
+                                            assist_in_averaging=False,  # TODO investigate
                                             verbose=args.verbose,
-                                            batch_size_per_step=None)
+                                            batch_size_per_step=1)
 
     def start_assistant(self) -> None:
         def assist_averaging_in_background(lock: threading.Lock,
