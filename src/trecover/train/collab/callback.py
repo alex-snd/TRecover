@@ -74,6 +74,8 @@ class CollabCheckpoint(Callback):
 
             self._report_metrics(trainer, step=current_step)
 
+        self.samples = self.optimizer.grad_averager.local_samples_accumulated
+
     def _params_are_finite(self):
         for param in self.pl_module.model.parameters():
             if not torch.all(torch.isfinite(param)):
@@ -115,7 +117,6 @@ class CollabCheckpoint(Callback):
         self.steps = 0
         self.loss = 0
         self.accuracy = 0
-        self.samples = self.optimizer.grad_averager.local_samples_accumulated
         self.last_reported_collaboration_step = step
 
     def _print_metrics(self, step: int) -> None:
