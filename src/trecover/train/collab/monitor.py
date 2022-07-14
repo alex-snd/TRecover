@@ -34,7 +34,7 @@ class MetricsMonitor(object):
 
             wandb.init(
                 project=wandb_project,
-                # name=experiment_name,
+                name='fiery-darkness-3',
                 # id='',  # wandb.util.generate_id()
                 dir=wandb_registry,
                 resume='allow',
@@ -117,7 +117,7 @@ class MetricsMonitor(object):
         )
 
     def _report(self, metrics: GlobalMetrics) -> None:
-        wandb.log(metrics.json(), step=self.current_step)
+        wandb.log(metrics.dict(), step=self.current_step)
 
         if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
             log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
