@@ -138,6 +138,8 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                         help='Period (in seconds) for fetching the metrics from DHT')
     parser.add_argument('--wandb-project', default='TRecover', type=str,
                         help='Name of Weights & Biases project to report the training progress to')
+    parser.add_argument('--wandb-id', default=None, type=str,
+                        help='Id of the previous run to resume it')
     parser.add_argument('--wandb-key', default=None, type=str,
                         help='Weights & Biases credentials token to log in')
     parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,

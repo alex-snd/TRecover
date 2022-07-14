@@ -40,6 +40,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
                                          upload_every_step=args.upload_every_step,
                                          wandb_key=args.wandb_key,
                                          wandb_project=args.wandb_project,
+                                         wandb_id=args.wandb_id,
                                          wandb_registry=args.wandb_registry,
                                          aux_optimizer=aux_optimizer)
         metrics_monitor.start()
