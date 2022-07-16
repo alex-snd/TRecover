@@ -8,7 +8,7 @@ import torch
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
 
 from trecover.config import log
-from trecover.train.collab.wrapper import BaseWrapper
+from trecover.train.collab.wrapper import BaseModelWrapper
 from trecover.train.scheduler import get_wrapped_linear_scheduler_with_warmup
 
 
@@ -19,7 +19,7 @@ class AuxiliaryOptimizer(object):
         self.state_path = args.monitor_state_path
         self.assist_refresh = args.assist_refresh
 
-        self.wrapped_model = BaseWrapper(args)
+        self.wrapped_model = BaseModelWrapper(args)
         self.collab_opt = create_collab_opt(optimizer=self.wrapped_model.configure_optimizers(),
                                             dht=dht,
                                             args=args,

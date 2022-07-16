@@ -11,7 +11,7 @@ from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import MetricsMonitor
 from trecover.train.collab.optim import AuxiliaryOptimizer, create_collab_opt
 from trecover.train.collab.strategy import CollaborativeStrategy
-from trecover.train.collab.wrapper import BaseWrapper, PeerWrapper
+from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
 
 rank_zero_only.rank = 1
 
@@ -57,7 +57,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
         args.batch_size = tune(cli_args)
 
     dht_manager = DHTManager(args)
-    wrapped_model = PeerWrapper(args)
+    wrapped_model = PeerModelWrapper(args)
     collab_strategy = CollaborativeStrategy(args=args, dht=dht_manager.dht)
 
     collab_checkpoint = CollabCheckpoint(dht_manager,
@@ -91,7 +91,7 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
                          auto_scale_batch_size=True,
                          strategy=tune_strategy)
 
-    result = trainer.tune(model=PeerWrapper(args),
+    result = trainer.tune(model=PeerModelWrapper(args),
                           scale_batch_size_kwargs={
                               'init_val': args.tune_batch_size_init,
                               'mode': args.tune_mode,
@@ -119,7 +119,7 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
     dht_manager = DHTManager(args)
 
     log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
-    wrapped_model = BaseWrapper(args)
+    wrapped_model = BaseModelWrapper(args)
     collab_opt = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
                                    dht=dht_manager.dht,
                                    args=args,

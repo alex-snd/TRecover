@@ -21,9 +21,9 @@ from trecover.utils.transform import tensor_to_columns, tensor_to_target
 from trecover.utils.visualization import visualize_columns, visualize_target
 
 
-class BaseWrapper(pl.LightningModule):
+class BaseModelWrapper(pl.LightningModule):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(BaseWrapper, self).__init__(*pl_args, **pl_kwargs)
+        super(BaseModelWrapper, self).__init__(*pl_args, **pl_kwargs)
 
         self.args = args
         self.model = TRecover(args.token_size, args.pe_max_len, args.n_layers, args.d_model,
@@ -76,9 +76,9 @@ class BaseWrapper(pl.LightningModule):
         ]
 
 
-class PeerWrapper(BaseWrapper):
+class PeerModelWrapper(BaseModelWrapper):
     def __init__(self, params: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(PeerWrapper, self).__init__(params, *pl_args, **pl_kwargs)
+        super(PeerModelWrapper, self).__init__(params, *pl_args, **pl_kwargs)
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
@@ -115,9 +115,9 @@ class PeerWrapper(BaseWrapper):
         return self._create_dataloader(self.args.val_files, self.args.val_dataset_size)
 
 
-class FullWrapper(PeerWrapper):
+class FullModelWrapper(PeerModelWrapper):
     def __init__(self, params: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(FullWrapper, self).__init__(params, *pl_args, **pl_kwargs)
+        super(FullModelWrapper, self).__init__(params, *pl_args, **pl_kwargs)
 
     def validation_epoch_end(self, step_outputs: Union[Dict[str, Tensor], List[Dict[str, Tensor]]]) -> None:
         self.visualize_on_epoch_end()
