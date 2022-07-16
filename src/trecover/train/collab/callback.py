@@ -144,15 +144,6 @@ class CollabCheckpoint(Callback):
     def _should_skip_saving_checkpoint(self, trainer: pl.Trainer) -> bool:
         from pytorch_lightning.trainer.states import TrainerFn
 
-        log.project_console.print((
-            trainer.fast_dev_run,
-            trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
-            , trainer.sanity_checking  # don't save anything during sanity check
-            , self.last_reported_collaboration_step == self.optimizer.local_epoch  # already saved at the last step
-            , self.backup_every_step is None  # backup is disabled
-            , self.optimizer.local_epoch % self.backup_every_step != 0  # not at the current step
-        ))
-
         return (
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
