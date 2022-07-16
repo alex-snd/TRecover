@@ -74,6 +74,12 @@ class CollabCheckpoint(Callback):
 
             self._report_metrics(trainer, step=current_step)
 
+            if not self._should_skip_saving_checkpoint(trainer):
+                log.project_console.print('Backup collab state', style='magenta')
+                trainer.strategy.backup_state()
+            else:
+                log.project_console.print('Skip backup', style='yellow')
+
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
     def _params_are_finite(self):
@@ -107,12 +113,6 @@ class CollabCheckpoint(Callback):
                     return_future=True
             ):
                 log.project_console.print('Failed to store metrics', style='red')
-
-        if not self._should_skip_saving_checkpoint(trainer):
-            log.project_console.print('Backup collab state', style='magenta')
-            trainer.strategy.backup_state()
-        else:
-            log.project_console.print('Skip backup', style='yellow')
 
         self.steps = 0
         self.loss = 0
