@@ -183,6 +183,17 @@ class CollaborativeStrategy(Strategy):
             self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
             self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
 
+            if self._collab_opt.offload_optimizer:
+                state_averager = self._collab_opt.state_averager
+                offloaded_parameters = [
+                    param for group in state_averager.optimizer.param_groups for param in group['params']
+                ]
+
+                assert len(offloaded_parameters) == len(state_averager.main_parameters)
+
+                for main_param, offloaded_param in zip(state_averager.main_parameters, offloaded_parameters):
+                    offloaded_param.copy_(main_param, non_blocking=True)
+
     def backup_state(self) -> None:
         torch.save(self.state_dict(), self.args.state_path)
 
