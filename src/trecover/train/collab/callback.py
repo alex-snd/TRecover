@@ -72,13 +72,13 @@ class CollabCheckpoint(Callback):
             self.lr = self.optimizer.opt.param_groups[0]['lr']
             self.alive_peers = trainer.strategy.num_peers
 
-            self._report_metrics(trainer, step=current_step)
-
             if not self._should_skip_saving_checkpoint(trainer):
                 log.project_console.print('Backup collab state', style='magenta')
                 trainer.strategy.backup_state()
             else:
                 log.project_console.print('Skip backup', style='yellow')
+
+            self._report_metrics(step=current_step)
 
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
@@ -90,7 +90,7 @@ class CollabCheckpoint(Callback):
 
         return True
 
-    def _report_metrics(self, trainer: pl.Trainer, step: int) -> None:
+    def _report_metrics(self, step: int) -> None:
         statistics = LocalMetrics(
             loss=self.loss,
             accuracy=self.accuracy,
@@ -143,6 +143,15 @@ class CollabCheckpoint(Callback):
 
     def _should_skip_saving_checkpoint(self, trainer: pl.Trainer) -> bool:
         from pytorch_lightning.trainer.states import TrainerFn
+
+        log.project_console.print((
+            trainer.fast_dev_run,
+            trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
+            , trainer.sanity_checking  # don't save anything during sanity check
+            , self.last_reported_collaboration_step == self.optimizer.local_epoch  # already saved at the last step
+            , self.backup_every_step is None  # backup is disabled
+            , self.optimizer.local_epoch % self.backup_every_step != 0  # not at the current step
+        ))
 
         return (
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
