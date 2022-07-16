@@ -194,9 +194,11 @@ class CollaborativeStrategy(Strategy):
                 for main_param, offloaded_param in zip(state_averager.main_parameters, offloaded_parameters):
                     offloaded_param.copy_(main_param, non_blocking=True)
 
+    @torch.no_grad()
     def backup_state(self) -> None:
         torch.save(self.state_dict(), self.args.state_path)
 
+    @torch.no_grad()
     def restore_from_backup(self, check_step: bool = False) -> None:
         if self.args.state_path.exists():
             state_dict = torch.load(self.args.state_path)

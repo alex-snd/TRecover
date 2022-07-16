@@ -82,6 +82,7 @@ class CollabCheckpoint(Callback):
 
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
+    @torch.no_grad()
     def _params_are_finite(self):
         for param in self.pl_module.model.parameters():
             if not torch.all(torch.isfinite(param)):
