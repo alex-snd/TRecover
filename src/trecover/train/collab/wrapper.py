@@ -3,6 +3,7 @@ from pathlib import Path
 from time import time
 from typing import Dict, Any, Iterable, Optional, Tuple, List, Union
 
+import bitsandbytes as bnb
 import pytorch_lightning as pl
 import torch
 from rich.console import Group
@@ -44,11 +45,11 @@ class BaseModelWrapper(pl.LightningModule):
         return src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out
 
     def configure_optimizers(self) -> Optimizer:
-        return torch.optim.Adam(params=self._get_trainable_params(),
-                                lr=self.args.lr,
-                                betas=(self.args.adam_beta1, self.args.adam_beta2),
-                                eps=self.args.adam_epsilon,
-                                weight_decay=self.args.weight_decay)
+        return bnb.optim.Adam8bit(params=self._get_trainable_params(),
+                                  lr=self.args.lr,
+                                  betas=(self.args.adam_beta1, self.args.adam_beta2),
+                                  eps=self.args.adam_epsilon,
+                                  weight_decay=self.args.weight_decay)
 
     def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
