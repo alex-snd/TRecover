@@ -1,8 +1,10 @@
 import time
+from pathlib import Path
 from typing import Generator, List, Optional
 
 import hivemind
 import numpy as np
+import torch
 import wandb
 from rich.console import Group
 from rich.panel import Panel
@@ -12,26 +14,31 @@ from wandb.util import generate_id
 from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
 from trecover.train.collab.optim import AuxiliaryOptimizer
+from trecover.train.collab.wrapper import BaseModelWrapper
 
 
-class MetricsMonitor(object):
+class CollabMonitor(object):
     def __init__(self,
                  dht: hivemind.DHT,
                  experiment_prefix: str,
                  refresh_period: int = 2,
                  upload_every_step: Optional[int] = None,
+                 state_path: Optional[Path] = None,
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
+                 wrapped_model: Optional[BaseModelWrapper] = None,
                  aux_optimizer: Optional[AuxiliaryOptimizer] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
         self.aux_optimizer = aux_optimizer
+        self.wrapped_model = wrapped_model
         self.wandb_report = wandb_key is not None
         self.current_step = -1
         self.refresh_period = refresh_period
         self.upload_every_step = upload_every_step
+        self.state_path = state_path
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
@@ -47,9 +54,6 @@ class MetricsMonitor(object):
                 resume='allow',
                 anonymous='never'
             )
-
-            if self.upload_every_step:
-                wandb.save(f'{self.aux_optimizer.state_path.absolute()}*')
 
     def stream(self) -> Generator[GlobalMetrics, None, None]:
         while True:
@@ -68,18 +72,23 @@ class MetricsMonitor(object):
 
     def start(self) -> None:
         try:
-            for metrics in self.stream():
-                self._print_metrics(metrics)
-
-                if self.wandb_report:
-                    self._report(metrics)
+            self._monitor_loop()
 
         except KeyboardInterrupt:
             log.project_console.print('Interrupted', style='yellow')
-
         finally:
             if self.wandb_report:
                 wandb.finish()
+
+    def _monitor_loop(self) -> None:
+        for metrics in self.stream():
+            self._print_metrics(metrics)
+
+            if self.wandb_report:
+                wandb.log(metrics.dict(), step=self.current_step)
+
+                if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
+                    self._upload_state()
 
     @staticmethod
     def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
@@ -126,9 +135,16 @@ class MetricsMonitor(object):
             justify='full'
         )
 
-    def _report(self, metrics: GlobalMetrics) -> None:
-        wandb.log(metrics.dict(), step=self.current_step)
+    def _upload_state(self) -> None:
+        with self.aux_optimizer:  # TODO indifferent thread or not?
+            self.aux_optimizer.sync_state()
+            state = self.aux_optimizer.state_dict
 
-        if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
-            log.project_console.print('Sync state with other peers and upload...', style='salmon1', justify='right')
-            self.aux_optimizer.backup_state()  # TODO in different thread
+            if self.wrapped_model:
+                state['model'] = self.wrapped_model.model.state_dict()
+
+            log.project_console.print('Store collab state...', style='salmon1', justify='right')
+            torch.save(state, self.state_path)
+
+        log.project_console.print('Upload collab state...', style='salmon1', justify='right')
+        wandb.save(str(self.state_path.absolute()), base_path=str(self.state_path.parent), policy='now')

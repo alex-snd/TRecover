@@ -1,4 +1,3 @@
-import time
 from typing import List, Optional
 
 import pytorch_lightning as pl
@@ -8,8 +7,8 @@ from trecover.config import log
 from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
-from trecover.train.collab.monitor import MetricsMonitor
-from trecover.train.collab.optim import AuxiliaryOptimizer, create_collab_opt
+from trecover.train.collab.monitor import CollabMonitor
+from trecover.train.collab.optim import AuxiliaryOptimizer
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
 
@@ -24,6 +23,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         return
 
     dht_manager = DHTManager(args)
+    wrapped_model = None
     aux_optimizer = None
 
     if args.upload_every_step or args.assist_in_averaging:
@@ -39,20 +39,22 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
             aux_optimizer.start_assistant()
 
     try:
-        metrics_monitor = MetricsMonitor(dht=dht_manager.dht,
-                                         experiment_prefix=args.experiment_prefix,
-                                         refresh_period=args.refresh_period,
-                                         upload_every_step=args.upload_every_step,
-                                         wandb_key=args.wandb_key,
-                                         wandb_project=args.wandb_project,
-                                         wandb_id=args.wandb_id,
-                                         wandb_registry=args.wandb_registry,
-                                         aux_optimizer=aux_optimizer)
+        metrics_monitor = CollabMonitor(dht=dht_manager.dht,
+                                        experiment_prefix=args.experiment_prefix,
+                                        refresh_period=args.refresh_period,
+                                        upload_every_step=args.upload_every_step,
+                                        state_path=args.monitor_state_path,
+                                        wandb_key=args.wandb_key,
+                                        wandb_project=args.wandb_project,
+                                        wandb_id=args.wandb_id,
+                                        wandb_registry=args.wandb_registry,
+                                        wrapped_model=wrapped_model,
+                                        aux_optimizer=aux_optimizer)
         metrics_monitor.start()
 
     finally:
         if aux_optimizer and args.assist_in_averaging:
-            aux_optimizer.is_finished()
+            aux_optimizer.set_finished()
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:
@@ -121,28 +123,15 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
 
-    dht_manager = DHTManager(args)
-
     log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
+    dht_manager = DHTManager(args)
     wrapped_model = BaseModelWrapper(args)
-    collab_opt = create_collab_opt(wrapped_optimizer=wrapped_model.wrapped_optimizer,
-                                   params=wrapped_model.trainable_params,
-                                   dht=dht_manager.dht,
-                                   args=args,
-                                   wrapped_scheduler=wrapped_model.wrapped_scheduler,
-                                   assist_in_averaging=args.assist_in_averaging,
-                                   verbose=args.verbose,
-                                   batch_size_per_step=None)
-
-    log.project_console.print('Start assistant for gradient averaging', style='yellow')
-    try:
-        while True:
-            collab_opt.step()
-
-            log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
-            time.sleep(args.assist_refresh)
-    except KeyboardInterrupt:
-        log.project_console.print('Interrupted', style='yellow')
+    aux_optimizer = AuxiliaryOptimizer(wrapped_optimizer=wrapped_model.wrapped_optimizer,
+                                       params=wrapped_model.trainable_params,
+                                       dht=dht_manager.dht,
+                                       args=args,
+                                       wrapped_scheduler=wrapped_model.wrapped_scheduler)
+    aux_optimizer.start_assistant(attach=True)
 
 
 def visualize(cli_args: Optional[List[str]] = None) -> None:

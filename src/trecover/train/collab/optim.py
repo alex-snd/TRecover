@@ -14,65 +14,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from trecover.config import log
 
 
-class AuxiliaryOptimizer(object):
-    def __init__(self,
-                 wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
-                 params: [Iterable[Dict[str, Any]]],
-                 dht: hivemind.DHT,
-                 args: Namespace,
-                 wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None):
-        self.lock = threading.Lock()
-        self.finished = threading.Event()
-        self.state_path = args.monitor_state_path
-        self.assist_refresh = args.assist_refresh
-
-        self.collab_opt = create_collab_opt(wrapped_optimizer=wrapped_optimizer,
-                                            params=params,
-                                            dht=dht,
-                                            args=args,
-                                            wrapped_scheduler=wrapped_scheduler,
-                                            assist_in_averaging=args.assist_in_averaging,
-                                            verbose=args.verbose,
-                                            batch_size_per_step=None)
-
-    def start_assistant(self) -> None:
-        def assist_averaging_in_background(lock: threading.Lock,
-                                           collab_opt: hivemind.Optimizer,
-                                           assist_refresh: float,
-                                           finished: threading.Event):
-            while not finished.is_set():
-                try:
-                    with lock:
-                        collab_opt.step()
-
-                    log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
-                    time.sleep(assist_refresh)
-
-                except Exception as e:
-                    log.project_logger.exception(e, exc_info=True)
-
-        averaging_thread = threading.Thread(name='AveragingAuxThread', target=assist_averaging_in_background,
-                                            args=[self.lock, self.collab_opt, self.assist_refresh, self.finished],
-                                            daemon=True)
-        averaging_thread.start()
-
-    def is_finished(self) -> None:
-        self.finished.set()
-
-    def state_dict(self) -> Dict[str, Any]:
-        return {
-            'model': self.wrapped_model.model.state_dict(),
-            'optimizer': self.collab_opt.state_dict(),
-            'scheduler': self.collab_opt.state_averager.scheduler.state_dict(),
-            'local_epoch': self.collab_opt.local_epoch
-        }
-
-    def backup_state(self) -> None:
-        with self.lock:
-            self.collab_opt.load_state_from_peers()
-            torch.save(self.state_dict(), self.state_path)
-
-
 class CPULamb8Bit(Optimizer2State):
     """
     The optimizer implementation was taken from this repository https://github.com/NCAI-Research/CALM
@@ -376,6 +317,79 @@ class CPULamb8Bit(Optimizer2State):
             param_delta = output_buffer.view_as(grad_cpu)
 
             return param_delta
+
+
+class AuxiliaryOptimizer(object):
+    def __init__(self,
+                 wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
+                 params: [Iterable[Dict[str, Any]]],
+                 dht: hivemind.DHT,
+                 args: Namespace,
+                 wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None):
+        self.lock = threading.Lock()
+        self.finished = threading.Event()
+        self.assist_refresh = args.assist_refresh
+
+        self.collab_opt = create_collab_opt(wrapped_optimizer=wrapped_optimizer,
+                                            params=params,
+                                            dht=dht,
+                                            args=args,
+                                            wrapped_scheduler=wrapped_scheduler,
+                                            assist_in_averaging=args.assist_in_averaging,
+                                            verbose=args.verbose,
+                                            batch_size_per_step=None)
+
+    def __enter__(self) -> 'AuxiliaryOptimizer':
+        self.lock.acquire()
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.lock.release()
+
+    def start_assistant(self, attach: bool = False) -> None:
+        def assist_averaging_in_background(lock: threading.Lock,
+                                           collab_opt: hivemind.Optimizer,
+                                           assist_refresh: float,
+                                           finished: threading.Event):
+            while not finished.is_set():
+                try:
+                    with lock:
+                        collab_opt.step()
+
+                    log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
+                    time.sleep(assist_refresh)
+
+                except KeyboardInterrupt:
+                    log.project_console.print('Interrupted', style='yellow', justify='right')
+                    return
+                except Exception as e:
+                    log.project_logger.exception(e, exc_info=True)
+
+        if attach:
+            assist_averaging_in_background(self.lock, self.collab_opt, self.assist_refresh, self.finished)
+
+        else:
+            averaging_thread = threading.Thread(name='AveragingAuxThread', target=assist_averaging_in_background,
+                                                args=[self.lock, self.collab_opt, self.assist_refresh, self.finished],
+                                                daemon=True)
+            averaging_thread.start()
+
+    def set_finished(self) -> None:
+        log.project_console.print('Stop assistant...', style='yellow', justify='right')
+        self.finished.set()
+
+    def sync_state(self) -> None:
+        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+        self.collab_opt.load_state_from_peers()
+
+    @property
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            'optimizer': self.collab_opt.state_dict(),
+            'scheduler': self.collab_opt.state_averager.scheduler.state_dict(),
+            'local_epoch': self.collab_opt.local_epoch
+        }
 
 
 def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
