@@ -85,11 +85,11 @@ class CollaborativeStrategy(Strategy):
         else:
             batch_size_per_step = self.args.batch_size * self.args.accumulate_batches
 
-        self._collab_opt = create_collab_opt(wrapped_optimizer=self.model.model.wrapped_optimizer,
-                                             params=self.model.model.trainable_params,
+        self._collab_opt = create_collab_opt(wrapped_optimizer=self.model.wrapped_optimizer,
+                                             params=self.model.trainable_params,
                                              dht=self.dht,
                                              args=self.args,
-                                             wrapped_scheduler=self.model.model.wrapped_scheduler,
+                                             wrapped_scheduler=self.model.wrapped_scheduler,
                                              assist_in_averaging=False,
                                              verbose=self.verbose,
                                              batch_size_per_step=batch_size_per_step)
