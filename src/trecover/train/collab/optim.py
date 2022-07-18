@@ -2,7 +2,7 @@ import math
 import threading
 import time
 from argparse import Namespace
-from typing import Any, Dict, Optional, Iterable, Callable
+from typing import Any, Dict, Optional, Iterable, Callable, Union
 
 import hivemind
 import torch
@@ -10,7 +10,6 @@ from bitsandbytes.functional import dequantize_blockwise, quantize_blockwise
 from bitsandbytes.optim.optimizer import Optimizer2State
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
 from torch.optim.lr_scheduler import LambdaLR
-from torch_optimizer.types import Betas2, Params
 
 from trecover.config import log
 from trecover.train.collab.wrapper import BaseModelWrapper
@@ -110,9 +109,9 @@ class CPULamb8Bit(Optimizer2State):
     """
 
     def __init__(self,
-                 params: Params,
+                 params: Union[[Iterable[Dict[str, Any]]], Dict[str, Any]],
                  lr: float = 1e-3,
-                 betas: Betas2 = (0.9, 0.999),
+                 betas: Tuple[float, float] = (0.9, 0.999),
                  eps: float = 1e-6,
                  weight_decay: float = 0,
                  clamp_value: float = 10,
