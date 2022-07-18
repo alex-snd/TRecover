@@ -73,7 +73,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Weight decay (L2 penalty)')
 
     # Scheduler
-    parser.add_argument('--warmup', default=3125, type=int,
+    parser.add_argument('--warmup-steps', default=3125, type=int,
                         help='Warmup steps value for learning rate scheduler')
     parser.add_argument('--total_steps', default=31250, type=int,
                         help='Total number of collaborative optimizer updates, used for learning rate schedule')
