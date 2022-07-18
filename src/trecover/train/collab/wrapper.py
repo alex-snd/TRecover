@@ -11,12 +11,14 @@ from rich.panel import Panel
 from rich.text import Text
 from torch import Tensor
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from trecover.config import log
 from trecover.model import TRecover
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
+from trecover.train.scheduler import get_linear_scheduler_with_warmup
 from trecover.utils.train import transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target
 from trecover.utils.visualization import visualize_columns, visualize_target
@@ -44,14 +46,35 @@ class BaseModelWrapper(pl.LightningModule):
 
         return src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out
 
-    def configure_optimizers(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
-        return lambda params: bnb.optim.Adam8bit(params=params,
-                                                 lr=self.args.lr,
-                                                 betas=(self.args.adam_beta1, self.args.adam_beta2),
-                                                 eps=self.args.adam_epsilon,
-                                                 weight_decay=self.args.weight_decay)
+    def configure_optimizers(self) -> Optimizer:  # fictive optimizer
+        return torch.optim.Adam(params=self.trainable_params,
+                                lr=self.args.lr,
+                                betas=(self.args.adam_beta1, self.args.adam_beta2),
+                                eps=self.args.adam_epsilon,
+                                weight_decay=self.args.weight_decay)
 
-    def get_trainable_params(self) -> Iterable[Dict[str, Any]]:
+    @property
+    def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
+        def optimizer(params: Iterable[Dict[str, Any]]) -> Optimizer:
+            return bnb.optim.Adam8bit(params=params,
+                                      lr=self.args.lr,
+                                      betas=(self.args.adam_beta1, self.args.adam_beta2),
+                                      eps=self.args.adam_epsilon,
+                                      weight_decay=self.args.weight_decay)
+
+        return optimizer
+
+    @property
+    def wrapped_scheduler(self) -> Callable[[Optimizer, ], LambdaLR]:
+        def scheduler(optimizer: Optimizer) -> LambdaLR:
+            return get_linear_scheduler_with_warmup(optimizer=optimizer,
+                                                    warmup_steps=self.args.warmup_steps,
+                                                    total_steps=self.args.total_steps)
+
+        return scheduler
+
+    @property
+    def trainable_params(self) -> Iterable[Dict[str, Any]]:
         no_decay = ['bias', 'LayerNorm.weight']
 
         return [

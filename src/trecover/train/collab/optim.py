@@ -10,7 +10,6 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
 from trecover.train.collab.wrapper import BaseModelWrapper
-from trecover.train.scheduler import get_wrapped_linear_scheduler_with_warmup
 
 
 class AuxiliaryOptimizer(object):
@@ -21,12 +20,11 @@ class AuxiliaryOptimizer(object):
         self.assist_refresh = args.assist_refresh
 
         self.wrapped_model = BaseModelWrapper(args)
-        self.wrapped_scheduler = get_wrapped_linear_scheduler_with_warmup(args.warmup, args.total_steps)
-        self.collab_opt = create_collab_opt(wrapped_optimizer=self.wrapped_model.configure_optimizers(),
-                                            params=self.wrapped_model.get_trainable_params(),
+        self.collab_opt = create_collab_opt(wrapped_optimizer=self.wrapped_model.wrapped_optimizer,
+                                            params=self.wrapped_model.trainable_params,
                                             dht=dht,
                                             args=args,
-                                            wrapped_scheduler=self.wrapped_scheduler,
+                                            wrapped_scheduler=self.wrapped_model.wrapped_scheduler,
                                             assist_in_averaging=args.assist_in_averaging,
                                             verbose=args.verbose,
                                             batch_size_per_step=None)

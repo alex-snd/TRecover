@@ -1,13 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Callable
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
 
 
 class BaseScheduler(ABC):
-    # TODO docs
-
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -17,20 +14,14 @@ class BaseScheduler(ABC):
 
     @abstractmethod
     def step(self) -> None:
-        # TODO docs
-
         pass
 
     @abstractmethod
     def set_rate(self, rate: float) -> None:
-        # TODO docs
-
         pass
 
 
 class IdentityScheduler(BaseScheduler):
-    # TODO docs
-
     def __str__(self) -> str:
         return '<IdentityScheduler()>'
 
@@ -42,8 +33,6 @@ class IdentityScheduler(BaseScheduler):
 
 
 class WarmupScheduler(BaseScheduler):
-    # TODO docs
-
     def __init__(self,
                  optimizer: Optimizer,
                  d_model: int,
@@ -128,12 +117,3 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
         )
 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
-
-
-def get_wrapped_linear_scheduler_with_warmup(warmup_steps: int, total_steps: int) -> Callable[[Optimizer, ], LambdaLR]:
-    def scheduler(optimizer: Optimizer) -> LambdaLR:
-        return get_linear_scheduler_with_warmup(optimizer=optimizer,
-                                                warmup_steps=warmup_steps,
-                                                total_steps=total_steps)
-
-    return scheduler

@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import Tuple, Dict, Any, Callable, Optional, Union, Iterable
+from typing import Tuple, Dict, Any, Callable, Optional, Union
 
 import hivemind
 import pytorch_lightning as pl
@@ -15,7 +15,6 @@ from torch import Tensor
 from trecover.config.log import project_console
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.optim import create_collab_opt
-from trecover.train.scheduler import get_wrapped_linear_scheduler_with_warmup
 
 
 class CollaborativeStrategy(Strategy):
@@ -81,20 +80,16 @@ class CollaborativeStrategy(Strategy):
     def _init_collab_opt(self) -> None:
         assert len(self.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
 
-        local_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer] = self.optimizers[0]
-
         if self.args.batch_size is None:
             batch_size_per_step = self.tune_batch_size
         else:
             batch_size_per_step = self.args.batch_size * self.args.accumulate_batches
 
-        wrapped_scheduler = get_wrapped_linear_scheduler_with_warmup(self.args.warmup, self.args.total_steps)
-
-        self._collab_opt = create_collab_opt(wrapped_optimizer=local_optimizer,
-                                             params=self.model.model.get_trainable_params(),
+        self._collab_opt = create_collab_opt(wrapped_optimizer=self.model.model.wrapped_optimizer,
+                                             params=self.model.model.trainable_params,
                                              dht=self.dht,
                                              args=self.args,
-                                             wrapped_scheduler=wrapped_scheduler,
+                                             wrapped_scheduler=self.model.model.wrapped_scheduler,
                                              assist_in_averaging=False,
                                              verbose=self.verbose,
                                              batch_size_per_step=batch_size_per_step)
