@@ -29,7 +29,12 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     if args.upload_every_step or args.assist_in_averaging:
         log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
 
-        aux_optimizer = AuxiliaryOptimizer(dht=dht_manager.dht, args=args)
+        wrapped_model = BaseModelWrapper(args)
+        aux_optimizer = AuxiliaryOptimizer(wrapped_optimizer=wrapped_model.wrapped_optimizer,
+                                           params=wrapped_model.trainable_params,
+                                           dht=dht_manager.dht,
+                                           args=args,
+                                           wrapped_scheduler=wrapped_model.wrapped_scheduler)
         if args.assist_in_averaging:
             aux_optimizer.start_assistant()
 

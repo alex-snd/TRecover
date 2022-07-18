@@ -12,22 +12,25 @@ from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQua
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
-from trecover.train.collab.wrapper import BaseModelWrapper
 
 
 class AuxiliaryOptimizer(object):
-    def __init__(self, dht: hivemind.DHT, args: Namespace):
+    def __init__(self,
+                 wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
+                 params: [Iterable[Dict[str, Any]]],
+                 dht: hivemind.DHT,
+                 args: Namespace,
+                 wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None):
         self.lock = threading.Lock()
         self.finished = threading.Event()
         self.state_path = args.monitor_state_path
         self.assist_refresh = args.assist_refresh
 
-        self.wrapped_model = BaseModelWrapper(args)
-        self.collab_opt = create_collab_opt(wrapped_optimizer=self.wrapped_model.wrapped_optimizer,
-                                            params=self.wrapped_model.trainable_params,
+        self.collab_opt = create_collab_opt(wrapped_optimizer=wrapped_optimizer,
+                                            params=params,
                                             dht=dht,
                                             args=args,
-                                            wrapped_scheduler=self.wrapped_model.wrapped_scheduler,
+                                            wrapped_scheduler=wrapped_scheduler,
                                             assist_in_averaging=args.assist_in_averaging,
                                             verbose=args.verbose,
                                             batch_size_per_step=None)
