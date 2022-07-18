@@ -3,7 +3,6 @@ from pathlib import Path
 from time import time
 from typing import Dict, Any, Iterable, Optional, Tuple, List, Union, Callable
 
-import bitsandbytes as bnb
 import pytorch_lightning as pl
 import torch
 from rich.console import Group
@@ -16,6 +15,7 @@ from torch.utils.data import DataLoader
 
 from trecover.config import log
 from trecover.model import TRecover
+from trecover.train.collab.optim import CPULamb8Bit
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
@@ -56,11 +56,13 @@ class BaseModelWrapper(pl.LightningModule):
     @property
     def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
         def optimizer(params: Iterable[Dict[str, Any]]) -> Optimizer:
-            return bnb.optim.Adam8bit(params=params,
-                                      lr=self.args.lr,
-                                      betas=(self.args.adam_beta1, self.args.adam_beta2),
-                                      eps=self.args.adam_epsilon,
-                                      weight_decay=self.args.weight_decay)
+            return CPULamb8Bit(params=params,  # TODO params
+                               lr=self.args.lr,
+                               betas=(self.args.adam_beta1, self.args.adam_beta2),
+                               eps=self.args.adam_epsilon,
+                               weight_decay=self.args.weight_decay,
+                               reuse_grad_buffers=not self.args.no_reuse_grad_buffers,
+                               bias_correction=True)
 
         return optimizer
 
