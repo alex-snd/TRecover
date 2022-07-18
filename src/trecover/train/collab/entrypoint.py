@@ -12,6 +12,7 @@ from trecover.train.collab.monitor import MetricsMonitor
 from trecover.train.collab.optim import AuxiliaryOptimizer, create_collab_opt
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
+from trecover.train.scheduler import get_wrapped_linear_scheduler_with_warmup
 
 rank_zero_only.rank = 1
 
@@ -120,9 +121,12 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
 
     log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
     wrapped_model = BaseModelWrapper(args)
-    collab_opt = create_collab_opt(optimizer=wrapped_model.configure_optimizers(),
+    wrapped_scheduler = get_wrapped_linear_scheduler_with_warmup(args.warmup, args.total_steps)
+    collab_opt = create_collab_opt(wrapped_optimizer=wrapped_model.configure_optimizers(),
+                                   params=wrapped_model.get_trainable_params(),
                                    dht=dht_manager.dht,
                                    args=args,
+                                   wrapped_scheduler=wrapped_scheduler,
                                    assist_in_averaging=args.assist_in_averaging,
                                    verbose=args.verbose,
                                    batch_size_per_step=None)

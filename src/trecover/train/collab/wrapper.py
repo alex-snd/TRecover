@@ -1,7 +1,7 @@
 from argparse import Namespace
 from pathlib import Path
 from time import time
-from typing import Dict, Any, Iterable, Optional, Tuple, List, Union
+from typing import Dict, Any, Iterable, Optional, Tuple, List, Union, Callable
 
 import bitsandbytes as bnb
 import pytorch_lightning as pl
@@ -44,23 +44,14 @@ class BaseModelWrapper(pl.LightningModule):
 
         return src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out
 
-    def configure_optimizers(self) -> Optimizer:
-        return bnb.optim.Adam8bit(params=self._get_trainable_params(),
-                                  lr=self.args.lr,
-                                  betas=(self.args.adam_beta1, self.args.adam_beta2),
-                                  eps=self.args.adam_epsilon,
-                                  weight_decay=self.args.weight_decay)
+    def configure_optimizers(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
+        return lambda params: bnb.optim.Adam8bit(params=params,
+                                                 lr=self.args.lr,
+                                                 betas=(self.args.adam_beta1, self.args.adam_beta2),
+                                                 eps=self.args.adam_epsilon,
+                                                 weight_decay=self.args.weight_decay)
 
-    def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
-        files = [files / file for file in files.iterdir()]
-        dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,
-                              max_threshold=self.args.max_threshold, dataset_size=dataset_size)
-
-        return dataset.create_dataloader(batch_size=self.batch_size,
-                                         collate=self.collate,
-                                         num_workers=self.args.n_workers)
-
-    def _get_trainable_params(self) -> Iterable[Dict[str, Any]]:
+    def get_trainable_params(self) -> Iterable[Dict[str, Any]]:
         no_decay = ['bias', 'LayerNorm.weight']
 
         return [
@@ -75,6 +66,15 @@ class BaseModelWrapper(pl.LightningModule):
                 'weight_decay': 0.0,
             },
         ]
+
+    def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
+        files = [files / file for file in files.iterdir()]
+        dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,
+                              max_threshold=self.args.max_threshold, dataset_size=dataset_size)
+
+        return dataset.create_dataloader(batch_size=self.batch_size,
+                                         collate=self.collate,
+                                         num_workers=self.args.n_workers)
 
 
 class PeerModelWrapper(BaseModelWrapper):

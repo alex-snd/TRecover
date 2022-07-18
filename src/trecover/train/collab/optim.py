@@ -1,11 +1,12 @@
 import threading
 import time
 from argparse import Namespace
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterable, Callable
 
 import hivemind
 import torch
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
+from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
 from trecover.train.collab.wrapper import BaseModelWrapper
@@ -20,9 +21,12 @@ class AuxiliaryOptimizer(object):
         self.assist_refresh = args.assist_refresh
 
         self.wrapped_model = BaseModelWrapper(args)
-        self.collab_opt = create_collab_opt(optimizer=self.wrapped_model.configure_optimizers(),
+        self.wrapped_scheduler = get_wrapped_linear_scheduler_with_warmup(args.warmup, args.total_steps)
+        self.collab_opt = create_collab_opt(wrapped_optimizer=self.wrapped_model.configure_optimizers(),
+                                            params=self.wrapped_model.get_trainable_params(),
                                             dht=dht,
                                             args=args,
+                                            wrapped_scheduler=self.wrapped_scheduler,
                                             assist_in_averaging=args.assist_in_averaging,
                                             verbose=args.verbose,
                                             batch_size_per_step=None)
@@ -65,23 +69,22 @@ class AuxiliaryOptimizer(object):
             torch.save(self.state_dict(), self.state_path)
 
 
-def create_collab_opt(optimizer: torch.optim.Optimizer,
+def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
+                      params: [Iterable[Dict[str, Any]]],
                       dht: hivemind.DHT,
                       args: Namespace,
+                      wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None,
                       assist_in_averaging: bool = False,
                       verbose: bool = True,
                       batch_size_per_step: Optional[int] = None
                       ) -> hivemind.Optimizer:
-    params = optimizer.param_groups
-    wrapped_scheduler = get_wrapped_linear_scheduler_with_warmup(args.warmup, args.total_steps)
-
     averaging_compression = SizeAdaptiveCompression(
         threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
     return hivemind.Optimizer(dht=dht,
                               run_id=args.experiment_prefix,
                               params=params,
-                              optimizer=type(optimizer),
+                              optimizer=wrapped_optimizer,
                               scheduler=wrapped_scheduler,
                               offload_optimizer=True,
                               delay_grad_averaging=False,
