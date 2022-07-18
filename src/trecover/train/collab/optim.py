@@ -2,7 +2,7 @@ import math
 import threading
 import time
 from argparse import Namespace
-from typing import Any, Dict, Optional, Iterable, Callable, Union
+from typing import Any, Dict, Optional, Iterable, Callable, Union, Tuple
 
 import hivemind
 import torch
@@ -84,7 +84,7 @@ class CPULamb8Bit(Optimizer2State):
 
     Parameters
     ----------
-    params : Union[[Iterable[Dict[str, Any]]], Dict[str, Any]]
+    params : Union[Iterable[Dict[str, Any]], Dict[str, Any]]
         Iterable of parameters to optimize or dicts defining parameter groups
     lr : float, default=1e-3
         Learning rate
@@ -109,7 +109,7 @@ class CPULamb8Bit(Optimizer2State):
     """
 
     def __init__(self,
-                 params: Union[[Iterable[Dict[str, Any]]], Dict[str, Any]],
+                 params: Union[Iterable[Dict[str, Any]], Dict[str, Any]],
                  lr: float = 1e-3,
                  betas: Tuple[float, float] = (0.9, 0.999),
                  eps: float = 1e-6,
