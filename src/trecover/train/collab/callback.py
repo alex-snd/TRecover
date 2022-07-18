@@ -5,6 +5,7 @@ import hivemind
 import pytorch_lightning as pl
 import torch.nn
 from pytorch_lightning.callbacks.base import Callback
+from pytorch_lightning.trainer.states import TrainerFn
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
@@ -142,8 +143,6 @@ class CollabCheckpoint(Callback):
         )
 
     def _should_skip_saving_checkpoint(self, trainer: pl.Trainer) -> bool:
-        from pytorch_lightning.trainer.states import TrainerFn
-
         return (
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
