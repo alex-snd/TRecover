@@ -81,6 +81,10 @@ class CollabCheckpoint(Callback):
 
             self._report_metrics(step=current_step)
 
+            metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
+            log.project_console.print(f'Optimizer state {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+                                      justify='center')
+
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
     @torch.no_grad()

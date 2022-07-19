@@ -101,8 +101,12 @@ class CollaborativeStrategy(Strategy):
             self.restore_from_backup()
 
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
-            project_console.print()
-            project_console.print(f'{len(metadata["optimizer_metadata"])}, {len(all_tensors)}', justify='center')
+            project_console.print('optimizer_metadata')
+            project_console.print(metadata["optimizer_metadata"])
+            project_console.print('all_tensors')
+            project_console.print(all_tensors)
+            project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+                                  justify='center')
 
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
