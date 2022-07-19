@@ -37,6 +37,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
                                            args=args,
                                            wrapped_scheduler=wrapped_model.wrapped_scheduler)
         if args.assist_in_averaging:
+            aux_optimizer.sync_state()
             aux_optimizer.start_assistant()
 
     try:
@@ -134,6 +135,8 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
                                        dht=dht_manager.dht,
                                        args=args,
                                        wrapped_scheduler=wrapped_model.wrapped_scheduler)
+
+    aux_optimizer.sync_state()
     aux_optimizer.start_assistant(attach=True)
 
 
