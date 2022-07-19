@@ -103,8 +103,6 @@ class CollaborativeStrategy(Strategy):
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
             project_console.print('optimizer_metadata')
             project_console.print(metadata["optimizer_metadata"])
-            project_console.print('all_tensors')
-            project_console.print(all_tensors)
             project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
                                   justify='center')
 
