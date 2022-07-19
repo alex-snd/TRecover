@@ -1,4 +1,5 @@
 from typing import List, Optional
+import os
 
 import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_only
@@ -59,6 +60,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
 def train(cli_args: Optional[List[str]] = None) -> None:
     args = get_train_parser().parse_args(cli_args)
+
+    os.system('ulimit -n 16384')
 
     if args.batch_size is None:
         args.batch_size = tune(cli_args)
