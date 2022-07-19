@@ -56,9 +56,11 @@ class BaseModelWrapper(pl.LightningModule):
     @property
     def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
         def optimizer(params: Iterable[Dict[str, Any]]) -> Optimizer:
-            return CPULamb8Bit(params=params,  # TODO params
+            return CPULamb8Bit(params=params,
                                lr=self.args.lr,
                                betas=(self.args.adam_beta1, self.args.adam_beta2),
+                               max_grad_norm=self.args.max_grad_norm,
+                               clamp_value=self.args.clamp_value,
                                eps=self.args.adam_epsilon,
                                weight_decay=self.args.weight_decay,
                                reuse_grad_buffers=not self.args.no_reuse_grad_buffers,

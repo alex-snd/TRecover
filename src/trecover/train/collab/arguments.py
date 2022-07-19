@@ -61,6 +61,7 @@ def get_data_parser(add_help: bool = True) -> ArgumentParser:
 def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Optimization arguments', add_help=add_help)
 
+    # CPULamb8Bit optimizer
     parser.add_argument('--lr', default=0.0025, type=float,
                         help='Learning rate value')
     parser.add_argument('--adam-beta1', default=0.9, type=float,
@@ -71,6 +72,10 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Term added to the denominator to improve numerical stability')
     parser.add_argument('--weight-decay', default=0.045, type=float,
                         help='Weight decay (L2 penalty)')
+    parser.add_argument('--max-grad-norm', default=4.0, type=float,
+                        help='Max norm of the gradients for clipping')
+    parser.add_argument('--clamp-value', default=1e9, type=float,
+                        help='Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e9)')
 
     # Scheduler
     parser.add_argument('--warmup-steps', default=3125, type=int,

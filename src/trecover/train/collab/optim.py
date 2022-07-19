@@ -40,7 +40,7 @@ class CPULamb8Bit(Optimizer2State):
     weight_decay : float, default=0
         Weight decay (L2 penalty)
     clamp_value : float, default=10
-        Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e3)
+        Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e9)
     bias_correction : bool, default=True
         Debias statistics by (1 - beta**step)
     min_8bit_size : int
@@ -50,6 +50,8 @@ class CPULamb8Bit(Optimizer2State):
         that .zero_grad() is called after each optimizer step.
     update_chunk_size : int, default=2 ** 24
         Quantized statistics will be de-quantized in chunks of up to this many elements.
+    max_grad_norm : Optional[float], default=None
+        Max norm of the gradients for clipping
 
     """
 
