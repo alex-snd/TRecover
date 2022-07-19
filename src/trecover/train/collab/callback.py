@@ -67,7 +67,7 @@ class CollabCheckpoint(Callback):
         self.loss += outputs['loss'].item()
         self.accuracy += outputs['accuracy']
 
-        if (current_step := self.optimizer.local_epoch) != self.last_reported_collaboration_step:
+        if (current_step := self.optimizer.local_epoch) != self.last_reported_collaboration_step and current_step != 0:
             self.total_samples_processed += self.samples
             self.samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
             self.lr = self.optimizer.opt.param_groups[0]['lr']
