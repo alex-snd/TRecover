@@ -38,11 +38,11 @@ class CPULamb8Bit(Optimizer2State):
     eps : float, default=1e-8
         Term added to the denominator to improve numerical stability
     weight_decay : float, default=0
-        weight decay (L2 penalty)
+        Weight decay (L2 penalty)
     clamp_value : float, default=10
-        clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e3)
+        Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e3)
     bias_correction : bool, default=True
-        debias statistics by (1 - beta**step)
+        Debias statistics by (1 - beta**step)
     min_8bit_size : int
         Statistics for parameters with fewer than this many elements will not be quantized
     reuse_grad_buffers : bool, default=False
