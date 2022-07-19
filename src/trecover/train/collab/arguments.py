@@ -11,13 +11,13 @@ def get_model_parser(add_help: bool = True) -> ArgumentParser:
                         help='Token size')
     parser.add_argument('--pe-max-len', default=256, type=int,
                         help='Positional encoding max length')
-    parser.add_argument('--n-layers', default=12, type=int,
+    parser.add_argument('--n-layers', default=8, type=int,
                         help='Number of encoder and decoder blocks')
     parser.add_argument('--d-model', default=768, type=int,
                         help='Model dimension - number of expected features in the encoder (decoder) input')
-    parser.add_argument('--n-heads', default=12, type=int,
+    parser.add_argument('--n-heads', default=16, type=int,
                         help='Number of encoder and decoder attention heads')
-    parser.add_argument('--d-ff', default=768, type=int,
+    parser.add_argument('--d-ff', default=768 * 4, type=int,
                         help='Dimension of the feedforward layer')
     parser.add_argument('--dropout', default=0.1, type=float,
                         help='Dropout range')
@@ -83,11 +83,11 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
                         help='Number of steps for gradients accumulation')
-    parser.add_argument('--target-batch-size', default=2048, type=int,
+    parser.add_argument('--target-batch-size', default=4096, type=int,
                         help='Perform optimizer step after all peers collectively accumulate this many samples')
-    parser.add_argument('--matchmaking-time', default=15, type=float,
+    parser.add_argument('--matchmaking-time', default=30, type=float,
                         help='Averaging group will wait for stragglers for at most this many seconds')
-    parser.add_argument('--allreduce-timeout', default=60, type=float,
+    parser.add_argument('--allreduce-timeout', default=80, type=float,
                         help='Give up on a given all-reduce round after this many seconds')
     parser.add_argument('--averaging-timeout', default=180, type=float,
                         help='Give up on averaging step after this many seconds')
@@ -95,6 +95,12 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
                              " This optimization reduces GPU memory consumption but may result in incorrect gradients "
                              "when using some advanced techniques (e.g. applying custom loss scaler)")
+
+    # Collaborative averager
+    parser.add_argument('--bandwidth', default=None, type=float,
+                        help='Min(upload & download speed) in megabits/s, used to assign averaging tasks between peers')
+    parser.add_argument('--min_vector_size', default=4_000_000, type=int,
+                        help='Minimum slice of gradients assigned to one reducer, should be same across peers')
 
     return parser
 

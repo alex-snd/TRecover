@@ -2,3 +2,4 @@ pytorch-lightning==1.6.4
 hivemind==1.1.0
 protobuf==3.20.1
 bitsandbytes-cuda102==0.26.0
+speedtest-cli==2.1.3

@@ -9,6 +9,7 @@ import torch
 from bitsandbytes.functional import dequantize_blockwise, quantize_blockwise
 from bitsandbytes.optim.optimizer import Optimizer2State
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
+from speedtest import Speedtest
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
@@ -401,8 +402,15 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                       verbose: bool = True,
                       batch_size_per_step: Optional[int] = None
                       ) -> hivemind.Optimizer:
+    if args.bandwidth is None:
+        log.project_console.print('Measure internet bandwidth...', style='salmon1', justify='right')
+        test = Speedtest()
+        args.bandwidth = max(1, min(test.upload(), test.download()) / 1e6)
+        log.project_console.print(f'Internet bandwidth (Mb/s): {args.bandwidth}', style='salmon1', justify='right')
+
     averaging_compression = SizeAdaptiveCompression(
         threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
+    # TODO load_compression
 
     return hivemind.Optimizer(dht=dht,
                               run_id=args.experiment_prefix,
@@ -422,4 +430,5 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                               matchmaking_time=args.matchmaking_time,
                               allreduce_timeout=args.allreduce_timeout,
                               averaging_timeout=args.averaging_timeout,
-                              reuse_grad_buffers=not args.no_reuse_grad_buffers)
+                              reuse_grad_buffers=not args.no_reuse_grad_buffers,
+                              averager_opts=dict(min_vector_size=args.min_vector_size, bandwidth=args.bandwidth))
