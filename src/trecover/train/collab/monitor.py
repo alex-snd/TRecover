@@ -56,17 +56,25 @@ class CollabMonitor(object):
             )
 
     def stream(self) -> Generator[GlobalMetrics, None, None]:
+        wait_peers_metrics = True
+
         while True:
-            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
+            if (metrics_entry := self.dht.get(self.metrics_key)) and (metrics_dict := metrics_entry.value):
                 metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
 
                 if (latest_step := max(item.step for item in metrics)) != self.current_step:
+                    if wait_peers_metrics:  # wait for other peers to report their metrics at the latest_step
+                        time.sleep(self.refresh_period)
+                        wait_peers_metrics = False
+                        continue
+
                     self.current_step = latest_step
 
                     yield self._average_peers_metrics(
                         [peer_metrics for peer_metrics in metrics if peer_metrics.step == latest_step]
                     )
 
+            wait_peers_metrics = True
             log.project_console.print('Fetching metrics...', style='yellow', justify='right')
             time.sleep(self.refresh_period)
 
@@ -136,7 +144,7 @@ class CollabMonitor(object):
         )
 
     def _upload_state(self) -> None:
-        with self.aux_optimizer:  # TODO indifferent thread or not?
+        with self.aux_optimizer:
             self.aux_optimizer.sync_state()
             state = self.aux_optimizer.state_dict
 
