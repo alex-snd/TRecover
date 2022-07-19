@@ -79,6 +79,9 @@ class CollabCheckpoint(Callback):
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
+            metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
+            log.project_console.print(metadata["optimizer_metadata"])
+
             self._report_metrics(step=current_step)
 
         metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
