@@ -1,5 +1,5 @@
-from typing import List, Optional
 import os
+from typing import List, Optional
 
 import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_only
