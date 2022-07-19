@@ -100,8 +100,15 @@ class CollaborativeStrategy(Strategy):
         if not self.tune:
             self.restore_from_backup()
 
+            metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
+            project_console.print()
+            project_console.print(f'{len(metadata["optimizer_metadata"])}, {len(all_tensors)}', justify='center')
+
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
+
+            metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
+            project_console.print(f'{len(metadata["optimizer_metadata"])}, {len(all_tensors)}', justify='center')
 
             if not self.args.state_path.exists():
                 project_console.print('Backup the collab state as it does not exist', style='magenta')
