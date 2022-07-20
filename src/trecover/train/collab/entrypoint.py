@@ -127,6 +127,8 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
 
+    os.system('ulimit -n 16384')
+
     log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
     dht_manager = DHTManager(args)
     wrapped_model = BaseModelWrapper(args)
