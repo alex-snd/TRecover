@@ -420,7 +420,7 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                               optimizer=wrapped_optimizer,
                               scheduler=wrapped_scheduler,
                               offload_optimizer=True,
-                              delay_grad_averaging=False,
+                              delay_grad_averaging=True,
                               delay_optimizer_step=True,
                               target_batch_size=args.target_batch_size,
                               batch_size_per_step=batch_size_per_step,
