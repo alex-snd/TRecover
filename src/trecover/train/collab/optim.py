@@ -338,9 +338,9 @@ class AuxiliaryOptimizer(object):
                                             dht=dht,
                                             args=args,
                                             wrapped_scheduler=wrapped_scheduler,
-                                            assist_in_averaging=False,
+                                            assist_in_averaging=args.assist_in_averaging,
                                             verbose=args.verbose,
-                                            batch_size_per_step=0)
+                                            batch_size_per_step=None)
 
         log.project_console.print(f'allow_state_sharing={self.collab_opt.state_averager.allow_state_sharing}')
 
