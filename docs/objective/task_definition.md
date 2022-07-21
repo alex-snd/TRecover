@@ -105,7 +105,7 @@ For a clearer explanation of the problem, let me introduce the following concept
     plaintext, is calculated by the formula:
     \[\begin{aligned} \hat{h}=|A|^{1 - H(A)}, \end{aligned}\]
     where \(H(A)\) is <a href="https://en.wikipedia.org/wiki/Entropy_(information_theory)">entropy</a> of a language 
-    with alphabet \(A\). 
+    with the \(A\) alphabet. 
 </p>
 
 !!! info ""
