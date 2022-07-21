@@ -88,6 +88,16 @@ class CollabCheckpoint(Callback):
         log.project_console.print(f'Optimizer state {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
                                   justify='center')
 
+        opt = self.optimizer.state_averager.optimizer
+
+        parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
+
+        log.project_console.print(
+            f'Parameters {len(parameters)}, Extras {len(self.optimizer.state_averager.extra_tensors)}',
+            justify='center')
+
+        del parameters
+
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
     @torch.no_grad()

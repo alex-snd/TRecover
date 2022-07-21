@@ -101,16 +101,29 @@ class CollaborativeStrategy(Strategy):
             self.restore_from_backup()
 
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
-            project_console.print('optimizer_metadata')
-            project_console.print(metadata["optimizer_metadata"])
             project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
                                   justify='center')
+
+            opt = self._collab_opt.state_averager.optimizer
+            parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
+            project_console.print(
+                f'Parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
+                justify='center')
+            del parameters
 
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
 
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
-            project_console.print(f'{len(metadata["optimizer_metadata"])}, {len(all_tensors)}', justify='center')
+            project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+                                  justify='center')
+
+            opt = self._collab_opt.state_averager.optimizer
+            parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
+            project_console.print(
+                f'Parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
+                justify='center')
+            del parameters
 
             if not self.args.state_path.exists():
                 project_console.print('Backup the collab state as it does not exist', style='magenta')
