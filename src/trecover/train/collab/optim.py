@@ -338,9 +338,9 @@ class AuxiliaryOptimizer(object):
                                             dht=dht,
                                             args=args,
                                             wrapped_scheduler=wrapped_scheduler,
-                                            assist_in_averaging=args.assist_in_averaging,
+                                            assist_in_averaging=False,
                                             verbose=args.verbose,
-                                            batch_size_per_step=None)
+                                            batch_size_per_step=0)
 
     def __enter__(self) -> 'AuxiliaryOptimizer':
         self.lock.acquire()
