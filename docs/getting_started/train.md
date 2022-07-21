@@ -36,5 +36,5 @@ To quickly start training the model, use this
     ```
     For more information use `trecover train local --help`
 
-=== "🕸️ Distributed"
+=== "🕸️ Collaborative"
     :soon: TODO
