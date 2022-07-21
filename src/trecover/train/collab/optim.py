@@ -342,6 +342,8 @@ class AuxiliaryOptimizer(object):
                                             verbose=args.verbose,
                                             batch_size_per_step=0)
 
+        log.project_console.print(f'allow_state_sharing={self.collab_opt.state_averager.allow_state_sharing}')
+
     def __enter__(self) -> 'AuxiliaryOptimizer':
         self.lock.acquire()
 
