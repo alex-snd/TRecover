@@ -121,7 +121,6 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
 
 def auxiliary(cli_args: Optional[List[str]] = None) -> None:
     args = get_auxiliary_parser().parse_args(cli_args)
-    args.assist_in_averaging = True
 
     if args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')

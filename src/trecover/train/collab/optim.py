@@ -338,9 +338,9 @@ class AuxiliaryOptimizer(object):
                                             dht=dht,
                                             args=args,
                                             wrapped_scheduler=wrapped_scheduler,
-                                            assist_in_averaging=args.assist_in_averaging,
+                                            auxiliary=False,
                                             verbose=args.verbose,
-                                            batch_size_per_step=None)
+                                            batch_size_per_step=0)
 
     def __enter__(self) -> 'AuxiliaryOptimizer':
         self.lock.acquire()
@@ -400,7 +400,7 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                       dht: hivemind.DHT,
                       args: Namespace,
                       wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None,
-                      assist_in_averaging: bool = False,
+                      auxiliary: bool = False,
                       verbose: bool = True,
                       batch_size_per_step: Optional[int] = None
                       ) -> hivemind.Optimizer:
@@ -429,7 +429,7 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                               load_state_compression=load_state_compression,
                               client_mode=args.client_mode,
                               verbose=verbose,
-                              auxiliary=assist_in_averaging,
+                              auxiliary=auxiliary,
                               matchmaking_time=args.matchmaking_time,
                               allreduce_timeout=args.allreduce_timeout,
                               averaging_timeout=args.averaging_timeout,

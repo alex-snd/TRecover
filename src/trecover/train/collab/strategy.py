@@ -90,7 +90,7 @@ class CollaborativeStrategy(Strategy):
                                              dht=self.dht,
                                              args=self.args,
                                              wrapped_scheduler=self.model.wrapped_scheduler,
-                                             assist_in_averaging=False,
+                                             auxiliary=False,
                                              verbose=self.verbose,
                                              batch_size_per_step=batch_size_per_step)
 
