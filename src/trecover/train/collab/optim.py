@@ -434,4 +434,8 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                               allreduce_timeout=args.allreduce_timeout,
                               averaging_timeout=args.averaging_timeout,
                               reuse_grad_buffers=not args.no_reuse_grad_buffers,
-                              averager_opts=dict(min_vector_size=args.min_vector_size, bandwidth=args.bandwidth))
+                              averager_opts={
+                                  'min_vector_size': args.min_vector_size,
+                                  'bandwidth': args.bandwidth,
+                                  'initialize_optimizer': True
+                              })
