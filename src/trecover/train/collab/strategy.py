@@ -129,9 +129,9 @@ class CollaborativeStrategy(Strategy):
                 justify='center')
             del parameters
 
-            if not self.args.state_path.exists():
-                project_console.print('Backup the collab state as it does not exist', style='magenta')
-                self.backup_state()
+            # if not self.args.state_path.exists():
+            #     project_console.print('Backup the collab state as it does not exist', style='magenta')
+            #     self.backup_state()
 
         if not self.args.no_reuse_grad_buffers:
             assert self.lightning_module is not None
