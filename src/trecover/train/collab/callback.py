@@ -79,24 +79,24 @@ class CollabCheckpoint(Callback):
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
-            metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
-            log.project_console.print(metadata["optimizer_metadata"])
+            # metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
+            # log.project_console.print(metadata["optimizer_metadata"])
 
             self._report_metrics(step=current_step)
 
-        metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
-        log.project_console.print(f'Optimizer state {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
-                                  justify='center')
-
-        opt = self.optimizer.state_averager.optimizer
-
-        parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
-
-        log.project_console.print(
-            f'Parameters {len(parameters)}, Extras {len(self.optimizer.state_averager.extra_tensors)}',
-            justify='center')
-
-        del parameters
+        # metadata, all_tensors, all_tensor_info = self.optimizer.state_averager.get_current_state()
+        # log.project_console.print(f'Optimizer state {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+        #                           justify='center')
+        #
+        # opt = self.optimizer.state_averager.optimizer
+        #
+        # parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
+        #
+        # log.project_console.print(
+        #     f'Parameters {len(parameters)}, Extras {len(self.optimizer.state_averager.extra_tensors)}',
+        #     justify='center')
+        #
+        # del parameters
 
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 

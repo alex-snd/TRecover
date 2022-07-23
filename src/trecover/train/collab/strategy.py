@@ -100,28 +100,32 @@ class CollaborativeStrategy(Strategy):
         if not self.tune:
             self.restore_from_backup()
 
+            project_console.print('PreSync', justify='center')
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
-            project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+            project_console.print(f'Optimizer metadata  {len(metadata["optimizer_metadata"])}, '
+                                  f'All tensors {len(all_tensors)}',
                                   justify='center')
 
             opt = self._collab_opt.state_averager.optimizer
             parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
             project_console.print(
-                f'Parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
+                f'Optimizer parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
                 justify='center')
             del parameters
 
             project_console.print('Sync with other peers', style='magenta')
             self._collab_opt.load_state_from_peers()
 
+            project_console.print('AfterSync', justify='center')
             metadata, all_tensors, all_tensor_info = self._collab_opt.state_averager.get_current_state()
-            project_console.print(f'Optimizer state  {len(metadata["optimizer_metadata"])}, {len(all_tensors)}',
+            project_console.print(f'Optimizer metadata  {len(metadata["optimizer_metadata"])}, '
+                                  f'All tensors {len(all_tensors)}',
                                   justify='center')
 
             opt = self._collab_opt.state_averager.optimizer
             parameters = tuple(param for param_group in opt.param_groups for param in param_group['params'])
             project_console.print(
-                f'Parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
+                f'Optimizer parameters {len(parameters)}, Extras {len(self._collab_opt.state_averager.extra_tensors)}',
                 justify='center')
             del parameters
 
