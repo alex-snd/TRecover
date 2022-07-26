@@ -40,7 +40,7 @@ def get_data_parser(add_help: bool = True) -> ArgumentParser:
                         help='Min sentence lengths')
     parser.add_argument('--max-threshold', default=256, type=int,
                         help='Max sentence lengths')
-    parser.add_argument('--train-dataset-size', default=2000, type=int,
+    parser.add_argument('--train-dataset-size', default=1_000_000, type=int,
                         help='Train dataset size')
     parser.add_argument('--val-dataset-size', default=400, type=int,
                         help='Validation dataset size')
