@@ -412,7 +412,7 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
 
     averaging_compression = SizeAdaptiveCompression(
         threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
-    load_state_compression = Float16Compression()
+    # load_state_compression = Float16Compression()
 
     return hivemind.Optimizer(dht=dht,
                               run_id=args.experiment_prefix,
@@ -426,7 +426,7 @@ def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], to
                               batch_size_per_step=batch_size_per_step,
                               grad_compression=averaging_compression,
                               state_averaging_compression=averaging_compression,
-                              load_state_compression=load_state_compression,
+                              # load_state_compression=load_state_compression,
                               client_mode=args.client_mode,
                               verbose=verbose,
                               auxiliary=auxiliary,
