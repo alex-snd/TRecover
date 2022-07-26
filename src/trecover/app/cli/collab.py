@@ -22,8 +22,7 @@ def monitor(ctx: Context,
 
     """
 
-    from trecover.train.collab import monitor
-    from trecover.train.collab.arguments import get_monitor_parser
+    from trecover.train.collab import monitor, get_monitor_parser
 
     if show_help:
         get_monitor_parser().print_help()
@@ -50,8 +49,7 @@ def visualize(ctx: Context,
 
     """
 
-    from trecover.train.collab import visualize
-    from trecover.train.collab.arguments import get_visualization_parser
+    from trecover.train.collab import visualize, get_visualization_parser
 
     if show_help:
         get_visualization_parser().print_help()
@@ -78,8 +76,7 @@ def tune(ctx: Context,
 
     """
 
-    from trecover.train.collab import tune
-    from trecover.train.collab.arguments import get_train_parser
+    from trecover.train.collab import tune, get_train_parser
 
     if show_help:
         get_train_parser().print_help()
@@ -106,8 +103,7 @@ def train(ctx: Context,
 
     """
 
-    from trecover.train.collab import train
-    from trecover.train.collab.arguments import get_train_parser
+    from trecover.train.collab import train, get_train_parser
 
     if show_help:
         get_train_parser().print_help()
@@ -134,8 +130,7 @@ def aux(ctx: Context,
 
     """
 
-    from trecover.train.collab import auxiliary
-    from trecover.train.collab.arguments import get_auxiliary_parser
+    from trecover.train.collab import auxiliary, get_auxiliary_parser
 
     if show_help:
         get_auxiliary_parser().print_help()
