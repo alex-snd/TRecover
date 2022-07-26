@@ -11,7 +11,7 @@ def get_model_parser(add_help: bool = True) -> ArgumentParser:
                         help='Token size')
     parser.add_argument('--pe-max-len', default=256, type=int,
                         help='Positional encoding max length')
-    parser.add_argument('--n-layers', default=6, type=int,
+    parser.add_argument('--n-layers', default=4, type=int,
                         help='Number of encoder and decoder blocks')
     parser.add_argument('--d-model', default=768, type=int,
                         help='Model dimension - number of expected features in the encoder (decoder) input')
@@ -62,7 +62,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Optimization arguments', add_help=add_help)
 
     # CPULamb8Bit optimizer
-    parser.add_argument('--lr', default=0.0025, type=float,
+    parser.add_argument('--lr', default=0.001, type=float,
                         help='Learning rate value')
     parser.add_argument('--adam-beta1', default=0.9, type=float,
                         help='Coefficient for computing running averages of gradient and its square')
@@ -78,7 +78,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e9)')
 
     # Scheduler
-    parser.add_argument('--warmup-steps', default=3125, type=int,
+    parser.add_argument('--warmup-steps', default=1500, type=int,
                         help='Warmup steps value for learning rate scheduler')
     parser.add_argument('--total-steps', default=31250, type=int,
                         help='Total number of collaborative optimizer updates, used for learning rate schedule')
