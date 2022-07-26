@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import log
-from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser
+from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser, sync_base_args
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import CollabMonitor
@@ -17,7 +17,7 @@ rank_zero_only.rank = 1
 
 
 def monitor(cli_args: Optional[List[str]] = None) -> None:
-    args = get_monitor_parser().parse_args(cli_args)
+    args = sync_base_args(get_monitor_parser().parse_args(cli_args))
 
     if args.assist_in_averaging and args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
@@ -60,7 +60,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:
-    args = get_train_parser().parse_args(cli_args)
+    args = sync_base_args(get_train_parser().parse_args(cli_args))
 
     os.system('ulimit -n 16384')
 
@@ -90,7 +90,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
 
 
 def tune(cli_args: Optional[List[str]] = None) -> int:
-    args = get_train_parser().parse_args(cli_args)
+    args = sync_base_args(get_train_parser().parse_args(cli_args))
 
     log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
@@ -120,7 +120,7 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
 
 
 def auxiliary(cli_args: Optional[List[str]] = None) -> None:
-    args = get_auxiliary_parser().parse_args(cli_args)
+    args = sync_base_args(get_auxiliary_parser().parse_args(cli_args))
 
     if args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')

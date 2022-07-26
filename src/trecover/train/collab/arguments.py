@@ -1,7 +1,32 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+import torch
+
 from trecover.config import var, exp_var
+
+
+def sync_base_args(args: Namespace) -> Namespace:
+    if args.no_args_sync:
+        return args
+
+    base_args = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
+
+    if experiment_prefix := base_args.get('experiment_prefix'):
+        args.experiment_prefix = experiment_prefix
+    if target_batch_size := base_args.get('target_batch_size'):
+        args.target_batch_size = target_batch_size
+    if (min_noise := base_args.get('min_noise')) or min_noise == 0:
+        args.min_noise = min_noise
+    if (max_noise := base_args.get('max_noise')) or max_noise == 0:
+        args.max_noise = max_noise
+    if initial_peers := base_args.get('initial_peers'):
+        if args.initial_peers:
+            args.initial_peers.extend([peer_id for peer_id in initial_peers if peer_id not in args.initial_peers])
+        else:
+            args.initial_peers = initial_peers
+
+    return args
 
 
 def get_model_parser(add_help: bool = True) -> ArgumentParser:
@@ -110,7 +135,6 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     return parser
 
 
-# TODO --no-args-sync
 def get_dht_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('DHT arguments', add_help=add_help)
 
@@ -132,6 +156,8 @@ def get_dht_parser(add_help: bool = True) -> ArgumentParser:
                         help='Visible multiaddrs the host announces for external connections from other p2p instances')
     parser.add_argument('--identity-path', type=Path,
                         help='Path to a pre-generated private key file. If defined, makes the peer ID deterministic')
+    parser.add_argument('--no-args-sync', action='store_true',
+                        help='Do not sync base collaborative arguments with torch.hub')
 
     return parser
 
@@ -243,3 +269,7 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Visualization columns delimiter')
 
     return parser
+
+
+if __name__ == '__main__':
+    print(sync_base_args(get_dht_parser().parse_args()))
