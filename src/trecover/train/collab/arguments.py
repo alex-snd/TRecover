@@ -11,7 +11,7 @@ def get_model_parser(add_help: bool = True) -> ArgumentParser:
                         help='Token size')
     parser.add_argument('--pe-max-len', default=256, type=int,
                         help='Positional encoding max length')
-    parser.add_argument('--n-layers', default=4, type=int,
+    parser.add_argument('--n-layers', default=5, type=int,
                         help='Number of encoder and decoder blocks')
     parser.add_argument('--d-model', default=768, type=int,
                         help='Model dimension - number of expected features in the encoder (decoder) input')
