@@ -67,11 +67,23 @@ def trecover(device: torch.device = torch.device('cpu'), version: str = 'latest'
 
 
 def collab_args() -> Dict[str, Any]:
+    """
+    Load collaborative training base arguments.
+
+    Returns
+    -------
+    Dict[str, Any] :
+        Collaborative training base arguments.
+
+    """
+
     return {
         'initial_peers': [
-            '/ip4/95.216.202.215/tcp/42123/p2p/QmcEakWA757aDP1b5iTzsmHEXUoQVcPa8YYrqwq6aYJkP5',
+            '/ip4/95.216.202.215/tcp/34234/p2p/QmS2mYPX8Q78RDQzxMf17phVYPashi4C6ixVbA3jrj9yxt',
         ],
-        'target_batch_size': 256,
+        'experiment_prefix': 'trecover',
+        'target_batch_size': 4096,
         'min_noise': 0,
         'max_noise': 1,
+
     }
