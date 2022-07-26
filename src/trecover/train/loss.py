@@ -5,8 +5,6 @@ from torch.nn import CrossEntropyLoss
 
 
 class CustomCrossEntropyLoss(torch.nn.Module):
-    # TODO docs
-
     def __init__(self, ignore_index: int = -1):
         super(CustomCrossEntropyLoss, self).__init__()
 
@@ -19,8 +17,6 @@ class CustomCrossEntropyLoss(torch.nn.Module):
 
 
 class CustomPenaltyLoss(torch.nn.Module):
-    # TODO docs
-
     def __init__(self, coefficient: float = 1.0, ignore_index: int = -1):
         super(CustomPenaltyLoss, self).__init__()
 

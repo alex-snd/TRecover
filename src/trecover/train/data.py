@@ -11,8 +11,6 @@ from trecover.config import var, log
 
 
 class BaseCollate(object):
-    # TODO docs
-
     def __init__(self, device: Optional[torch.device] = None):
         self.device = device or torch.device("cpu")
 
@@ -23,17 +21,11 @@ class BaseCollate(object):
         raise NotImplementedError
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
-        # TODO docs
-
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
 
 
 class StandardCollate(BaseCollate):
-    # TODO docs
-
     def __init__(self, min_noise: int, max_noise: int, device: Optional[torch.device] = None):
-        # TODO docs
-
         assert 0 <= min_noise <= len(var.ALPHABET), \
             f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
         assert min_noise <= max_noise <= len(var.ALPHABET), \
@@ -47,8 +39,6 @@ class StandardCollate(BaseCollate):
         return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
-        # TODO docs
-
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
@@ -97,10 +87,7 @@ class StandardCollate(BaseCollate):
 
 
 class WikiDataset(Dataset):
-    # TODO docs
-
     def __init__(self, datafiles: List[Path], min_threshold: int, max_threshold: int, dataset_size: int):
-        # TODO docs
         assert self.__exists(datafiles), 'datafiles do not exist'
         assert min_threshold > 0, 'min_threshold should be grater than 0'
         assert max_threshold >= min_threshold, f'max_threshold should be grater or equal than {min_threshold}'
@@ -115,7 +102,6 @@ class WikiDataset(Dataset):
         self.dataset_size = dataset_size
 
     def __getitem__(self, idx: int) -> str:
-        # TODO docs
         np.random.seed(None)
 
         file_id = np.random.choice(self.n_files, p=self.distribution)
@@ -139,7 +125,6 @@ class WikiDataset(Dataset):
 
     @staticmethod
     def __exists(datafiles: List[Path]) -> bool:
-        # TODO docs
         for file in datafiles:
             if not file.exists():
                 print(f'{file} doesnt exist')
@@ -148,7 +133,6 @@ class WikiDataset(Dataset):
         return True if len(datafiles) else False
 
     def __get_distribution(self) -> np.ndarray:
-        # TODO docs
         powered = np.array(self.file_sizes)
 
         return powered / np.sum(powered)
@@ -158,8 +142,6 @@ class WikiDataset(Dataset):
                           num_workers: int = 0,
                           pin_memory: bool = True
                           ) -> DataLoader:
-        # TODO docs
-
         assert batch_size > 0, 'batch_size should be grater than 0'
         assert num_workers >= 0, 'num_workers should be grater or equal than 0'
 
