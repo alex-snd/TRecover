@@ -1,4 +1,6 @@
 :root {
   --md-primary-fg-color:        #48466D;
   --md-accent-fg-color:         #F5793B;
+  --md-typeset-table-color:     #FFFFFF;
+  --md-code-bg-color:           hsla(243, 45%, 35%, 0.1);
 }
