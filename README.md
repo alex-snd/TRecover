@@ -1,21 +1,24 @@
-<h1 align="center">Welcome to Text Recovery Project 👋</h1>
+<h1 align="center">Welcome to <a href="https://alex-snd.github.io/TRecover">Text Recovery Project</a> 👋</h1>
 <p align="center">
   A python library for training a Transformer neural network to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.
 </p>
 
-![Preview Animation](../assets/preview_animation.gif?raw=true)
+![Preview Animation](https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true)
   
 <p align="center">
   <a href="https://huggingface.co/spaces/alex-snd/TRecover">
     <img src="https://img.shields.io/badge/demo-%F0%9F%A4%97%20Hugging%20Face-blue?color=%2348466D" alt="Hugging Face demo"/>
   </a>
+  <a href="https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb">
+    <img src="https://badgen.net/badge/icon/Open in Colab/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/google_colab.svg?raw=true&label" alt="Open In Colab"/>
+  </a>
+  <a href="https://wandb.ai/snd/TRecover?workspace=user-snd">
+    <img src="https://badgen.net/badge/icon/Visualize in W&B/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/wandb_dots_logo.svg?raw=true&label" alt="Visualize in W&B"/>
+  </a>
   <a href="https://alex-snd.github.io/TRecover">
     <img src="https://img.shields.io/badge/docs-MkDocs-blue.svg?color=%2348466D" alt="MkDocs link"/>
   </a>
   <img src="https://img.shields.io/badge/python-v3.8.5-blue.svg?color=%2348466D" alt="Python version"/>
-  <a href="https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg?color=%2348466D" alt="Open In Colab"/>
-  </a>
   <a href="https://badge.fury.io/py/trecover">
     <img src="https://img.shields.io/pypi/v/trecover?color=%2348466D" alt="PyPI version"/>
   </a>
@@ -127,7 +130,7 @@ trecover download data
 To quickly start training the model, open the [Jupyter Notebook](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb).
 
 
-* 🕸️ Distributed <br>
+* 🕸️ Collaboartive <br>
   TODO
 * 💻 Local <br>
   After the dataset is loaded, you can start training the model:
