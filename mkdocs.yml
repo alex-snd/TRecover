@@ -48,11 +48,15 @@ theme:
 # Extra CSS
 extra_css:
   - static/css/custom.css
+  - static/css/termynal.css
 
+# Extra Js
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - static/js/termynal.js
+  - static/js/custom.js
 
 # Extensions
 markdown_extensions:
@@ -111,35 +115,35 @@ plugins:
 nav:
   - Home: index.md
   - Getting started:
-    - Installation: getting_started/installation.md
-    - Data: getting_started/data.md
-    - Train: getting_started/train.md
+      - Installation: getting_started/installation.md
+      - Data: getting_started/data.md
+      - Train: getting_started/train.md
   - Objective:
-    - Task definition: objective/task_definition.md
-    - Related work: objective/related_work.md
+      - Task definition: objective/task_definition.md
+      - Related work: objective/related_work.md
   - Demo: demo.md
   - Reference:
-    - CLI:
-      - src/trecover/app/cli/index.md
-      - Download : src/trecover/app/cli/download.md
-      - Collab : src/trecover/app/cli/collab.md
-      - Mlflow : src/trecover/app/cli/mlflow.md
-      - Dashboard : src/trecover/app/cli/dashboard.md
-      - API : src/trecover/app/cli/api.md
-      - Worker : src/trecover/app/cli/worker.md
-      - Broker : src/trecover/app/cli/broker.md
-      - Backend : src/trecover/app/cli/backend.md
-    - API:
-      - src/trecover/app/api/index.md
-      - Schemas : src/trecover/app/api/schemas.md
-      - Celery Tasks : src/trecover/app/api/backend/tasks.md
-    - Utils:
-        - Beam Search : src/trecover/utils/beam_search.md
-        - CLI : src/trecover/utils/cli.md
-        - Docker : src/trecover/utils/docker.md
-        - Inference : src/trecover/utils/inference.md
-        - Model : src/trecover/utils/model.md
-        - Train : src/trecover/utils/train.md
-        - Transform : src/trecover/utils/transform.md
-        - Visualization : src/trecover/utils/visualization.md
+      - CLI:
+          - src/trecover/app/cli/index.md
+          - Download: src/trecover/app/cli/download.md
+          - Collab: src/trecover/app/cli/collab.md
+          - Mlflow: src/trecover/app/cli/mlflow.md
+          - Dashboard: src/trecover/app/cli/dashboard.md
+          - API: src/trecover/app/cli/api.md
+          - Worker: src/trecover/app/cli/worker.md
+          - Broker: src/trecover/app/cli/broker.md
+          - Backend: src/trecover/app/cli/backend.md
+      - API:
+          - src/trecover/app/api/index.md
+          - Schemas: src/trecover/app/api/schemas.md
+          - Celery Tasks: src/trecover/app/api/backend/tasks.md
+      - Utils:
+          - Beam Search: src/trecover/utils/beam_search.md
+          - CLI: src/trecover/utils/cli.md
+          - Docker: src/trecover/utils/docker.md
+          - Inference: src/trecover/utils/inference.md
+          - Model: src/trecover/utils/model.md
+          - Train: src/trecover/utils/train.md
+          - Transform: src/trecover/utils/transform.md
+          - Visualization: src/trecover/utils/visualization.md
 
