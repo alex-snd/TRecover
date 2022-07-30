@@ -9,7 +9,7 @@
 
 :root {
     --color-bg: hsla(243, 45%, 35%, 0.1);
-    --color-text: #57646c;
+    --color-text: hsla(200, 18%, 26%, 1);
     --color-text-subtle: #48466D;
     --color-terminal-control: #48466D;
 }
