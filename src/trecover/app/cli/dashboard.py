@@ -74,10 +74,10 @@ def dashboard_start(host: str = Option(var.STREAMLIT_HOST, '--host', '-h', help=
             '--server.port', str(port),
             '--logger.level', loglevel,
             '--global.suppressDeprecationWarnings', 'True',
-            '--theme.backgroundColor', '#E7EAD9',
-            '--theme.secondaryBackgroundColor', '#DFE3D0',
+            '--theme.backgroundColor', '#FFFFFF',
+            '--theme.secondaryBackgroundColor', '#EAEAF2',
             '--theme.primaryColor', '#FF8068',
-            '--theme.textColor', '#157D96'
+            '--theme.textColor', '#48466D'
             ]
 
     if no_daemon:
