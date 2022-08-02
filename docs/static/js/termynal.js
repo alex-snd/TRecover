@@ -20,7 +20,7 @@ class Termynal {
      * @param {number} options.typeDelay - Delay between each typed character, in ms.
      * @param {number} options.lineDelay - Delay between each line, in ms.
      * @param {number} options.progressLength - Number of characters displayed as progress bar.
-     * @param {string} options.progressChar – Character to use for progress bar, defaults to █.
+     * @param {string} options.progressChar – Character to use for progress bar, defaults to ━.
 	 * @param {number} options.progressPercent - Max percent of progress.
      * @param {string} options.cursor – Character to use for cursor, defaults to ▋.
      * @param {Object[]} lineData - Dynamically loaded line data objects.
@@ -36,7 +36,7 @@ class Termynal {
         this.originalLineDelay = this.lineDelay = options.lineDelay
             || parseFloat(this.container.getAttribute(`${this.pfx}-lineDelay`)) || 1500;
         this.progressLength = options.progressLength
-            || parseFloat(this.container.getAttribute(`${this.pfx}-progressLength`)) || 40;
+            || parseFloat(this.container.getAttribute(`${this.pfx}-progressLength`)) || 20;
         this.progressChar = options.progressChar
             || this.container.getAttribute(`${this.pfx}-progressChar`) || '━';
 		this.progressPercent = options.progressPercent
