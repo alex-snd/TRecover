@@ -15,6 +15,8 @@ hide:
     === "🤗 Hugging Face"
         <font size="+1">You can play with a pre-trained model hosted [here](https://huggingface.co/spaces/alex-snd/TRecover).</font>
 
+        <img src="https://github.com/alex-snd/TRecover/blob/assets/dashboard_demo.gif?raw=true"/>
+
     === "🐳 Docker Compose"
         <font size="+1">Use the command below to run the service via Docker Compose.</font>
 
