@@ -68,10 +68,7 @@ class CollabCheckpoint(Callback):
         self.accuracy += outputs['accuracy']
 
         if (current_step := self.optimizer.local_epoch) != self.last_reported_collaboration_step and current_step != 0:
-            self.total_samples_processed += self.samples
-            self.samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
-            self.lr = self.optimizer.opt.param_groups[0]['lr']
-            self.alive_peers = trainer.strategy.num_peers
+            self._report_metrics(trainer=trainer, step=current_step)
 
             if not self._should_skip_saving_checkpoint(trainer):
                 log.project_console.print('Backup collab state', style='magenta')
@@ -79,7 +76,7 @@ class CollabCheckpoint(Callback):
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
-            self._report_metrics(step=current_step)
+            self.last_reported_collaboration_step = current_step
 
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
 
@@ -91,7 +88,12 @@ class CollabCheckpoint(Callback):
 
         return True
 
-    def _report_metrics(self, step: int) -> None:
+    def _report_metrics(self, trainer: pl.Trainer, step: int) -> None:
+        self.total_samples_processed += self.samples
+        self.samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
+        self.lr = self.optimizer.opt.param_groups[0]['lr']
+        self.alive_peers = trainer.strategy.num_peers
+
         statistics = LocalMetrics(
             loss=self.loss,
             accuracy=self.accuracy,
@@ -119,7 +121,6 @@ class CollabCheckpoint(Callback):
         self.steps = 0
         self.loss = 0
         self.accuracy = 0
-        self.last_reported_collaboration_step = step
 
     def _print_metrics(self, step: int) -> None:
         panel_group = Group(Text(f'Local loss: {self.loss / self.steps}',
