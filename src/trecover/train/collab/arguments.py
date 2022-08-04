@@ -258,6 +258,8 @@ def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
                         help='Whether to show collaborative optimizer logs')
     parser.add_argument('--assist-refresh', default=1, type=float,
                         help='Period (in seconds) for trying to assist averaging')
+    parser.add_argument('--as-active-peer', action='store_true',
+                        help='Allow to share state with other peers otherwise only assist in averaging')
 
     return parser
 
