@@ -40,7 +40,7 @@ class CPULamb8Bit(Optimizer2State):
     weight_decay : float, default=0
         Weight decay (L2 penalty)
     clamp_value : float, default=10
-        Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g 10e9)
+        Clamp weight_norm in (0,clamp_value). Set to a high value to avoid it (e.g. 10e9)
     bias_correction : bool, default=True
         Debias statistics by (1 - beta**step)
     min_8bit_size : int
