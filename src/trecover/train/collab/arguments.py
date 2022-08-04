@@ -107,6 +107,8 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Warmup steps value for learning rate scheduler')
     parser.add_argument('--total-steps', default=31250, type=int,
                         help='Total number of collaborative optimizer updates, used for learning rate schedule')
+    parser.add_argument('--min-lr', default=1e-4, type=float,
+                        help='Minimum value for learning rate schedule')
 
     # Collaborative optimizer
     parser.add_argument('--batch-size', default=None, type=int,

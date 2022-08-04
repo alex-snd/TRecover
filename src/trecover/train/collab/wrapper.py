@@ -73,7 +73,8 @@ class BaseModelWrapper(pl.LightningModule):
         def scheduler(optimizer: Optimizer) -> LambdaLR:
             return get_linear_scheduler_with_warmup(optimizer=optimizer,
                                                     warmup_steps=self.args.warmup_steps,
-                                                    total_steps=self.args.total_steps)
+                                                    total_steps=self.args.total_steps,
+                                                    min_lr=self.args.min_lr)
 
         return scheduler
 

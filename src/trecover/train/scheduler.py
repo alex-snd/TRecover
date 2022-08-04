@@ -85,6 +85,7 @@ class WarmupScheduler(BaseScheduler):
 def get_linear_scheduler_with_warmup(optimizer: Optimizer,
                                      warmup_steps: int,
                                      total_steps: int,
+                                     min_lr: float = 0.0,
                                      last_epoch: int = -1
                                      ) -> LambdaLR:
     """
@@ -99,6 +100,8 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
         The number of steps for the warmup phase.
     total_steps : int
         The total number of training steps.
+    min_lr : Optional[float], default=0.0
+        Minimum learning rate value for the scheduler.
     last_epoch : Optional[int], default=-1
         The index of the last epoch when resuming training.
 
@@ -112,8 +115,7 @@ def get_linear_scheduler_with_warmup(optimizer: Optimizer,
     def lr_lambda(current_step: int) -> float:
         if current_step < warmup_steps:
             return float(current_step) / float(max(1, warmup_steps))
-        return max(
-            0.0, float(total_steps - current_step) / float(max(1, total_steps - warmup_steps))
-        )
+
+        return max(min_lr, float(total_steps - current_step) / float(max(1, total_steps - warmup_steps)))
 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
