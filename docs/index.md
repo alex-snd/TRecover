@@ -9,7 +9,7 @@ hide:
 <h1 align="center"><img src="https://github.com/alex-snd/TRecover/blob/assets/preview_animation_white.gif?raw=true" alt="Preview Animation"/></h1>
 <div align="center">
     <h2 align="center">Welcome to Text Recovery Project 👋 </h2>
-    <h3 align="center">A python library for training a Transformer neural network to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.</h3>
+    <h3 align="center">A python library for decentralized training of a Transformer neural network across the Internet to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.</h3>
     <a href="https://huggingface.co/spaces/alex-snd/TRecover">
         <img src="https://img.shields.io/badge/demo-%F0%9F%A4%97%20Hugging%20Face-blue?color=%2348466D" alt="Hugging Face demo"/>
     </a>
