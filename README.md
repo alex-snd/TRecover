@@ -4,7 +4,7 @@
 </p>
 
 ![Preview Animation](https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true)
-  
+
 <p align="center">
   <a href="https://huggingface.co/spaces/alex-snd/TRecover">
     <img src="https://img.shields.io/badge/demo-%F0%9F%A4%97%20Hugging%20Face-blue?color=%2348466D" alt="Hugging Face demo"/>
@@ -29,22 +29,28 @@
 </p>
 
 ## 🚀 Objective
-The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text in columns that can be compiled for a [Running Key Cipher](https://en.wikipedia.org/wiki/Running_key_cipher). You can read more about the problem [here](https://alex-snd.github.io/TRecover/objective/task_definition/).
 
-In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described below.
+The main goal of the project is to study the possibility of using Transformer neural network to “read” meaningful text
+in columns that can be compiled for a [Running Key Cipher](https://en.wikipedia.org/wiki/Running_key_cipher). You can
+read more about the problem [here](https://alex-snd.github.io/TRecover/objective/task_definition/).
+
+In addition, the second rather fun 😅 goal is to train a large enough model so that it can handle the case described
+below.
 Let there be an original sentence:
 
->Hello, my name is ***Zendaya*** Maree Stoermer Coleman but you can just call me ***Zendaya***.
+> Hello, my name is ***Zendaya*** Maree Stoermer Coleman but you can just call me ***Zendaya***.
 
-The columns for this sentence will be compiled in such a way that the last seven contain from ten to thirteen letters of the English alphabet, and all the others from two to five. Thus, the last seven characters will be much harder to "read" compared to the rest. However, we can guess from the meaning of the sentence that this is the name ***Zendaya***.
+The columns for this sentence will be compiled in such a way that the last seven contain from ten to thirteen letters of
+the English alphabet, and all the others from two to five. Thus, the last seven characters will be much harder to "read"
+compared to the rest. However, we can guess from the meaning of the sentence that this is the name ***Zendaya***.
 In other words, the goal is also to train a model that can understand and correctly “read” the last word.
 
-
-
-
 ## ⚙ Installation
+
 Trecover requires Python 3.8 or higher and supports both Windows and Linux platforms.
+
 1. Clone the repository:
+
 ```shell
 git clone https://github.com/alex-snd/TRecover.git  && cd trecover
 ```
@@ -81,7 +87,7 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
     ```shell
     pip install -e ".[dev]"
     ```
-    
+
 6. Initialize project's environment:
    ```shell
    trecover init
@@ -91,46 +97,50 @@ git clone https://github.com/alex-snd/TRecover.git  && cd trecover
    trecover init --help
    ```
 
-
 ## 👀 Demo
+
 * 🤗 Hugging Face <br>
   You can play with a pre-trained model hosted [here](https://huggingface.co/spaces/alex-snd/TRecover).
+
+  <img align="center" src="https://github.com/alex-snd/TRecover/blob/assets/dashboard_demo.gif?raw=true"/>
+
 * 🐳 Docker Compose<br>
-  * Pull from Docker Hub:
-    ```shell
-    docker-compose -f docker/compose/scalable-service.yml up
-    ```
-  * Build from source:
-    ```shell
-    trecover download artifacts
-    docker-compose -f docker/compose/scalable-service-build.yml up
-    ```
+    * Pull from Docker Hub:
+      ```shell
+      docker-compose -f docker/compose/scalable-service.yml up
+      ```
+    * Build from source:
+      ```shell
+      trecover download artifacts
+      docker-compose -f docker/compose/scalable-service-build.yml up
+      ```
 * 💻 Local (requires docker) <br>
-  * Download pretrained model:
-    ```shell
-    trecover download artifacts
-    ```
-  * Launch the service:
-    ```shell
-    trecover up
-    ```
-
-
+    * Download pretrained model:
+      ```shell
+      trecover download artifacts
+      ```
+    * Launch the service:
+      ```shell
+      trecover up
+      ```
 
 ## 🗃️ Data
-The [WikiText](https://huggingface.co/datasets/wikitext) and [WikiQA](https://huggingface.co/datasets/wiki_qa) datasets 
+
+The [WikiText](https://huggingface.co/datasets/wikitext) and [WikiQA](https://huggingface.co/datasets/wiki_qa) datasets
 were used to train the model, from which all characters except English letters were removed.<br>
 You can download the cleaned dataset:
+
 ```shell
 trecover download data
 ```
 
-
 ## 💪 Train
-To quickly start training the model, open the [Jupyter Notebook](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb).
 
+To quickly start training the model, open
+the [Jupyter Notebook](https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb)
+.
 
-* 🕸️ Collaboartive <br>
+* 🕸️ Collaborative <br>
   TODO
 * 💻 Local <br>
   After the dataset is loaded, you can start training the model:
@@ -161,21 +171,21 @@ To quickly start training the model, open the [Jupyter Notebook](https://colab.r
   ```
   For more information use `trecover train local --help`
 
-
 ## ✔️ Related work
+
 TODO: what was done, tech stack.
 
-
 ## 🤝 Contributing
+
 Contributions, issues and feature requests are welcome.<br />
 Feel free to check [issues page](https://github.com/alex-snd/TRecover/issues) if you want to contribute.
 
-
 ## 👏 Show your support
+
 Please don't hesitate to ⭐️ this repository if you find it cool!
 
-
 ## 📜 License
+
 Copyright © 2022 [Alexander Shulga](https://www.linkedin.com/in/alex-snd).<br />
 This project is [Apache 2.0](https://github.com/alex-snd/TRecover/blob/master/LICENSE) licensed.
 
