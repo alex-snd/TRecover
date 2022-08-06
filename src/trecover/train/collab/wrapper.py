@@ -95,6 +95,14 @@ class BaseModelWrapper(pl.LightningModule):
             },
         ]
 
+    @torch.no_grad()
+    def params_are_finite(self) -> bool:
+        for param in self.parameters():
+            if not torch.all(torch.isfinite(param)):
+                return False
+
+        return True
+
     def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
         dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,

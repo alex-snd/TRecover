@@ -3,7 +3,6 @@ from typing import Optional, Dict, Any
 
 import hivemind
 import pytorch_lightning as pl
-import torch.nn
 from pytorch_lightning.callbacks.base import Callback
 from pytorch_lightning.trainer.states import TrainerFn
 from rich.console import Group
@@ -54,7 +53,7 @@ class CollabCheckpoint(Callback):
             self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load?
             self.max_noise = pl_module.args.max_noise
 
-        if not self._params_are_finite():
+        if not self.pl_module.model.params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')
 
             if not self.state_path.exists():
@@ -79,14 +78,6 @@ class CollabCheckpoint(Callback):
             self.last_reported_collaboration_step = current_step
 
         self.samples = self.optimizer.grad_averager.local_samples_accumulated
-
-    @torch.no_grad()
-    def _params_are_finite(self):
-        for param in self.pl_module.model.parameters():
-            if not torch.all(torch.isfinite(param)):
-                return False
-
-        return True
 
     def _report_metrics(self, trainer: pl.Trainer, step: int) -> None:
         self.total_samples_processed += self.samples
