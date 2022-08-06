@@ -1,7 +1,7 @@
 from argparse import Namespace
 from pathlib import Path
 from time import time
-from typing import Dict, Any, Iterable, Optional, Tuple, List, Union, Callable
+from typing import Dict, Any, Iterable, Optional, Tuple, List, Union
 
 import pytorch_lightning as pl
 import torch
@@ -10,15 +10,12 @@ from rich.panel import Panel
 from rich.text import Text
 from torch import Tensor
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from trecover.config import log
 from trecover.model import TRecover
-from trecover.train.collab.optim import CPULamb8Bit
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
-from trecover.train.scheduler import get_linear_scheduler_with_warmup
 from trecover.utils.train import transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target
 from trecover.utils.visualization import visualize_columns, visualize_target
@@ -47,53 +44,11 @@ class BaseModelWrapper(pl.LightningModule):
         return src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out
 
     def configure_optimizers(self) -> Optimizer:  # fictive optimizer
-        return torch.optim.Adam(params=self.trainable_params,
+        return torch.optim.Adam(params=self.model.parameters(),
                                 lr=self.args.lr,
                                 betas=(self.args.adam_beta1, self.args.adam_beta2),
                                 eps=self.args.adam_epsilon,
                                 weight_decay=self.args.weight_decay)
-
-    @property
-    def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], Optimizer]:
-        def optimizer(params: Iterable[Dict[str, Any]]) -> Optimizer:
-            return CPULamb8Bit(params=params,
-                               lr=self.args.lr,
-                               betas=(self.args.adam_beta1, self.args.adam_beta2),
-                               max_grad_norm=self.args.max_grad_norm,
-                               clamp_value=self.args.clamp_value,
-                               eps=self.args.adam_epsilon,
-                               weight_decay=self.args.weight_decay,
-                               reuse_grad_buffers=not self.args.no_reuse_grad_buffers,
-                               bias_correction=True)
-
-        return optimizer
-
-    @property
-    def wrapped_scheduler(self) -> Callable[[Optimizer, ], LambdaLR]:
-        def scheduler(optimizer: Optimizer) -> LambdaLR:
-            return get_linear_scheduler_with_warmup(optimizer=optimizer,
-                                                    warmup_steps=self.args.warmup_steps,
-                                                    total_steps=self.args.total_steps,
-                                                    min_lr=self.args.min_lr)
-
-        return scheduler
-
-    @property
-    def trainable_params(self) -> Iterable[Dict[str, Any]]:
-        no_decay = ['bias', 'LayerNorm.weight']
-
-        return [
-            {
-                'params': [p for n, p in self.model.named_parameters()
-                           if not any(nd in n for nd in no_decay) and p.requires_grad],
-                'weight_decay': self.args.weight_decay,
-            },
-            {
-                'params': [p for n, p in self.model.named_parameters()
-                           if any(nd in n for nd in no_decay) and p.requires_grad],
-                'weight_decay': 0.0,
-            },
-        ]
 
     def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
@@ -106,8 +61,8 @@ class BaseModelWrapper(pl.LightningModule):
 
 
 class PeerModelWrapper(BaseModelWrapper):
-    def __init__(self, params: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(PeerModelWrapper, self).__init__(params, *pl_args, **pl_kwargs)
+    def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
+        super(PeerModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
@@ -145,8 +100,8 @@ class PeerModelWrapper(BaseModelWrapper):
 
 
 class FullModelWrapper(PeerModelWrapper):
-    def __init__(self, params: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(FullModelWrapper, self).__init__(params, *pl_args, **pl_kwargs)
+    def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
+        super(FullModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
     def validation_epoch_end(self, step_outputs: Union[Dict[str, Tensor], List[Dict[str, Tensor]]]) -> None:
         self.visualize_on_epoch_end()

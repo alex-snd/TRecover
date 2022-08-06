@@ -8,7 +8,7 @@ from trecover.config import log
 from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser, sync_base_args
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
-from trecover.train.collab.monitor import CollabMonitor
+from trecover.train.collab.monitor import CollaborativeMonitor
 from trecover.train.collab.optim import AuxiliaryOptimizer
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
@@ -24,34 +24,27 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         return
 
     dht_manager = DHTManager(args)
-    wrapped_model = None
     aux_optimizer = None
 
-    if args.upload_every_step or args.assist_in_averaging:
-        log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
+    if (enable_upload := args.upload_every_step is not None and args.upload_every_step > 0) or args.assist_in_averaging:
+        args.as_active_peer |= enable_upload
+        aux_optimizer = AuxiliaryOptimizer(dht=dht_manager.dht,
+                                           wrapped_model=BaseModelWrapper(args),
+                                           args=args)
 
-        wrapped_model = BaseModelWrapper(args)
-        aux_optimizer = AuxiliaryOptimizer(wrapped_optimizer=wrapped_model.wrapped_optimizer,
-                                           params=wrapped_model.trainable_params,
-                                           dht=dht_manager.dht,
-                                           args=args,
-                                           wrapped_scheduler=wrapped_model.wrapped_scheduler)
         if args.assist_in_averaging:
-            aux_optimizer.sync_state()
             aux_optimizer.start_assistant()
 
     try:
-        metrics_monitor = CollabMonitor(dht=dht_manager.dht,
-                                        experiment_prefix=args.experiment_prefix,
-                                        refresh_period=args.refresh_period,
-                                        upload_every_step=args.upload_every_step,
-                                        state_path=args.monitor_state_path,
-                                        wandb_key=args.wandb_key,
-                                        wandb_project=args.wandb_project,
-                                        wandb_id=args.wandb_id,
-                                        wandb_registry=args.wandb_registry,
-                                        wrapped_model=wrapped_model,
-                                        aux_optimizer=aux_optimizer)
+        metrics_monitor = CollaborativeMonitor(dht=dht_manager.dht,
+                                               experiment_prefix=args.experiment_prefix,
+                                               refresh_period=args.refresh_period,
+                                               upload_every_step=args.upload_every_step,
+                                               wandb_key=args.wandb_key,
+                                               wandb_project=args.wandb_project,
+                                               wandb_id=args.wandb_id,
+                                               wandb_registry=args.wandb_registry,
+                                               aux_optimizer=aux_optimizer)
         metrics_monitor.start()
 
     finally:
@@ -71,10 +64,9 @@ def train(cli_args: Optional[List[str]] = None) -> None:
     wrapped_model = PeerModelWrapper(args)
     collab_strategy = CollaborativeStrategy(args=args, dht=dht_manager.dht)
 
-    collab_checkpoint = CollabCheckpoint(dht_manager,
+    collab_checkpoint = CollabCheckpoint(dht_manager=dht_manager,
                                          statistics_expiration=args.statistics_expiration,
-                                         backup_every_step=args.backup_every_step,
-                                         state_path=args.state_path)
+                                         backup_every_step=args.backup_every_step)
 
     trainer = pl.Trainer(default_root_dir=args.pl_registry,
                          max_epochs=args.n_epochs,
@@ -127,17 +119,8 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
         return
 
     os.system('ulimit -n 16384')
+    aux_optimizer = AuxiliaryOptimizer(dht=DHTManager(args).dht, wrapped_model=BaseModelWrapper(args), args=args)
 
-    log.project_console.print('Configure auxiliary collab optimizer', style='yellow')
-    dht_manager = DHTManager(args)
-    wrapped_model = BaseModelWrapper(args)
-    aux_optimizer = AuxiliaryOptimizer(wrapped_optimizer=wrapped_model.wrapped_optimizer,
-                                       params=wrapped_model.trainable_params,
-                                       dht=dht_manager.dht,
-                                       args=args,
-                                       wrapped_scheduler=wrapped_model.wrapped_scheduler)
-
-    aux_optimizer.sync_state()
     aux_optimizer.start_assistant(attach=True)
 
 

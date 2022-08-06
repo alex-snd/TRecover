@@ -9,10 +9,12 @@ import torch
 from bitsandbytes.functional import dequantize_blockwise, quantize_blockwise
 from bitsandbytes.optim.optimizer import Optimizer2State
 from hivemind import SizeAdaptiveCompression, Float16Compression, Uniform8BitQuantization
+from speedtest import Speedtest, SpeedtestException
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
-from trecover.utils.train import get_internet_bandwidth
+from trecover.train.collab.wrapper import BaseModelWrapper
+from trecover.train.scheduler import get_linear_scheduler_with_warmup
 
 
 class CPULamb8Bit(Optimizer2State):
@@ -322,25 +324,241 @@ class CPULamb8Bit(Optimizer2State):
             return param_delta
 
 
-class AuxiliaryOptimizer(object):
+class CollaborativeOptimizer(object):
     def __init__(self,
-                 wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
-                 params: [Iterable[Dict[str, Any]]],
                  dht: hivemind.DHT,
+                 wrapped_model: BaseModelWrapper,
                  args: Namespace,
-                 wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None):
+                 batch_size_per_step: Optional[int],
+                 verbose: bool = True):
+        self.dht = dht
+        self.wrapped_model = wrapped_model
+        self.args = args
+        self.state_path = args.state_path
+        self.batch_size_per_step = batch_size_per_step
+        self.verbose = verbose
+        self.auxiliary = False
+        self._opt = None
+
+    @property
+    def trainable_params(self) -> Iterable[Dict[str, Any]]:
+        no_decay = ['bias', 'LayerNorm.weight']
+
+        return [
+            {
+                'params': [p for n, p in self.wrapped_model.model.named_parameters()
+                           if not any(nd in n for nd in no_decay) and p.requires_grad],
+                'weight_decay': self.args.weight_decay,
+            },
+            {
+                'params': [p for n, p in self.wrapped_model.model.named_parameters()
+                           if any(nd in n for nd in no_decay) and p.requires_grad],
+                'weight_decay': 0.0,
+            },
+        ]
+
+    @property
+    def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], CPULamb8Bit]:
+        def optimizer(params: Iterable[Dict[str, Any]]) -> CPULamb8Bit:
+            return CPULamb8Bit(params=params,
+                               lr=self.args.lr,
+                               betas=(self.args.adam_beta1, self.args.adam_beta2),
+                               max_grad_norm=self.args.max_grad_norm,
+                               clamp_value=self.args.clamp_value,
+                               eps=self.args.adam_epsilon,
+                               weight_decay=self.args.weight_decay,
+                               reuse_grad_buffers=not self.args.no_reuse_grad_buffers,
+                               bias_correction=True)
+
+        return optimizer
+
+    @property
+    def wrapped_scheduler(self) -> Callable[[torch.optim.Optimizer, ], LambdaLR]:
+        def scheduler(optimizer: torch.optim.Optimizer) -> LambdaLR:
+            return get_linear_scheduler_with_warmup(optimizer=optimizer,
+                                                    warmup_steps=self.args.warmup_steps,
+                                                    total_steps=self.args.total_steps,
+                                                    min_lr=self.args.min_lr)
+
+        return scheduler
+
+    @property
+    def opt(self) -> hivemind.Optimizer:
+        if not self._opt:
+            assert (self.batch_size_per_step is None and self.auxiliary) or \
+                   (self.batch_size_per_step is not None and not self.auxiliary)
+
+            averaging_compression = SizeAdaptiveCompression(
+                threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
+
+            self._opt = hivemind.Optimizer(dht=self.dht,
+                                           run_id=self.args.experiment_prefix,
+                                           params=self.trainable_params,
+                                           optimizer=self.wrapped_optimizer,
+                                           scheduler=self.wrapped_scheduler,
+                                           offload_optimizer=True,
+                                           delay_grad_averaging=True,
+                                           delay_optimizer_step=True,
+                                           target_batch_size=self.args.target_batch_size,
+                                           batch_size_per_step=self.batch_size_per_step,
+                                           grad_compression=averaging_compression,
+                                           state_averaging_compression=averaging_compression,
+                                           client_mode=self.args.client_mode,
+                                           verbose=self.verbose,
+                                           auxiliary=self.auxiliary,
+                                           matchmaking_time=self.args.matchmaking_time,
+                                           allreduce_timeout=self.args.allreduce_timeout,
+                                           averaging_timeout=self.args.averaging_timeout,
+                                           reuse_grad_buffers=not self.args.no_reuse_grad_buffers,
+                                           averager_opts={
+                                               'min_vector_size': self.args.min_vector_size,
+                                               'bandwidth': self.bandwidth
+                                           })
+            if not self._opt.state_averager.allow_state_sharing:
+                log.project_console.print(
+                    'Note: Other peers will not be able to download collab state from this one',
+                    style='yellow', justify='right'
+                )
+
+        return self._opt
+
+    @property
+    def run_id(self) -> str:
+        return self.opt.run_id
+
+    @property
+    def allow_state_sharing(self) -> str:
+        return self.opt.state_averager.allow_state_sharing
+
+    @property
+    def num_peers(self) -> int:
+        return self.opt.tracker.global_progress.num_peers
+
+    @property
+    def global_epoch(self) -> int:
+        return self.opt.tracker.global_epoch
+
+    @property
+    def local_epoch(self) -> int:
+        return self.opt.local_epoch
+
+    @property
+    def local_samples_accumulated(self) -> int:
+        return self.opt.grad_averager.local_samples_accumulated
+
+    @property
+    def samples_per_second(self) -> float:
+        return self.opt.tracker.performance_ema.samples_per_second
+
+    @property
+    def lr(self) -> float:
+        return self.opt.opt.param_groups[0]['lr']
+
+    @property
+    def bandwidth(self) -> Optional[float]:
+        if not self.args.bandwidth:
+            try:
+                log.project_console.print('Measure internet bandwidth...', style='salmon1', justify='right')
+                test = Speedtest()
+                self.args.bandwidth = max(1, min(test.upload(), test.download()) / 1e6)
+                log.project_console.print(f'Internet bandwidth (Mb/s): {self.args.bandwidth}',
+                                          style='salmon1', justify='right')
+            except SpeedtestException:
+                log.project_console.print('Unable to measure internet bandwidth', style='red', justify='right')
+                return None
+
+        return self.args.bandwidth
+
+    @property
+    @torch.no_grad()
+    def params_are_finite(self) -> bool:
+        for param in self.wrapped_model.model.parameters():
+            if not torch.all(torch.isfinite(param)):
+                return False
+
+        return True
+
+    @torch.no_grad()
+    def sync_state(self) -> None:
+        if self.num_peers:
+            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+            self.opt.load_state_from_peers()
+            log.project_console.print('Sync is finished', style='salmon1', justify='right')
+        else:
+            log.project_console.print(
+                'There is no one active peer to synchronize the collab state with',
+                style='salmon1', justify='right'
+            )
+
+    @torch.no_grad()
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            'model': self.wrapped_model.model.state_dict(),
+            'optimizer': self.opt.state_dict(),
+            'scheduler': self.opt.state_averager.scheduler.state_dict(),
+            'local_epoch': self.opt.local_epoch,
+        }
+
+    @torch.no_grad()
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.wrapped_model.model.load_state_dict(state_dict['model'])
+        self.opt.load_state_dict(state_dict['optimizer'])
+        self.opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
+        self.opt.state_averager.local_epoch = state_dict['local_epoch']
+
+        if self.opt.offload_optimizer:
+            state_averager = self.opt.state_averager
+            offloaded_parameters = [
+                param for group in state_averager.optimizer.param_groups for param in group['params']
+            ]
+
+            assert len(offloaded_parameters) == len(state_averager.main_parameters), \
+                'Unable to load collaborative optimizer state dict'
+
+            for main_param, offloaded_param in zip(state_averager.main_parameters, offloaded_parameters):
+                offloaded_param.copy_(main_param, non_blocking=True)
+
+    @torch.no_grad()
+    def backup_state(self) -> None:
+        log.project_console.print('Backup the collab state', style='magenta', justify='right')
+        torch.save(self.state_dict(), self.state_path)
+        log.project_console.print('Backup done', style='magenta', justify='right')
+
+    @torch.no_grad()
+    def restore_from_backup(self, check_step: bool = False) -> None:
+        if self.state_path.exists():
+            state_dict = torch.load(self.state_path)
+            current_step = self.opt.local_epoch
+            backup_step = state_dict['local_epoch']
+
+            if not check_step or backup_step >= current_step:
+                self.load_state_dict(state_dict)
+                log.project_console.print('Collab sate is restored from backup', style='green', justify='right')
+
+            else:
+                log.project_console.print(
+                    'Bypassed restoring collab state from local backup - backup state is too old',
+                    style='yellow', justify='right'
+                )
+        else:
+            log.project_console.print('Backup does not exist', style='yellow', justify='right')
+
+
+class AuxiliaryOptimizer(CollaborativeOptimizer):
+    def __init__(self,
+                 dht: hivemind.DHT,
+                 wrapped_model: BaseModelWrapper,
+                 args: Namespace):
+        super(AuxiliaryOptimizer, self).__init__(dht=dht,
+                                                 wrapped_model=wrapped_model,
+                                                 args=args,
+                                                 batch_size_per_step=0 if args.as_active_peer else None,
+                                                 verbose=args.verbose)
+
+        self.auxiliary = not args.as_active_peer
         self.lock = threading.Lock()
         self.finished = threading.Event()
-        self.assist_refresh = args.assist_refresh
-
-        self.collab_opt = create_collab_opt(wrapped_optimizer=wrapped_optimizer,
-                                            params=params,
-                                            dht=dht,
-                                            args=args,
-                                            wrapped_scheduler=wrapped_scheduler,
-                                            auxiliary=not args.as_active_peer,
-                                            verbose=args.verbose,
-                                            batch_size_per_step=0 if args.as_active_peer else None)
+        self.last_reported_step = None
 
     def __enter__(self) -> 'AuxiliaryOptimizer':
         self.lock.acquire()
@@ -350,86 +568,66 @@ class AuxiliaryOptimizer(object):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.lock.release()
 
+    def _check_params_finiteness(self) -> None:
+        if self.allow_state_sharing and not self.params_are_finite:
+            log.project_console.print('Model parameters are not finite', style='red')
+
+            if not self.state_path.exists():
+                raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
+
+            self.restore_from_backup()
+
+    @property
+    def _is_time_to_backup(self) -> bool:
+        return (
+                self.local_epoch != self.last_reported_step
+                and self.local_epoch != 0
+                and self.local_epoch % self.args.backup_every_step == 0
+        )
+
+    def _assist_averaging_in_background(self) -> None:
+        log.project_console.print('Start assistant', style='bright_blue', justify='right')
+
+        self.restore_from_backup()
+        self.sync_state()
+
+        if self.allow_state_sharing or self.args.backup_every_step:
+            self.backup_state()
+            self.last_reported_step = self.local_epoch
+
+        while not self.finished.is_set():
+            try:
+                with self:
+                    self._check_params_finiteness()
+                    self.opt.step()
+
+                    if self._is_time_to_backup:
+                        self.backup_state()
+                        self.last_reported_step = self.local_epoch
+
+                log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
+                time.sleep(self.args.assist_refresh)
+
+            except KeyboardInterrupt:
+                log.project_console.print('Assistant is stopped', style='yellow', justify='right')
+                return
+            except Exception as e:
+                log.project_logger.exception(e, exc_info=True)
+
     def start_assistant(self, attach: bool = False) -> None:
-        def assist_averaging_in_background(lock: threading.Lock,
-                                           collab_opt: hivemind.Optimizer,
-                                           assist_refresh: float,
-                                           finished: threading.Event):
-            while not finished.is_set():
-                try:
-                    with lock:
-                        collab_opt.step()
-
-                    log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
-                    time.sleep(assist_refresh)
-
-                except KeyboardInterrupt:
-                    log.project_console.print('Interrupted', style='yellow', justify='right')
-                    return
-                except Exception as e:
-                    log.project_logger.exception(e, exc_info=True)
+        if self.args.client_mode:
+            log.project_console.print('Client-mode peer cannot assist in averaging', style='red', justify='right')
+            return
 
         if attach:
-            assist_averaging_in_background(self.lock, self.collab_opt, self.assist_refresh, self.finished)
-
+            self._assist_averaging_in_background()
         else:
-            averaging_thread = threading.Thread(name='AveragingAuxThread', target=assist_averaging_in_background,
-                                                args=[self.lock, self.collab_opt, self.assist_refresh, self.finished],
+            averaging_thread = threading.Thread(name='AveragingAuxThread',
+                                                target=self._assist_averaging_in_background,
+                                                args=[self],
                                                 daemon=True)
             averaging_thread.start()
 
     def set_finished(self) -> None:
         log.project_console.print('Stop assistant...', style='yellow', justify='right')
         self.finished.set()
-
-    def sync_state(self) -> None:
-        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
-        self.collab_opt.load_state_from_peers()
-
-    @property
-    def state_dict(self) -> Dict[str, Any]:
-        return {
-            'optimizer': self.collab_opt.state_dict(),
-            'scheduler': self.collab_opt.state_averager.scheduler.state_dict(),
-            'local_epoch': self.collab_opt.local_epoch
-        }
-
-
-def create_collab_opt(wrapped_optimizer: Callable[[Iterable[Dict[str, Any]]], torch.optim.Optimizer],
-                      params: [Iterable[Dict[str, Any]]],
-                      dht: hivemind.DHT,
-                      args: Namespace,
-                      wrapped_scheduler: Optional[Callable[[torch.optim.Optimizer, ], LambdaLR]] = None,
-                      auxiliary: bool = False,
-                      verbose: bool = True,
-                      batch_size_per_step: Optional[int] = None
-                      ) -> hivemind.Optimizer:
-    if args.bandwidth is None:
-        args.bandwidth = get_internet_bandwidth()
-
-    averaging_compression = SizeAdaptiveCompression(
-        threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
-
-    return hivemind.Optimizer(dht=dht,
-                              run_id=args.experiment_prefix,
-                              params=params,
-                              optimizer=wrapped_optimizer,
-                              scheduler=wrapped_scheduler,
-                              offload_optimizer=True,
-                              delay_grad_averaging=True,
-                              delay_optimizer_step=True,
-                              target_batch_size=args.target_batch_size,
-                              batch_size_per_step=batch_size_per_step,
-                              grad_compression=averaging_compression,
-                              state_averaging_compression=averaging_compression,
-                              client_mode=args.client_mode,
-                              verbose=verbose,
-                              auxiliary=auxiliary,
-                              matchmaking_time=args.matchmaking_time,
-                              allreduce_timeout=args.allreduce_timeout,
-                              averaging_timeout=args.averaging_timeout,
-                              reuse_grad_buffers=not args.no_reuse_grad_buffers,
-                              averager_opts={
-                                  'min_vector_size': args.min_vector_size,
-                                  'bandwidth': args.bandwidth
-                              })

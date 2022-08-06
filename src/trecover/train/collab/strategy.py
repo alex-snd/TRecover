@@ -12,9 +12,9 @@ from pytorch_lightning.utilities.exceptions import MisconfigurationException
 from pytorch_lightning.utilities.model_helpers import is_overridden
 from torch import Tensor
 
-from trecover.config.log import project_console
+from trecover.config import log
 from trecover.train.collab.dht import DHTManager
-from trecover.train.collab.optim import create_collab_opt
+from trecover.train.collab.optim import CollaborativeOptimizer
 
 
 class CollaborativeStrategy(Strategy):
@@ -32,15 +32,9 @@ class CollaborativeStrategy(Strategy):
         self.verbose = not tune if verbose is None else verbose
         self.tune = tune
         self._dht: Optional[hivemind.DHT] = dht
-        self._collab_opt: Optional[hivemind.Optimizer] = None
+        self._collab_opt: Optional[CollaborativeOptimizer] = None
         self._optimizer_zero_grad_original: Optional[Callable] = None
         self._collab_opt_initialized = False
-
-    @property
-    def num_peers(self) -> int:
-        if self._collab_opt:
-            return self._collab_opt.tracker.global_progress.num_peers
-        return 1
 
     @property
     def root_device(self) -> torch.device:
@@ -70,6 +64,12 @@ class CollaborativeStrategy(Strategy):
 
         return self._dht
 
+    @property
+    def collab_opt(self) -> CollaborativeOptimizer:
+        assert self._collab_opt is not None, 'Collaborative optimizer is not initializer yet'
+
+        return self._collab_opt
+
     def setup(self, trainer: pl.Trainer) -> None:
         self.model_to_device()
         super().setup(trainer)
@@ -85,27 +85,19 @@ class CollaborativeStrategy(Strategy):
         else:
             batch_size_per_step = self.args.batch_size * self.args.accumulate_batches
 
-        self._collab_opt = create_collab_opt(wrapped_optimizer=self.model.wrapped_optimizer,
-                                             params=self.model.trainable_params,
-                                             dht=self.dht,
-                                             args=self.args,
-                                             wrapped_scheduler=self.model.wrapped_scheduler,
-                                             auxiliary=False,
-                                             verbose=self.verbose,
-                                             batch_size_per_step=batch_size_per_step)
+        self._collab_opt = CollaborativeOptimizer(dht=self.dht,
+                                                  wrapped_model=self.lightning_module,
+                                                  args=self.args,
+                                                  batch_size_per_step=batch_size_per_step,
+                                                  verbose=self.verbose)
 
-        self.optimizers = [self._collab_opt]
+        self.optimizers = [self._collab_opt.opt]
         self._collab_opt_initialized = True
 
         if not self.tune:
-            self.restore_from_backup()
-
-            project_console.print('Sync with other peers', style='magenta')
-            self._collab_opt.load_state_from_peers()
-
-            if not self.args.state_path.exists():
-                project_console.print('Backup the collab state as it does not exist', style='magenta')
-                self.backup_state()
+            self._collab_opt.restore_from_backup()
+            self._collab_opt.sync_state()
+            self._collab_opt.backup_state()
 
         if not self.args.no_reuse_grad_buffers:
             assert self.lightning_module is not None
@@ -116,7 +108,7 @@ class CollaborativeStrategy(Strategy):
         assert self.lightning_module is not None
 
         if is_overridden('optimizer_zero_grad', self.lightning_module):
-            project_console.print(
+            log.project_console.print(
                 'You have overridden `optimizer_zero_grad` which will be disabled. '
                 'When `CollaborativeStrategy(reuse_grad_buffers=True)`, the optimizer cannot call zero grad, '
                 'as this would delete the gradients before they are averaged.',
@@ -165,64 +157,6 @@ class CollaborativeStrategy(Strategy):
     def broadcast(self, obj: TBroadcast, src: int = 0) -> TBroadcast:
         return obj
 
-    def state_dict(self) -> Dict[str, Any]:
-        if self._collab_opt:
-            return {
-                'model': self.model.model.state_dict(),
-                'optimizer': self._collab_opt.state_dict(),
-                'scheduler': self._collab_opt.state_averager.scheduler.state_dict(),
-                'local_epoch': self._collab_opt.local_epoch,
-            }
-        else:
-            return {'model': self.model.model.state_dict(), 'optimizer': {}, 'scheduler': {}, 'local_epoch': {}}
-
-    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
-        self.model.model.load_state_dict(state_dict['model'])
-
-        if self._collab_opt:
-            self._collab_opt.load_state_dict(state_dict['optimizer'])
-            self._collab_opt.state_averager.scheduler.load_state_dict(state_dict['scheduler'])
-            self._collab_opt.state_averager.local_epoch = state_dict['local_epoch']
-
-            if self._collab_opt.offload_optimizer:
-                state_averager = self._collab_opt.state_averager
-                offloaded_parameters = [
-                    param for group in state_averager.optimizer.param_groups for param in group['params']
-                ]
-
-                assert len(offloaded_parameters) == len(state_averager.main_parameters)
-
-                for main_param, offloaded_param in zip(state_averager.main_parameters, offloaded_parameters):
-                    offloaded_param.copy_(main_param, non_blocking=True)
-
-    @torch.no_grad()
-    def backup_state(self) -> None:
-        torch.save(self.state_dict(), self.args.state_path)
-
-    @torch.no_grad()
-    def restore_from_backup(self, check_step: bool = False) -> None:
-        if self.args.state_path.exists():
-            state_dict = torch.load(self.args.state_path)
-            current_step = self._collab_opt.local_epoch
-            backup_step = state_dict['local_epoch']
-
-            if not check_step or backup_step >= current_step:
-                self.load_state_dict(state_dict)
-                project_console.print('CollaborativeStrategy: Collab sate is restored from backup.', style='green')
-
-            else:
-                project_console.print(
-                    'CollaborativeStrategy: Bypassed restoring collab state '
-                    'from local backup - backup state is too old.',
-                    style='yellow'
-                )
-
-        else:
-            project_console.print(
-                'CollaborativeStrategy: Backup does not exist.',
-                style='yellow'
-            )
-
     def teardown(self) -> None:
         # re-enable `optimizer_zero_grad`
         if self._optimizer_zero_grad_original is not None and self.lightning_module is not None:
@@ -230,15 +164,15 @@ class CollaborativeStrategy(Strategy):
 
         if self._collab_opt:
             if self.verbose:
-                project_console.print('Shutting down hivemind optimizer', style='yellow')
+                log.project_console.print('Shutting down hivemind optimizer', style='yellow')
 
-            self._collab_opt.shutdown()
+            self._collab_opt.opt.shutdown()
             self._collab_opt = None
             self._collab_opt_initialized = False
 
         if self._dht:
             if self.verbose:
-                project_console.print('Shutting down hivemind DHT', style='yellow')
+                log.project_console.print('Shutting down hivemind DHT', style='yellow')
 
             self._dht.shutdown()
             self._dht = None

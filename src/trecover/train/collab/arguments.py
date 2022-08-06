@@ -111,6 +111,14 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Minimum value for learning rate schedule')
 
     # Collaborative optimizer
+    parser.add_argument('--verbose', action='store_true',
+                        help='Whether to show collaborative optimizer logs')
+    parser.add_argument('--state-path', default=exp_var.COLLAB_STATE_PATH, type=Path,
+                        help='Path to state backup file. Load this state upon init and when '
+                             'recovering from NaN parameters')
+    parser.add_argument('--backup-every-step', default=None, type=int,
+                        help='Update collab state backup on disk once in this many global steps. '
+                             'Default: do not update local state')
     parser.add_argument('--batch-size', default=None, type=int,
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
@@ -164,8 +172,8 @@ def get_dht_parser(add_help: bool = True) -> ArgumentParser:
     return parser
 
 
-def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
-    parser = ArgumentParser('DHT arguments', add_help=add_help,
+def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
                             parents=[
                                 get_dht_parser(add_help=False),
                                 get_model_parser(add_help=False),
@@ -173,7 +181,18 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                                 get_optimization_parser(add_help=False)
                             ])
 
-    parser.add_argument('--refresh-period', default=3, type=float,
+    parser.add_argument('--assist-refresh', default=1, type=float,
+                        help='Period (in seconds) for trying to assist averaging')
+    parser.add_argument('--as-active-peer', action='store_true',
+                        help='Allow to share state with other peers otherwise only assist in averaging')
+
+    return parser
+
+
+def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Monitor arguments', add_help=add_help, parents=[get_auxiliary_parser(add_help=False)])
+
+    parser.add_argument('--refresh-period', default=10, type=float,
                         help='Period (in seconds) for fetching the metrics from DHT')
     parser.add_argument('--wandb-project', default='TRecover', type=str,
                         help='Name of Weights & Biases project to report the training progress to')
@@ -183,17 +202,11 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                         help='Weights & Biases credentials token to log in')
     parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,
                         help='Default path for Weights & Biases logs and weights')
-    parser.add_argument('--monitor-state-path', default=exp_var.MONITOR_STATE_PATH, type=Path,
-                        help='Path to state backup file')
     parser.add_argument('--upload-every-step', default=None, type=int,
                         help='Upload to Weights & Biases and backup on disk training state '
                              'once in this many global steps. Default: do not upload')
-    parser.add_argument('--verbose', action='store_true',
-                        help='Whether to show collaborative optimizer logs')
     parser.add_argument('--assist-in-averaging', action='store_true',
                         help='If True, this peer will facilitate averaging for other (training) peers')
-    parser.add_argument('--assist-refresh', default=1, type=float,
-                        help='Period (in seconds) for trying to assist averaging')
 
     return parser
 
@@ -235,31 +248,6 @@ def get_train_parser(add_help: bool = True) -> ArgumentParser:
                         help='Number of epochs for training')
     parser.add_argument('--statistics-expiration', default=600, type=float,
                         help='Statistics will be removed if not updated in this many seconds')
-    parser.add_argument('--backup-every-step', default=None, type=int,
-                        help='Update training state backup on disk once in this many global steps. '
-                             'Default: do not update local state')
-    parser.add_argument('--state-path', default=exp_var.TRAIN_STATE_PATH, type=Path,
-                        help='Path to state backup file. Load this state upon init and when '
-                             'recovering from NaN parameters')
-
-    return parser
-
-
-def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
-    parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
-                            parents=[
-                                get_dht_parser(add_help=False),
-                                get_model_parser(add_help=False),
-                                get_data_parser(add_help=False),
-                                get_optimization_parser(add_help=False)
-                            ])
-
-    parser.add_argument('--verbose', action='store_true',
-                        help='Whether to show collaborative optimizer logs')
-    parser.add_argument('--assist-refresh', default=1, type=float,
-                        help='Period (in seconds) for trying to assist averaging')
-    parser.add_argument('--as-active-peer', action='store_true',
-                        help='Allow to share state with other peers otherwise only assist in averaging')
 
     return parser
 
@@ -273,7 +261,3 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Visualization columns delimiter')
 
     return parser
-
-
-if __name__ == '__main__':
-    print(sync_base_args(get_dht_parser().parse_args()))
