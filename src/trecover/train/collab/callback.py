@@ -53,7 +53,7 @@ class CollabCheckpoint(Callback):
             self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load?
             self.max_noise = pl_module.args.max_noise
 
-        if not self.pl_module.model.params_are_finite():
+        if not self.pl_module.params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')
 
             if not self.state_path.exists():

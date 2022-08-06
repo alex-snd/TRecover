@@ -97,7 +97,7 @@ class BaseModelWrapper(pl.LightningModule):
 
     @torch.no_grad()
     def params_are_finite(self) -> bool:
-        for param in self.parameters():
+        for param in self.model.parameters():
             if not torch.all(torch.isfinite(param)):
                 return False
 
