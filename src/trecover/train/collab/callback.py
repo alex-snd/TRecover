@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Optional, Dict, Any
 
 import hivemind
@@ -16,7 +15,8 @@ from trecover.train.collab.wrapper import BaseModelWrapper
 
 
 class CollabCheckpoint(Callback):
-    def __init__(self, dht_manager: DHTManager,
+    def __init__(self,
+                 dht_manager: DHTManager,
                  statistics_expiration: float,
                  backup_every_step: int):
         self.dht_manager: DHTManager = dht_manager

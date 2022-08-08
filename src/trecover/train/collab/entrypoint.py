@@ -67,7 +67,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
     wrapped_model = PeerModelWrapper(args)
     collab_strategy = CollaborativeStrategy(args=args, dht=dht_manager.dht)
 
-    collab_checkpoint = CollabCheckpoint(dht_manager,
+    collab_checkpoint = CollabCheckpoint(dht_manager=dht_manager,
                                          statistics_expiration=args.statistics_expiration,
                                          backup_every_step=args.backup_every_step)
 
