@@ -555,10 +555,18 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         log.project_console.print('Start assistant', style='bright_blue', justify='right')
         self.sync_state()
 
-        # TODO restore if params are not finite and sync state
+        # TODO check if it syncs automatically
         while not self.finished.is_set():
             try:
                 with self:
+                    if not self.params_are_finite():
+                        log.project_console.print('Model parameters are not finite', style='red')
+
+                        if not self.state_path.exists():
+                            raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
+
+                        self.restore_from_backup()
+
                     self.opt.step()
 
                 log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
