@@ -59,7 +59,7 @@ class CollabCheckpoint(Callback):
             if not self.collab_opt.state_path.exists():
                 raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
 
-            trainer.strategy.collab_opt.restore_from_backup()
+            self.collab_opt.restore_from_backup()
             return
 
         self.steps += 1
@@ -70,7 +70,7 @@ class CollabCheckpoint(Callback):
             self._report_metrics(step=current_step)
 
             if not self._should_skip_saving_checkpoint(trainer):
-                trainer.strategy.collab_opt.backup_state()
+                self.collab_opt.backup_state()
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
