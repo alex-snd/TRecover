@@ -11,6 +11,8 @@ from rich.text import Text
 
 from trecover.config import log
 from trecover.train.collab.dht import DHTManager, LocalMetrics
+from trecover.train.collab.optim import CollaborativeOptimizer
+from trecover.train.collab.wrapper import BaseModelWrapper
 
 
 class CollabCheckpoint(Callback):
@@ -19,8 +21,8 @@ class CollabCheckpoint(Callback):
                  backup_every_step: int,
                  state_path: Path):
         self.dht_manager: DHTManager = dht_manager
-        self.pl_module: Optional[pl.LightningModule] = None
-        self.optimizer: Optional[hivemind.Optimizer] = None
+        self.wrapped_model: Optional[BaseModelWrapper] = None
+        self.collab_opt: Optional[CollaborativeOptimizer] = None
 
         self.statistics_expiration = statistics_expiration
         self.last_reported_collaboration_step = None
@@ -43,47 +45,46 @@ class CollabCheckpoint(Callback):
                            outputs: Dict[str, Any],
                            *args, **kwargs
                            ) -> None:
-        if self.optimizer is None:
+        if self.collab_opt is None:
             assert len(trainer.strategy.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
-            self.optimizer = trainer.strategy.optimizers[0]
-            self.last_reported_collaboration_step = self.optimizer.local_epoch
+            self.collab_opt = trainer.strategy.collab_opt
+            self.last_reported_collaboration_step = self.collab_opt.local_epoch
 
-        if self.pl_module is None:
-            self.pl_module = pl_module
-            self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load?
+        if self.wrapped_model is None:
+            self.wrapped_model = pl_module  # the same as self.collab_opt.wrapped_model  TODO does it need to be here?
+            self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load? move to collab_opt?
             self.max_noise = pl_module.args.max_noise
 
-        if not self.pl_module.params_are_finite():
+        if not self.collab_opt.params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')
 
             if not self.state_path.exists():
                 raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
 
-            trainer.strategy.restore_from_backup()
+            trainer.strategy.collab_opt.restore_from_backup()
             return
 
         self.steps += 1
         self.loss += outputs['loss'].item()
         self.accuracy += outputs['accuracy']
 
-        if (current_step := self.optimizer.local_epoch) != self.last_reported_collaboration_step and current_step != 0:
-            self._report_metrics(trainer=trainer, step=current_step)
+        if (current_step := self.collab_opt.local_epoch) != self.last_reported_collaboration_step and current_step != 0:
+            self._report_metrics(step=current_step)
 
             if not self._should_skip_saving_checkpoint(trainer):
-                log.project_console.print('Backup collab state', style='magenta')
-                trainer.strategy.backup_state()
+                trainer.strategy.collab_opt.backup_state()
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
             self.last_reported_collaboration_step = current_step
 
-        self.samples = self.optimizer.grad_averager.local_samples_accumulated
+        self.samples = self.collab_opt.local_samples_accumulated
 
-    def _report_metrics(self, trainer: pl.Trainer, step: int) -> None:
+    def _report_metrics(self, step: int) -> None:
         self.total_samples_processed += self.samples
-        self.samples_per_second = self.optimizer.tracker.performance_ema.samples_per_second
-        self.lr = self.optimizer.opt.param_groups[0]['lr']
-        self.alive_peers = trainer.strategy.num_peers
+        self.samples_per_second = self.collab_opt.samples_per_second
+        self.lr = self.collab_opt.lr
+        self.alive_peers = self.collab_opt.num_peers
 
         statistics = LocalMetrics(
             loss=self.loss,
@@ -99,9 +100,9 @@ class CollabCheckpoint(Callback):
 
         self._print_metrics(step=step - 1)
 
-        if self.optimizer.local_epoch == self.optimizer.tracker.global_epoch:
+        if self.collab_opt.local_epoch == self.collab_opt.global_epoch:
             if not self.dht_manager.dht.store(
-                    key=self.optimizer.run_id + "_metrics",
+                    key=f'{self.collab_opt.run_id}_metrics',
                     subkey=self.dht_manager.local_public_key,
                     value=statistics.dict(),
                     expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
@@ -139,7 +140,7 @@ class CollabCheckpoint(Callback):
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
                 or trainer.sanity_checking  # don't save anything during sanity check
-                or self.last_reported_collaboration_step == self.optimizer.local_epoch  # already saved at the last step
+                or self.last_reported_collaboration_step == self.collab_opt.local_epoch  # already saved the last step
                 or self.backup_every_step is None  # backup is disabled
-                or self.optimizer.local_epoch % self.backup_every_step != 0  # not at the current step
+                or self.collab_opt.local_epoch % self.backup_every_step != 0  # not at the current step
         )

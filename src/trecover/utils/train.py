@@ -11,8 +11,6 @@ import torch
 from torch import Tensor
 from torch.optim import Optimizer
 
-from trecover.config import log
-
 
 class ExperimentParams(dict):
     """ Container for experiment parameters """
@@ -176,29 +174,3 @@ def transfer(tensors: Tuple[Optional[Tensor], ...], to_device: torch.device) -> 
         tensor.to(to_device) if isinstance(tensor, Tensor) else tensor
         for tensor in tensors
     ])
-
-
-def get_internet_bandwidth() -> Optional[float]:
-    """
-    Measure internet bandwidth for current machine.
-
-    Returns
-    -------
-    Optional[float]:
-        None if unable to measure otherwise estimated internet bandwidth.
-
-    """
-
-    try:
-        from speedtest import Speedtest
-
-        log.project_console.print('Measure internet bandwidth...', style='salmon1', justify='right')
-        test = Speedtest()
-        bandwidth = max(1, min(test.upload(), test.download()) / 1e6)
-        log.project_console.print(f'Internet bandwidth (Mb/s): {bandwidth}', style='salmon1', justify='right')
-
-    except Exception:
-        log.project_console.print('Unable to measure internet bandwidth', style='red', justify='right')
-        return None
-
-    return bandwidth
