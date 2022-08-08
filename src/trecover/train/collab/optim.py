@@ -414,6 +414,12 @@ class CollaborativeOptimizer(object):
                                                'min_vector_size': self.args.min_vector_size,
                                                'bandwidth': self.bandwidth
                                            })
+            if not self._opt.state_averager.allow_state_sharing:
+                log.project_console.print(
+                    'Note: Other peers will not be able to download optimizer state from this one',
+                    style='yellow', justify='right'
+                )
+
         return self._opt
 
     @property
@@ -554,12 +560,13 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
     def _assist_averaging_in_background(self) -> None:
         log.project_console.print('Start assistant', style='bright_blue', justify='right')
         self.sync_state()
+        # TODO backup
 
         # TODO check if it syncs automatically
         while not self.finished.is_set():
             try:
                 with self:
-                    if not self.params_are_finite():
+                    if not self.auxiliary and not self.params_are_finite():
                         log.project_console.print('Model parameters are not finite', style='red')
 
                         if not self.state_path.exists():

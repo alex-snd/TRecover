@@ -113,7 +113,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     # Collaborative optimizer
     parser.add_argument('--verbose', action='store_true',
                         help='Whether to show collaborative optimizer logs')
-    parser.add_argument('--state-path', default=exp_var.TRAIN_STATE_PATH, type=Path,
+    parser.add_argument('--state-path', default=exp_var.COLLAB_STATE_PATH, type=Path,
                         help='Path to state backup file. Load this state upon init and when '
                              'recovering from NaN parameters')
     parser.add_argument('--batch-size', default=None, type=int,
