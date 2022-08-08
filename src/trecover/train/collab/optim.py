@@ -558,7 +558,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         self.auxiliary = not args.as_active_peer
         self.lock = threading.Lock()
         self.finished = threading.Event()
-        self.assist_refresh = args.assist_refresh
+        self.last_reported_step = None
 
     def __enter__(self) -> 'AuxiliaryOptimizer':
         self.lock.acquire()
@@ -568,29 +568,45 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.lock.release()
 
+    def _check_params_finiteness(self) -> None:
+        if self.allow_state_sharing and not self.params_are_finite:
+            log.project_console.print('Model parameters are not finite', style='red')
+
+            if not self.state_path.exists():
+                raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
+
+            self.restore_from_backup()
+
+    @property
+    def _is_time_to_backup(self) -> bool:
+        return (
+                self.local_epoch != self.last_reported_step
+                and self.local_epoch != 0
+                and self.local_epoch % self.args.backup_every_step == 0
+        )
+
     def _assist_averaging_in_background(self) -> None:
         log.project_console.print('Start assistant', style='bright_blue', justify='right')
 
+        self.restore_from_backup()
         self.sync_state()
 
-        if self.allow_state_sharing:
+        if self.allow_state_sharing or self.args.backup_every_step:
             self.backup_state()
+            self.last_reported_step = self.local_epoch
 
         while not self.finished.is_set():
             try:
                 with self:
-                    if self.allow_state_sharing and not self.params_are_finite:
-                        log.project_console.print('Model parameters are not finite', style='red')
-
-                        if not self.state_path.exists():
-                            raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
-
-                        self.restore_from_backup()
-
+                    self._check_params_finiteness()
                     self.opt.step()
 
+                    if self._is_time_to_backup:
+                        self.backup_state()
+                        self.last_reported_step = self.local_epoch
+
                 log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
-                time.sleep(self.assist_refresh)
+                time.sleep(self.args.assist_refresh)
 
             except KeyboardInterrupt:
                 log.project_console.print('Assistant is stopped', style='yellow', justify='right')
@@ -605,9 +621,9 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
         if attach:
             self._assist_averaging_in_background()
-
         else:
-            averaging_thread = threading.Thread(name='AveragingAuxThread', target=self._assist_averaging_in_background,
+            averaging_thread = threading.Thread(name='AveragingAuxThread',
+                                                target=self._assist_averaging_in_background,
                                                 args=[self],
                                                 daemon=True)
             averaging_thread.start()

@@ -116,6 +116,9 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     parser.add_argument('--state-path', default=exp_var.COLLAB_STATE_PATH, type=Path,
                         help='Path to state backup file. Load this state upon init and when '
                              'recovering from NaN parameters')
+    parser.add_argument('--backup-every-step', default=None, type=int,
+                        help='Update collab state backup on disk once in this many global steps. '
+                             'Default: do not update local state')
     parser.add_argument('--batch-size', default=None, type=int,
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
@@ -245,9 +248,6 @@ def get_train_parser(add_help: bool = True) -> ArgumentParser:
                         help='Number of epochs for training')
     parser.add_argument('--statistics-expiration', default=600, type=float,
                         help='Statistics will be removed if not updated in this many seconds')
-    parser.add_argument('--backup-every-step', default=None, type=int,
-                        help='Update training state backup on disk once in this many global steps. '
-                             'Default: do not update local state')
 
     return parser
 
