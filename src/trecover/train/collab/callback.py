@@ -24,7 +24,7 @@ class CollabCheckpoint(Callback):
         self.collab_opt: Optional[CollaborativeOptimizer] = None
 
         self.statistics_expiration = statistics_expiration
-        self.last_reported_collaboration_step = None
+        self.last_reported_step = None
         self.min_noise = None
         self.max_noise = None
         self.lr = None
@@ -46,7 +46,7 @@ class CollabCheckpoint(Callback):
         if self.collab_opt is None:
             assert len(trainer.strategy.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
             self.collab_opt = trainer.strategy.collab_opt
-            self.last_reported_collaboration_step = self.collab_opt.local_epoch
+            self.last_reported_step = self.collab_opt.local_epoch
 
         if self.wrapped_model is None:
             self.wrapped_model = pl_module  # the same as self.collab_opt.wrapped_model  TODO does it need to be here?
@@ -66,7 +66,7 @@ class CollabCheckpoint(Callback):
         self.loss += outputs['loss'].item()
         self.accuracy += outputs['accuracy']
 
-        if (current_step := self.collab_opt.local_epoch) != self.last_reported_collaboration_step and current_step != 0:
+        if (current_step := self.collab_opt.local_epoch) != self.last_reported_step and current_step != 0:
             self._report_metrics(step=current_step)
 
             if not self._should_skip_saving_checkpoint(trainer):
@@ -74,7 +74,7 @@ class CollabCheckpoint(Callback):
             else:
                 log.project_console.print('Skip backup', style='yellow')
 
-            self.last_reported_collaboration_step = current_step
+            self.last_reported_step = current_step
 
         self.samples = self.collab_opt.local_samples_accumulated
 
@@ -138,7 +138,7 @@ class CollabCheckpoint(Callback):
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
                 or trainer.sanity_checking  # don't save anything during sanity check
-                or self.last_reported_collaboration_step == self.collab_opt.local_epoch  # already saved the last step
+                or self.last_reported_step == self.collab_opt.local_epoch  # already saved the last step
                 or self.backup_every_step is None  # backup is disabled
                 or self.collab_opt.local_epoch % self.backup_every_step != 0  # not at the current step
         )
