@@ -427,6 +427,10 @@ class CollaborativeOptimizer(object):
         return self.opt.run_id
 
     @property
+    def allow_state_sharing(self) -> str:
+        return self.opt.state_averager.allow_state_sharing
+
+    @property
     def num_peers(self) -> int:
         return self.opt.tracker.global_progress.num_peers
 
@@ -465,6 +469,7 @@ class CollaborativeOptimizer(object):
 
         return self.args.bandwidth
 
+    @property
     @torch.no_grad()
     def params_are_finite(self) -> bool:
         for param in self.wrapped_model.model.parameters():
@@ -559,13 +564,16 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
     def _assist_averaging_in_background(self) -> None:
         log.project_console.print('Start assistant', style='bright_blue', justify='right')
+
         self.sync_state()
-        # TODO backup
+
+        if self.allow_state_sharing:
+            self.backup_state()
 
         while not self.finished.is_set():
             try:
                 with self:
-                    if not self.auxiliary and not self.params_are_finite():
+                    if self.allow_state_sharing and not self.params_are_finite:
                         log.project_console.print('Model parameters are not finite', style='red')
 
                         if not self.state_path.exists():
