@@ -50,23 +50,6 @@ class BaseModelWrapper(pl.LightningModule):
                                 eps=self.args.adam_epsilon,
                                 weight_decay=self.args.weight_decay)
 
-    @property
-    def trainable_params(self) -> Iterable[Dict[str, Any]]:
-        no_decay = ['bias', 'LayerNorm.weight']
-
-        return [
-            {
-                'params': [p for n, p in self.model.named_parameters()
-                           if not any(nd in n for nd in no_decay) and p.requires_grad],
-                'weight_decay': self.args.weight_decay,
-            },
-            {
-                'params': [p for n, p in self.model.named_parameters()
-                           if any(nd in n for nd in no_decay) and p.requires_grad],
-                'weight_decay': 0.0,
-            },
-        ]
-
     def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
         dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,

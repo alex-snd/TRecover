@@ -341,6 +341,23 @@ class CollaborativeOptimizer(object):
         self._opt = None
 
     @property
+    def trainable_params(self) -> Iterable[Dict[str, Any]]:
+        no_decay = ['bias', 'LayerNorm.weight']
+
+        return [
+            {
+                'params': [p for n, p in self.wrapped_model.model.named_parameters()
+                           if not any(nd in n for nd in no_decay) and p.requires_grad],
+                'weight_decay': self.args.weight_decay,
+            },
+            {
+                'params': [p for n, p in self.wrapped_model.model.named_parameters()
+                           if any(nd in n for nd in no_decay) and p.requires_grad],
+                'weight_decay': 0.0,
+            },
+        ]
+
+    @property
     def wrapped_optimizer(self) -> Callable[[Iterable[Dict[str, Any]]], CPULamb8Bit]:
         def optimizer(params: Iterable[Dict[str, Any]]) -> CPULamb8Bit:
             return CPULamb8Bit(params=params,
@@ -376,7 +393,7 @@ class CollaborativeOptimizer(object):
 
             self._opt = hivemind.Optimizer(dht=self.dht,
                                            run_id=self.args.experiment_prefix,
-                                           params=self.wrapped_model.trainable_params,
+                                           params=self.trainable_params,
                                            optimizer=self.wrapped_optimizer,
                                            scheduler=self.wrapped_scheduler,
                                            offload_optimizer=True,
