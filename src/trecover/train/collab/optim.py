@@ -480,9 +480,15 @@ class CollaborativeOptimizer(object):
 
     @torch.no_grad()
     def sync_state(self) -> None:
-        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
-        self.opt.load_state_from_peers()
-        log.project_console.print('Sync is finished', style='salmon1', justify='right')
+        if self.num_peers:
+            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+            self.opt.load_state_from_peers()
+            log.project_console.print('Sync is finished', style='salmon1', justify='right')
+        else:
+            log.project_console.print(
+                'There is no one active peer to synchronize the collab state with',
+                style='salmon1', justify='right'
+            )
 
     @torch.no_grad()
     def state_dict(self) -> Dict[str, Any]:
