@@ -98,7 +98,7 @@ class CollaborativeStrategy(Strategy):
             self._collab_opt.restore_from_backup()
             self._collab_opt.sync_state()
 
-            if not self.args.state_path.exists():
+            if not self.collab_opt.state_path.exists():
                 self._collab_opt.backup_state()
 
         if not self.args.no_reuse_grad_buffers:
