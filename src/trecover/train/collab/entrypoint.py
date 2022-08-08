@@ -27,12 +27,10 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     aux_optimizer = None
 
     if (enable_upload := args.upload_every_step is not None and args.upload_every_step > 0) or args.assist_in_averaging:
-        log.project_console.print('Configure auxiliary collab optimizer', style='magenta', justify='right')
         args.as_active_peer |= enable_upload
         aux_optimizer = AuxiliaryOptimizer(dht=dht_manager.dht,
                                            wrapped_model=BaseModelWrapper(args),
                                            args=args)
-        log.project_console.print('Optimizer is initialized', style='magenta', justify='right')
 
         if args.assist_in_averaging:
             aux_optimizer.start_assistant()
@@ -120,10 +118,8 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
 
-    log.project_console.print('Configure auxiliary collab optimizer', style='magenta', justify='right')
     os.system('ulimit -n 16384')
     aux_optimizer = AuxiliaryOptimizer(dht=DHTManager(args).dht, wrapped_model=BaseModelWrapper(args), args=args)
-    log.project_console.print('Optimizer is initialized', style='magenta', justify='right')
 
     aux_optimizer.start_assistant(attach=True)
 
