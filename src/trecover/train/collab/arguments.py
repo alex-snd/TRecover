@@ -113,6 +113,9 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
     # Collaborative optimizer
     parser.add_argument('--verbose', action='store_true',
                         help='Whether to show collaborative optimizer logs')
+    parser.add_argument('--state-path', default=exp_var.TRAIN_STATE_PATH, type=Path,
+                        help='Path to state backup file. Load this state upon init and when '
+                             'recovering from NaN parameters')
     parser.add_argument('--batch-size', default=None, type=int,
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
@@ -196,8 +199,6 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                         help='Weights & Biases credentials token to log in')
     parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,
                         help='Default path for Weights & Biases logs and weights')
-    parser.add_argument('--monitor-state-path', default=exp_var.MONITOR_STATE_PATH, type=Path,
-                        help='Path to state backup file')
     parser.add_argument('--upload-every-step', default=None, type=int,
                         help='Upload to Weights & Biases and backup on disk training state '
                              'once in this many global steps. Default: do not upload')
@@ -247,9 +248,6 @@ def get_train_parser(add_help: bool = True) -> ArgumentParser:
     parser.add_argument('--backup-every-step', default=None, type=int,
                         help='Update training state backup on disk once in this many global steps. '
                              'Default: do not update local state')
-    parser.add_argument('--state-path', default=exp_var.TRAIN_STATE_PATH, type=Path,
-                        help='Path to state backup file. Load this state upon init and when '
-                             'recovering from NaN parameters')
 
     return parser
 

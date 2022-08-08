@@ -42,7 +42,6 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
                                                experiment_prefix=args.experiment_prefix,
                                                refresh_period=args.refresh_period,
                                                upload_every_step=args.upload_every_step,
-                                               state_path=args.monitor_state_path,
                                                wandb_key=args.wandb_key,
                                                wandb_project=args.wandb_project,
                                                wandb_id=args.wandb_id,

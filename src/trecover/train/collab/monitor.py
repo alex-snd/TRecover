@@ -1,5 +1,4 @@
 import time
-from pathlib import Path
 from typing import Generator, List, Optional
 
 import hivemind
@@ -21,7 +20,6 @@ class CollaborativeMonitor(object):
                  experiment_prefix: str,
                  refresh_period: int = 2,
                  upload_every_step: Optional[int] = None,
-                 state_path: Optional[Path] = None,
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
@@ -34,7 +32,6 @@ class CollaborativeMonitor(object):
         self.current_step = -1
         self.refresh_period = refresh_period
         self.upload_every_step = upload_every_step
-        self.state_path = state_path
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
