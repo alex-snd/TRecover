@@ -4,7 +4,6 @@ from typing import Generator, List, Optional
 
 import hivemind
 import numpy as np
-import torch
 import wandb
 from rich.console import Group
 from rich.panel import Panel
@@ -14,10 +13,9 @@ from wandb.util import generate_id
 from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
 from trecover.train.collab.optim import AuxiliaryOptimizer
-from trecover.train.collab.wrapper import BaseModelWrapper
 
 
-class CollabMonitor(object):
+class CollaborativeMonitor(object):
     def __init__(self,
                  dht: hivemind.DHT,
                  experiment_prefix: str,
@@ -28,12 +26,10 @@ class CollabMonitor(object):
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
-                 wrapped_model: Optional[BaseModelWrapper] = None,
                  aux_optimizer: Optional[AuxiliaryOptimizer] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
         self.aux_optimizer = aux_optimizer
-        self.wrapped_model = wrapped_model
         self.wandb_report = wandb_key is not None
         self.current_step = -1
         self.refresh_period = refresh_period
@@ -59,7 +55,7 @@ class CollabMonitor(object):
         wait_peers_metrics = True
 
         while True:
-            if (metrics_entry := self.dht.get(self.metrics_key)) and (metrics_dict := metrics_entry.value):
+            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
                 metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
 
                 if (latest_step := max(item.step for item in metrics)) != self.current_step:
@@ -128,8 +124,7 @@ class CollabMonitor(object):
         panel_group = Group(
             Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
             Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
-            Text(f'Learning rate: {metrics.lr}',
-                 style='bright_blue', justify='left'),
+            Text(f'Learning rate: {metrics.lr}', style='bright_blue', justify='left'),
             Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
                  style='bright_blue', justify='left'),
             Text(f'Samples accumulated: {metrics.samples_accumulated}', style='bright_blue', justify='left'),
@@ -144,15 +139,12 @@ class CollabMonitor(object):
         )
 
     def _upload_state(self) -> None:
-        with self.aux_optimizer:
-            self.aux_optimizer.sync_state()
-            state = self.aux_optimizer.state_dict
-
-            if self.wrapped_model:
-                state['model'] = self.wrapped_model.model.state_dict()
-
-            log.project_console.print('Store collab state...', style='salmon1', justify='right')
-            torch.save(state, self.state_path)
-
-        log.project_console.print('Upload collab state...', style='salmon1', justify='right')
-        wandb.save(str(self.state_path.absolute()), base_path=str(self.state_path.parent), policy='now')
+        pass  # TODO alter
+        # with self.aux_optimizer:
+        #     # self.aux_optimizer.sync_state() # TODO if not as active peer
+        #
+        #     log.project_console.print('Store collab state...', style='salmon1', justify='right')
+        #     torch.save(self.aux_optimizer.state_dict, self.state_path)
+        #
+        # log.project_console.print('Upload collab state...', style='salmon1', justify='right')
+        # wandb.save(str(self.state_path.absolute()), base_path=str(self.state_path.parent), policy='now')
