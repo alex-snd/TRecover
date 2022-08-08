@@ -18,8 +18,7 @@ from trecover.train.collab.wrapper import BaseModelWrapper
 class CollabCheckpoint(Callback):
     def __init__(self, dht_manager: DHTManager,
                  statistics_expiration: float,
-                 backup_every_step: int,
-                 state_path: Path):
+                 backup_every_step: int):
         self.dht_manager: DHTManager = dht_manager
         self.wrapped_model: Optional[BaseModelWrapper] = None
         self.collab_opt: Optional[CollaborativeOptimizer] = None
@@ -37,7 +36,6 @@ class CollabCheckpoint(Callback):
         self.samples_per_second = 0
         self.alive_peers = 0
         self.backup_every_step = backup_every_step
-        self.state_path = state_path
 
     def on_train_batch_end(self,
                            trainer: pl.Trainer,
@@ -58,7 +56,7 @@ class CollabCheckpoint(Callback):
         if not self.collab_opt.params_are_finite():
             log.project_console.print('Model parameters are not finite', style='red')
 
-            if not self.state_path.exists():
+            if not self.collab_opt.state_path.exists():
                 raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
 
             trainer.strategy.collab_opt.restore_from_backup()

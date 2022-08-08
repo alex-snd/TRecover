@@ -26,11 +26,9 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     dht_manager = DHTManager(args)
     aux_optimizer = None
 
-    if args.upload_every_step or args.assist_in_averaging:
+    if (enable_upload := args.upload_every_step is not None and args.upload_every_step > 0) or args.assist_in_averaging:
         log.project_console.print('Configure auxiliary collab optimizer', style='magenta', justify='right')
-
-        args.as_active_peer = args.upload_every_step  # TODO
-
+        args.as_active_peer |= enable_upload
         aux_optimizer = AuxiliaryOptimizer(dht=dht_manager.dht,
                                            wrapped_model=BaseModelWrapper(args),
                                            args=args)
@@ -71,8 +69,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
 
     collab_checkpoint = CollabCheckpoint(dht_manager,
                                          statistics_expiration=args.statistics_expiration,
-                                         backup_every_step=args.backup_every_step,
-                                         state_path=args.state_path)
+                                         backup_every_step=args.backup_every_step)
 
     trainer = pl.Trainer(default_root_dir=args.pl_registry,
                          max_epochs=args.n_epochs,
