@@ -416,7 +416,7 @@ class CollaborativeOptimizer(object):
                                            })
             if not self._opt.state_averager.allow_state_sharing:
                 log.project_console.print(
-                    'Note: Other peers will not be able to download optimizer state from this one',
+                    'Note: Other peers will not be able to download collab state from this one',
                     style='yellow', justify='right'
                 )
 
@@ -562,7 +562,6 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         self.sync_state()
         # TODO backup
 
-        # TODO check if it syncs automatically
         while not self.finished.is_set():
             try:
                 with self:
