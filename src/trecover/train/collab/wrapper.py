@@ -44,7 +44,7 @@ class BaseModelWrapper(pl.LightningModule):
         return src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask, tgt_out
 
     def configure_optimizers(self) -> Optimizer:  # fictive optimizer
-        return torch.optim.Adam(params=self.trainable_params,
+        return torch.optim.Adam(params=self.model.parameters(),
                                 lr=self.args.lr,
                                 betas=(self.args.adam_beta1, self.args.adam_beta2),
                                 eps=self.args.adam_epsilon,
