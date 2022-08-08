@@ -97,9 +97,7 @@ class CollaborativeStrategy(Strategy):
         if not self.tune:
             self._collab_opt.restore_from_backup()
             self._collab_opt.sync_state()
-
-            if not self.collab_opt.state_path.exists():
-                self._collab_opt.backup_state()
+            self._collab_opt.backup_state()
 
         if not self.args.no_reuse_grad_buffers:
             assert self.lightning_module is not None
