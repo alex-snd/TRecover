@@ -487,7 +487,7 @@ class CollaborativeOptimizer(object):
         self.opt.state_averager.allow_state_sharing = orig_value
 
         log.project_console.print(
-            f'Collab state is recovered in {time.monotonic() - t_start:.4} sec', style='green', justify='right'
+            f'Collab state is recovered in {time.monotonic() - t_start:.4} sec', style='yellow', justify='right'
         )
 
     @property
