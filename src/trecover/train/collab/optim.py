@@ -487,7 +487,7 @@ class CollaborativeOptimizer(object):
         self.opt.state_averager.allow_state_sharing = orig_value
 
         log.project_console.print(
-            f'Collab state is recovered in {time.monotonic() - t_start} sec', style='green', justify='right'
+            f'Collab state is recovered in {time.monotonic() - t_start:.4} sec', style='green', justify='right'
         )
 
     @property
@@ -505,7 +505,7 @@ class CollaborativeOptimizer(object):
         log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
         self.opt.load_state_from_peers()
         log.project_console.print(
-            f'Sync is finished in {time.monotonic() - t_start} sec', style='salmon1', justify='right'
+            f'Sync is finished in {time.monotonic() - t_start:.4} sec', style='salmon1', justify='right'
         )
 
     @torch.no_grad()
@@ -541,7 +541,9 @@ class CollaborativeOptimizer(object):
         t_start = time.monotonic()
         log.project_console.print('Backup the collab state', style='magenta', justify='right')
         torch.save(self.state_dict(), self.state_path)
-        log.project_console.print(f'Backup done in {time.monotonic() - t_start} sec', style='magenta', justify='right')
+        log.project_console.print(
+            f'Backup done in {time.monotonic() - t_start:.4} sec', style='magenta', justify='right'
+        )
 
     @torch.no_grad()
     def restore_from_backup(self, check_step: bool = False) -> None:
@@ -554,7 +556,7 @@ class CollaborativeOptimizer(object):
             if not check_step or backup_step >= current_step:
                 self.load_state_dict(state_dict)
                 log.project_console.print(
-                    f'Collab sate is restored from backup in {time.monotonic() - t_start} sec',
+                    f'Collab sate is restored from backup in {time.monotonic() - t_start:.4} sec',
                     style='green', justify='right'
                 )
             else:
