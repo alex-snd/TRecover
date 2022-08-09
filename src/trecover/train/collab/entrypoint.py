@@ -24,32 +24,32 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         return
 
     dht_manager = DHTManager(args)
-    aux_optimizer = None
+    aux_opt = None
 
-    if (enable_upload := args.upload_every_step is not None and args.upload_every_step > 0) or args.assist_in_averaging:
-        args.as_active_peer |= enable_upload
-        aux_optimizer = AuxiliaryOptimizer(dht=dht_manager.dht,
-                                           wrapped_model=BaseModelWrapper(args),
-                                           args=args)
+    if args.upload_state or args.assist_in_averaging:
+        # args.as_active_peer |= args.upload_state  # TODO investigate
+        aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
+                                     wrapped_model=BaseModelWrapper(args),
+                                     args=args)
 
         if args.assist_in_averaging:
-            aux_optimizer.start_assistant()
+            aux_opt.start_assistant()
 
     try:
         metrics_monitor = CollaborativeMonitor(dht=dht_manager.dht,
                                                experiment_prefix=args.experiment_prefix,
                                                refresh_period=args.refresh_period,
-                                               upload_every_step=args.upload_every_step,
+                                               upload_state=args.upload_state,
                                                wandb_key=args.wandb_key,
                                                wandb_project=args.wandb_project,
                                                wandb_id=args.wandb_id,
                                                wandb_registry=args.wandb_registry,
-                                               aux_optimizer=aux_optimizer)
+                                               aux_opt=aux_opt)
         metrics_monitor.start()
 
     finally:
-        if aux_optimizer and args.assist_in_averaging:
-            aux_optimizer.set_finished()
+        if aux_opt:
+            aux_opt.set_finished()
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:

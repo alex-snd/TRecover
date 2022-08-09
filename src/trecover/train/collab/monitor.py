@@ -18,20 +18,20 @@ class CollaborativeMonitor(object):
     def __init__(self,
                  dht: hivemind.DHT,
                  experiment_prefix: str,
-                 refresh_period: int = 2,
-                 upload_every_step: Optional[int] = None,
+                 refresh_period: int = 10,
+                 upload_state: bool = False,
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
-                 aux_optimizer: Optional[AuxiliaryOptimizer] = None):
+                 aux_opt: Optional[AuxiliaryOptimizer] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
-        self.aux_optimizer = aux_optimizer
+        self.aux_opt = aux_opt
         self.wandb_report = wandb_key is not None
         self.current_step = -1
         self.refresh_period = refresh_period
-        self.upload_every_step = upload_every_step
+        self.upload_state = upload_state
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
@@ -48,7 +48,24 @@ class CollaborativeMonitor(object):
                 anonymous='never'
             )
 
-    def stream(self) -> Generator[GlobalMetrics, None, None]:
+            if self.upload_state:
+                if self.aux_opt and self.aux_opt.args.backup_every_step and self.aux_opt.args.backup_every_step > 0:
+                    wandb.save(str(self.aux_opt.state_path.absolute()),
+                               base_path=str(self.aux_opt.state_path.parent),
+                               policy='live')
+                elif self.aux_opt is None:
+                    log.project_console.print(
+                        'Unable to upload collab state to W&B since AuxiliaryOptimizer is not initialized',
+                        style='yellow', justify='right'
+                    )
+                else:
+                    log.project_console.print(
+                        'Unable to upload collab state to W&B since backup frequency is not specified.'
+                        'Specify frequency with `--backup_every_step` argument',
+                        style='yellow', justify='right'
+                    )
+
+    def stream(self) -> Generator[GlobalMetrics, None, None]:  # TODO alter
         wait_peers_metrics = True
 
         while True:
@@ -87,9 +104,6 @@ class CollaborativeMonitor(object):
 
             if self.wandb_report:
                 wandb.log(metrics.dict(), step=self.current_step)
-
-                if self.aux_optimizer and self.upload_every_step and self.current_step % self.upload_every_step == 0:
-                    self._upload_state()
 
     @staticmethod
     def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
@@ -134,14 +148,3 @@ class CollaborativeMonitor(object):
                   title_align='left', border_style='magenta'),
             justify='full'
         )
-
-    def _upload_state(self) -> None:
-        pass  # TODO alter
-        # with self.aux_optimizer:
-        #     # self.aux_optimizer.sync_state() # TODO if not as active peer
-        #
-        #     log.project_console.print('Store collab state...', style='salmon1', justify='right')
-        #     torch.save(self.aux_optimizer.state_dict, self.state_path)
-        #
-        # log.project_console.print('Upload collab state...', style='salmon1', justify='right')
-        # wandb.save(str(self.state_path.absolute()), base_path=str(self.state_path.parent), policy='now')

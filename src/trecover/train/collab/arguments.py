@@ -181,7 +181,7 @@ def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
                                 get_optimization_parser(add_help=False)
                             ])
 
-    parser.add_argument('--assist-refresh', default=1, type=float,
+    parser.add_argument('--assist-refresh', default=5, type=float,
                         help='Period (in seconds) for trying to assist averaging')
     parser.add_argument('--as-active-peer', action='store_true',
                         help='Allow to share state with other peers otherwise only assist in averaging')
@@ -202,9 +202,9 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                         help='Weights & Biases credentials token to log in')
     parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,
                         help='Default path for Weights & Biases logs and weights')
-    parser.add_argument('--upload-every-step', default=None, type=int,
-                        help='Upload to Weights & Biases and backup on disk training state '
-                             'once in this many global steps. Default: do not upload')
+    parser.add_argument('--upload-state', action='store_true',
+                        help='Whether to upload collab state to Weights & Biases. Default: do not upload.'
+                             'Also you need to specify `--backup-every-step` argument')
     parser.add_argument('--assist-in-averaging', action='store_true',
                         help='If True, this peer will facilitate averaging for other (training) peers')
 
