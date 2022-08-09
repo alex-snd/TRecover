@@ -621,7 +621,15 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                     self.opt.step()
 
                     if self._is_time_to_backup:
+                        if self.auxiliary:
+                            log.project_console.print(
+                                'Since this peer is not active, we need to sync it with others before backup',
+                                style='magenta', justify='right'
+                            )
+                            self.sync_state()
+
                         self.backup_state()
+
                         self.last_reported_step = self.local_epoch
 
                 log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
