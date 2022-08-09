@@ -414,6 +414,7 @@ class CollaborativeOptimizer(object):
                                                'min_vector_size': self.args.min_vector_size,
                                                'bandwidth': self.bandwidth
                                            })
+
             if not self._opt.state_averager.allow_state_sharing:
                 log.project_console.print(
                     'Note: Other peers will not be able to download collab state from this one',
@@ -427,7 +428,7 @@ class CollaborativeOptimizer(object):
         return self.opt.run_id
 
     @property
-    def allow_state_sharing(self) -> str:
+    def allow_state_sharing(self) -> bool:
         return self.opt.state_averager.allow_state_sharing
 
     @property
@@ -469,6 +470,26 @@ class CollaborativeOptimizer(object):
 
         return self.args.bandwidth
 
+    def recover_state(self) -> None:
+        log.project_console.print('Trying to recover collab state...', style='yellow', justify='right')
+
+        if not self.state_path.exists():
+            raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
+
+        t_start = time.monotonic()
+        orig_value = self.allow_state_sharing
+        self.opt.state_averager.allow_state_sharing = False
+
+        while not self.params_are_finite:
+            self.restore_from_backup()
+            self.sync_state()
+
+        self.opt.state_averager.allow_state_sharing = orig_value
+
+        log.project_console.print(
+            f'Collab state is recovered in {time.monotonic() - t_start} sec', style='green', justify='right'
+        )
+
     @property
     @torch.no_grad()
     def params_are_finite(self) -> bool:
@@ -480,15 +501,12 @@ class CollaborativeOptimizer(object):
 
     @torch.no_grad()
     def sync_state(self) -> None:
-        if self.num_peers:
-            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
-            self.opt.load_state_from_peers()
-            log.project_console.print('Sync is finished', style='salmon1', justify='right')
-        else:
-            log.project_console.print(
-                'There is no one active peer to synchronize the collab state with',
-                style='salmon1', justify='right'
-            )
+        t_start = time.monotonic()
+        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+        self.opt.load_state_from_peers()
+        log.project_console.print(
+            f'Sync is finished in {time.monotonic() - t_start} sec', style='salmon1', justify='right'
+        )
 
     @torch.no_grad()
     def state_dict(self) -> Dict[str, Any]:
@@ -520,21 +538,25 @@ class CollaborativeOptimizer(object):
 
     @torch.no_grad()
     def backup_state(self) -> None:
+        t_start = time.monotonic()
         log.project_console.print('Backup the collab state', style='magenta', justify='right')
         torch.save(self.state_dict(), self.state_path)
-        log.project_console.print('Backup done', style='magenta', justify='right')
+        log.project_console.print(f'Backup done in {time.monotonic() - t_start} sec', style='magenta', justify='right')
 
     @torch.no_grad()
     def restore_from_backup(self, check_step: bool = False) -> None:
         if self.state_path.exists():
+            t_start = time.monotonic()
             state_dict = torch.load(self.state_path)
             current_step = self.opt.local_epoch
             backup_step = state_dict['local_epoch']
 
             if not check_step or backup_step >= current_step:
                 self.load_state_dict(state_dict)
-                log.project_console.print('Collab sate is restored from backup', style='green', justify='right')
-
+                log.project_console.print(
+                    f'Collab sate is restored from backup in {time.monotonic() - t_start} sec',
+                    style='green', justify='right'
+                )
             else:
                 log.project_console.print(
                     'Bypassed restoring collab state from local backup - backup state is too old',
@@ -568,15 +590,6 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.lock.release()
 
-    def _check_params_finiteness(self) -> None:
-        if self.allow_state_sharing and not self.params_are_finite:
-            log.project_console.print('Model parameters are not finite', style='red')
-
-            if not self.state_path.exists():
-                raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
-
-            self.restore_from_backup()
-
     @property
     def _is_time_to_backup(self) -> bool:
         return (
@@ -598,7 +611,10 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         while not self.finished.is_set():
             try:
                 with self:
-                    self._check_params_finiteness()
+                    if not self.auxiliary and not self.params_are_finite:
+                        log.project_console.print('Model parameters are not finite', style='red', justify='right')
+                        self.recover_state()
+
                     self.opt.step()
 
                     if self._is_time_to_backup:

@@ -47,20 +47,13 @@ class CollabCheckpoint(Callback):
             assert len(trainer.strategy.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
             self.collab_opt = trainer.strategy.collab_opt
             self.last_reported_step = self.collab_opt.local_epoch
-
-        if self.wrapped_model is None:
-            self.wrapped_model = pl_module  # the same as self.collab_opt.wrapped_model  TODO does it need to be here?
-            self.min_noise = pl_module.args.min_noise  # TODO as property or not, torch.hub.load? move to collab_opt?
-            self.max_noise = pl_module.args.max_noise
+            self.min_noise = self.collab_opt.args.min_noise
+            self.max_noise = self.collab_opt.args.max_noise
 
         if not self.collab_opt.params_are_finite:
-            log.project_console.print('Model parameters are not finite', style='red')
-
-            if not self.collab_opt.state_path.exists():
-                raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
-
-            self.collab_opt.restore_from_backup()
-            return
+            log.project_console.print('Model parameters are not finite', style='red', justify='right')
+            self.collab_opt.recover_state()
+            return  # TODO reset accumulated metrics?
 
         self.steps += 1
         self.loss += outputs['loss'].item()
@@ -72,7 +65,7 @@ class CollabCheckpoint(Callback):
             if not self._should_skip_saving_checkpoint(trainer):
                 self.collab_opt.backup_state()
             else:
-                log.project_console.print('Skip backup', style='yellow')
+                log.project_console.print('Skip backup', style='yellow', justify='right')
 
             self.last_reported_step = current_step
 
@@ -106,7 +99,7 @@ class CollabCheckpoint(Callback):
                     expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
                     return_future=True
             ):
-                log.project_console.print('Failed to store metrics', style='red')
+                log.project_console.print('Failed to store metrics', style='red', justify='right')
 
         self.steps = 0
         self.loss = 0
