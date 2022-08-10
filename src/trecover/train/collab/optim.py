@@ -651,7 +651,6 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         else:
             averaging_thread = threading.Thread(name='AveragingAuxThread',
                                                 target=self._assist_averaging_in_background,
-                                                args=[self],
                                                 daemon=True)
             averaging_thread.start()
 
