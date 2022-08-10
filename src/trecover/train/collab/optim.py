@@ -597,6 +597,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         return (
                 self.local_epoch != self.last_reported_step
                 and self.local_epoch != 0
+                and self.args.backup_every_step
                 and self.args.backup_every_step > 0
                 and self.local_epoch % self.args.backup_every_step == 0
         )
