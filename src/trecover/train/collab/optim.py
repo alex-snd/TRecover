@@ -388,6 +388,8 @@ class CollaborativeOptimizer(object):
             assert (self.batch_size_per_step is None and self.auxiliary) or \
                    (self.batch_size_per_step is not None and not self.auxiliary)
 
+            log.project_console.print('Configure collaborative optimizer', style='magenta', justify='right')
+
             averaging_compression = SizeAdaptiveCompression(
                 threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
@@ -414,6 +416,8 @@ class CollaborativeOptimizer(object):
                                                'min_vector_size': self.args.min_vector_size,
                                                'bandwidth': self.bandwidth
                                            })
+
+            log.project_console.print('Optimizer configuration is done', style='magenta', justify='right')
 
             if not self._opt.state_averager.allow_state_sharing:
                 log.project_console.print(
