@@ -603,7 +603,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 and self.local_epoch != 0
                 and self.args.backup_every_step
                 and self.args.backup_every_step > 0
-                and self.local_epoch % self.args.backup_every_step == 0
+                and self.local_epoch + 1 % self.args.backup_every_step == 0
         )
 
     def _assist_averaging_in_background(self) -> None:
