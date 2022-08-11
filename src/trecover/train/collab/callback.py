@@ -135,5 +135,5 @@ class CollabCheckpoint(Callback):
                 or trainer.sanity_checking  # don't save anything during sanity check
                 or self.last_reported_step == self.collab_opt.local_epoch  # already saved the last step
                 or self.backup_every_step is None  # backup is disabled
-                or self.collab_opt.local_epoch % self.backup_every_step != 0  # not at the current step
+                or self.collab_opt.local_epoch + 1 % self.backup_every_step != 0  # not at the current step
         )
