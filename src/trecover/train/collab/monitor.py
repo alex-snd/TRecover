@@ -50,7 +50,7 @@ class CollaborativeMonitor(object):
 
             if self.upload_state:
                 if self.aux_opt and self.aux_opt.args.backup_every_step and self.aux_opt.args.backup_every_step > 0:
-                    wandb.save(str(self.aux_opt.state_path.absolute()),
+                    wandb.save(str(self.aux_opt.state_path.absolute()),  # TODO change filename
                                base_path=str(self.aux_opt.state_path.parent),
                                policy='live')
                 elif self.aux_opt is None:
@@ -93,7 +93,7 @@ class CollaborativeMonitor(object):
             self._monitor_loop()
 
         except KeyboardInterrupt:
-            log.project_console.print('Interrupted', style='yellow')
+            log.project_console.print('Monitor is stopped', style='yellow')
         finally:
             if self.wandb_report:
                 wandb.finish()
@@ -104,6 +104,7 @@ class CollaborativeMonitor(object):
 
             if self.wandb_report:
                 wandb.log(metrics.dict(), step=self.current_step)
+                # TODO check self.aux_opt.state_path for modification and copy to wandb.run.dir
 
     @staticmethod
     def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
