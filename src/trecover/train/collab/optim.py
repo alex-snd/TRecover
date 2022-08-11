@@ -339,6 +339,7 @@ class CollaborativeOptimizer(object):
         self.verbose = verbose
         self.auxiliary = False
         self._opt = None
+        self._original_allow_state_sharing = None
 
     @property
     def trainable_params(self) -> Iterable[Dict[str, Any]]:
@@ -417,6 +418,8 @@ class CollaborativeOptimizer(object):
                                                'bandwidth': self.bandwidth
                                            })
 
+            self._original_allow_state_sharing = self._opt.state_averager.allow_state_sharing
+
             log.project_console.print('Optimizer configuration is done', style='magenta', justify='right')
 
             if not self._opt.state_averager.allow_state_sharing:
@@ -435,9 +438,28 @@ class CollaborativeOptimizer(object):
     def allow_state_sharing(self) -> bool:
         return self.opt.state_averager.allow_state_sharing
 
+    @allow_state_sharing.setter
+    def allow_state_sharing(self, value: bool) -> None:
+        self.opt.state_averager.allow_state_sharing = value
+
+    @property
+    def original_allow_state_sharing(self) -> bool:
+        if self._original_allow_state_sharing is None:
+            return self.allow_state_sharing
+
+        return self._original_allow_state_sharing
+
     @property
     def num_peers(self) -> int:
         return self.opt.tracker.global_progress.num_peers
+
+    @property
+    def num_client_peers(self) -> int:
+        return self.opt.tracker.global_progress.num_clients
+
+    @property
+    def num_non_client_peers(self) -> int:
+        return self.num_peers - self.num_client_peers
 
     @property
     def global_epoch(self) -> int:
@@ -481,14 +503,13 @@ class CollaborativeOptimizer(object):
             raise RuntimeError('Encountered broken parameters, but there is no backup to fall back to.')
 
         t_start = time.monotonic()
-        orig_value = self.allow_state_sharing
-        self.opt.state_averager.allow_state_sharing = False
+        self.allow_state_sharing = False
 
         while not self.params_are_finite:
             self.restore_from_backup()
             self.sync_state()
 
-        self.opt.state_averager.allow_state_sharing = orig_value
+        self.allow_state_sharing = self.original_allow_state_sharing
 
         log.project_console.print(
             f'Collab state is recovered in {time.monotonic() - t_start:.4} sec', style='yellow', justify='right'
@@ -616,28 +637,24 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.backup_state()
             self.last_reported_step = self.local_epoch
 
+        self._assistant_loop()
+
+    def _assistant_loop(self) -> None:
         while not self.finished.is_set():
             try:
                 with self:
-                    if not self.auxiliary and not self.params_are_finite:
-                        log.project_console.print('Model parameters are not finite', style='red', justify='right')
-                        self.recover_state()
-
+                    self._update_state_sharing_status_step()
+                    self._check_finiteness_step()
                     self.opt.step()
 
                     if self._is_time_to_backup:
-                        if self.auxiliary:
-                            log.project_console.print(
-                                'Since this peer is not active, we need to sync it with others before backup',
-                                style='magenta', justify='right'
-                            )
-                            self.sync_state()
+                        self._backup_step()
 
-                        self.backup_state()
-
-                        self.last_reported_step = self.local_epoch
-
-                log.project_console.print('Assist in averaging...', style='bright_blue', justify='right')
+                log.project_console.print(
+                    'Assist in averaging...',
+                    style='bright_blue' if self.allow_state_sharing else 'blue',
+                    justify='right'
+                )
                 time.sleep(self.args.assist_refresh)
 
             except KeyboardInterrupt:
@@ -645,6 +662,71 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 return
             except Exception as e:
                 log.project_logger.exception(e, exc_info=True)
+
+    def _update_state_sharing_status_step(self) -> None:
+        if self.allow_state_sharing and self.num_peers == 1 and self.num_non_client_peers == 1:
+            self.allow_state_sharing = False
+            log.project_console.print(
+                'From now, this auxiliary peer will not be able to share his state '
+                'since it is no longer synchronized with one single active peer',
+                style='yellow',
+                justify='right'
+            )
+
+        elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
+            log.project_console.print(
+                'WARN: From now, this auxiliary peer will no longer be able to '
+                'synchronize its state with a single one client-mode peer.',
+                style='yellow',
+                justify='right'
+            )
+            log.project_console.print(
+                f'That is, new peers will be able to download the actual state '
+                f'only for the {self.local_epoch} collaborative step',
+                style='yellow',
+                justify='right'
+            )
+
+        elif self.original_allow_state_sharing and not self.allow_state_sharing and self.num_peers != 1:
+            log.project_console.print(
+                'Need to synchronize this auxiliary peer to enable state sharing',
+                style='salmon1',
+                justify='right'
+            )
+
+            self.sync_state()
+            self.allow_state_sharing = True
+
+            log.project_console.print(
+                'State sharing is enabled for this auxiliary peer',
+                style='green',
+                justify='right'
+            )
+
+    def _check_finiteness_step(self) -> None:
+        if self.allow_state_sharing and not self.params_are_finite:
+            log.project_console.print('Model parameters are not finite', style='red', justify='right')
+            self.recover_state()
+
+    def _backup_step(self) -> None:
+        if self.auxiliary:
+            log.project_console.print(
+                'Since this peer is not active, we need to sync it with others before backup',
+                style='magenta', justify='right'
+            )
+
+            self.sync_state()
+
+            if not self.params_are_finite:
+                log.project_console.print(
+                    'It is not possible to make a backup since the parameters '
+                    'that have just been synchronized are not finite',
+                    style='red', justify='right'
+                )
+                return
+
+        self.backup_state()
+        self.last_reported_step = self.local_epoch
 
     def start_assistant(self, attach: bool = False) -> None:
         if self.args.client_mode:
