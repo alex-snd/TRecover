@@ -1,11 +1,13 @@
 import time
-from typing import Generator, List, Optional
+from collections import OrderedDict
+from typing import Generator, List, Optional, Tuple
 
 import hivemind
 import numpy as np
 import wandb
 from rich.console import Group
 from rich.panel import Panel
+from rich.pretty import pprint
 from rich.text import Text
 from wandb.util import generate_id
 
@@ -18,6 +20,8 @@ class CollaborativeMonitor(object):
     def __init__(self,
                  dht: hivemind.DHT,
                  experiment_prefix: str,
+                 delay_in_steps: int = 1,
+                 delay_in_seconds: int = 180,
                  refresh_period: int = 10,
                  upload_state: bool = False,
                  wandb_key: Optional[str] = None,
@@ -29,7 +33,10 @@ class CollaborativeMonitor(object):
         self.metrics_key = f'{experiment_prefix}_metrics'
         self.aux_opt = aux_opt
         self.wandb_report = wandb_key is not None
-        self.current_step = -1
+        self.steps_metrics = OrderedDict()
+        self.delay_in_steps = delay_in_steps
+        self.delay_in_seconds = delay_in_seconds
+        self.last_yield_time = time.monotonic()
         self.refresh_period = refresh_period
         self.upload_state = upload_state
 
@@ -48,63 +55,29 @@ class CollaborativeMonitor(object):
                 anonymous='never'
             )
 
-            if self.upload_state:
-                if self.aux_opt and self.aux_opt.args.backup_every_step and self.aux_opt.args.backup_every_step > 0:
-                    wandb.save(str(self.aux_opt.state_path.absolute()),  # TODO change filename
-                               base_path=str(self.aux_opt.state_path.parent),
-                               policy='live')
-                elif self.aux_opt is None:
-                    log.project_console.print(
-                        'Unable to upload collab state to W&B since AuxiliaryOptimizer is not initialized',
-                        style='yellow', justify='right'
-                    )
-                else:
-                    log.project_console.print(
-                        'Unable to upload collab state to W&B since backup frequency is not specified.'
-                        'Specify frequency with `--backup_every_step` argument',
-                        style='yellow', justify='right'
-                    )
+        self._status()
 
-    def stream(self) -> Generator[GlobalMetrics, None, None]:  # TODO alter
-        wait_peers_metrics = True
+    @property
+    def _is_time_to_yield(self) -> bool:
+        if len(self.steps_metrics) == 0:
+            return False
+        if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
+            log.project_console.print('Yield because of delay_in_seconds', justify='center')
+            return True
+        if len(self.steps_metrics) > self.delay_in_steps:
+            log.project_console.print('Yield because of delay_in_steps', justify='center')
+            return True
 
-        while True:
-            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
-                metrics = [LocalMetrics.parse_obj(metrics_dict[peer].value) for peer in metrics_dict]
-
-                if (latest_step := max(item.step for item in metrics)) != self.current_step:
-                    if wait_peers_metrics:  # wait for other peers to report their metrics at the latest_step
-                        time.sleep(self.refresh_period)
-                        wait_peers_metrics = False
-                        continue
-
-                    self.current_step = latest_step
-
-                    yield self._average_peers_metrics(
-                        [peer_metrics for peer_metrics in metrics if peer_metrics.step == latest_step]
-                    )
-
-            wait_peers_metrics = True
-            log.project_console.print('Fetching metrics...', style='yellow', justify='right')
-            time.sleep(self.refresh_period)
-
-    def start(self) -> None:
-        try:
-            self._monitor_loop()
-
-        except KeyboardInterrupt:
-            log.project_console.print('Monitor is stopped', style='yellow')
-        finally:
-            if self.wandb_report:
-                wandb.finish()
+        return False
 
     def _monitor_loop(self) -> None:
-        for metrics in self.stream():
-            self._print_metrics(metrics)
+        for step, metrics in self.stream():
+            self._print_metrics(step, metrics)
 
             if self.wandb_report:
-                wandb.log(metrics.dict(), step=self.current_step)
+                wandb.log(metrics.dict(), step=step)
                 # TODO check self.aux_opt.state_path for modification and copy to wandb.run.dir
+                self._upload_state()
 
     @staticmethod
     def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
@@ -132,7 +105,8 @@ class CollaborativeMonitor(object):
             alive_peers=len(metrics)
         )
 
-    def _print_metrics(self, metrics: GlobalMetrics) -> None:
+    @staticmethod
+    def _print_metrics(step: int, metrics: GlobalMetrics) -> None:
         panel_group = Group(
             Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
             Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
@@ -145,7 +119,77 @@ class CollaborativeMonitor(object):
         )
 
         log.project_console.print(
-            Panel(panel_group, title=f'Global step {self.current_step}',
-                  title_align='left', border_style='magenta'),
+            Panel(panel_group, title=f'Global step {step}', title_align='left', border_style='magenta'),
             justify='full'
         )
+
+    def _status(self) -> None:
+        if not self.wandb_report:
+            log.project_console.print(
+                'This peer does not report metrics to the W&B',
+                style='yellow', justify='right'
+            )
+        if not self.upload_state:
+            log.project_console.print(
+                'This peer does not upload collab state to the W&B',
+                style='yellow', justify='right'
+            )
+        elif not self.wandb_report:
+            log.project_console.print(
+                'Unable to upload collab state to the W&B since credentials did not specified'
+                'Specify credentials with `--wandb-key` argument',
+                style='red', justify='right'
+            )
+        elif self.aux_opt is None:
+            log.project_console.print(
+                'Unable to upload collab state to the W&B since AuxiliaryOptimizer is not initialized',
+                style='red', justify='right'
+            )
+        elif self.aux_opt.args.backup_every_step is None:
+            log.project_console.print(
+                'Unable to upload collab state to the W&B since backup frequency is not specified.'
+                'Specify frequency with `--backup-every-step` argument',
+                style='red', justify='right'
+            )
+        elif self.aux_opt.args.backup_every_step <= 0:
+            log.project_console.print(
+                'Unable to upload collab state to the W&B since backup frequency is specified incorrectly.',
+                style='red', justify='right'
+            )
+
+    def _upload_state(self) -> None:
+        pass
+        # elif self.aux_opt and self.aux_opt.args.backup_every_step and self.aux_opt.args.backup_every_step > 0:
+        #     wandb.save(str(self.aux_opt.state_path.absolute()),  # TODO change filename
+        #                base_path=str(self.aux_opt.state_path.parent),
+        #                policy='live')
+
+    def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
+        while True:
+            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
+                for peer, metrics in metrics_dict.items():
+                    metrics = LocalMetrics.parse_obj(metrics.value)
+                    self.steps_metrics.setdefault(metrics.step, dict())
+                    self.steps_metrics[metrics.step][peer] = metrics
+
+            pprint(dict(self.steps_metrics), expand_all=True)
+
+            if self._is_time_to_yield:
+                step, step_peers_metrics = self.steps_metrics.popitem(last=False)
+                yield step, self._average_peers_metrics(step_peers_metrics.values())
+                log.project_console.print('After pop', justify='center')
+                pprint(dict(self.steps_metrics), expand_all=True)
+                self.last_yield_time = time.monotonic()
+
+            log.project_console.print('Fetching metrics...', style='salmon1', justify='right')
+            time.sleep(self.refresh_period)
+
+    def start(self) -> None:
+        try:
+            self._monitor_loop()
+
+        except KeyboardInterrupt:
+            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
+        finally:
+            if self.wandb_report:
+                wandb.finish()

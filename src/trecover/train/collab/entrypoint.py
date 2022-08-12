@@ -38,6 +38,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     try:
         metrics_monitor = CollaborativeMonitor(dht=dht_manager.dht,
                                                experiment_prefix=args.experiment_prefix,
+                                               delay_in_steps=args.delay_in_steps,
+                                               delay_in_seconds=args.delay_in_seconds,
                                                refresh_period=args.refresh_period,
                                                upload_state=args.upload_state,
                                                wandb_key=args.wandb_key,

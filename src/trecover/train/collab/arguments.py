@@ -192,6 +192,12 @@ def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
 def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Monitor arguments', add_help=add_help, parents=[get_auxiliary_parser(add_help=False)])
 
+    parser.add_argument('--delay-in-steps', default=1, type=int,
+                        help='The delay in displaying (reporting to W&B) the current status '
+                             'of metrics in such a number of steps')
+    parser.add_argument('--delay-in-seconds', default=180, type=float,
+                        help='The delay in displaying (reporting to W&B) the current status '
+                             'of metrics for a maximum of such time in seconds')
     parser.add_argument('--refresh-period', default=10, type=float,
                         help='Period (in seconds) for fetching the metrics from DHT')
     parser.add_argument('--wandb-project', default='TRecover', type=str,
