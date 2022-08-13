@@ -129,7 +129,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Averaging group will wait for stragglers for at most this many seconds')
     parser.add_argument('--allreduce-timeout', default=80, type=float,
                         help='Give up on a given all-reduce round after this many seconds')
-    parser.add_argument('--averaging-timeout', default=180, type=float,
+    parser.add_argument('--averaging-timeout', default=200, type=float,
                         help='Give up on averaging step after this many seconds')
     parser.add_argument('--no-reuse-grad-buffers', action='store_true',
                         help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
@@ -195,7 +195,7 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
     parser.add_argument('--delay-in-steps', default=1, type=int,
                         help='The delay in displaying (reporting to W&B) the current status '
                              'of metrics in such a number of steps')
-    parser.add_argument('--delay-in-seconds', default=180, type=float,
+    parser.add_argument('--delay-in-seconds', default=300, type=float,
                         help='The delay in displaying (reporting to W&B) the current status '
                              'of metrics for a maximum of such time in seconds')
     parser.add_argument('--refresh-period', default=10, type=float,
