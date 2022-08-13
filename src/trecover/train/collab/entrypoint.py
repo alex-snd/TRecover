@@ -27,7 +27,6 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     aux_opt = None
 
     if args.upload_state or args.assist_in_averaging:
-        # args.as_active_peer |= args.upload_state  # TODO investigate
         aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
                                      wrapped_model=BaseModelWrapper(args),
                                      args=args)
