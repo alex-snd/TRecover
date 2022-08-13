@@ -2,6 +2,7 @@ import math
 import threading
 import time
 from argparse import Namespace
+from pathlib import Path
 from typing import Any, Dict, Optional, Iterable, Callable, Union, Tuple
 
 import hivemind
@@ -334,7 +335,7 @@ class CollaborativeOptimizer(object):
         self.dht = dht
         self.wrapped_model = wrapped_model
         self.args = args
-        self.state_path = args.state_path
+        self.state_path: Path = args.state_path
         self.batch_size_per_step = batch_size_per_step
         self.verbose = verbose
         self.auxiliary = False

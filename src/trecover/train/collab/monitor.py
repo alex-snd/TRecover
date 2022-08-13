@@ -39,6 +39,7 @@ class CollaborativeMonitor(object):
         self.last_yield_step = -1
         self.refresh_period = refresh_period
         self.upload_state = upload_state
+        self.last_upload_time = time.monotonic()
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
@@ -57,69 +58,34 @@ class CollaborativeMonitor(object):
 
         self._status()
 
-    @property
-    def _is_time_to_yield(self) -> bool:
-        if len(self.steps_metrics) == 0:
-            return False
-        if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
-            return True
-        if len(self.steps_metrics) > self.delay_in_steps:
-            return True
+    def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
+        while True:
+            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
+                for peer, metrics in metrics_dict.items():
+                    metrics = LocalMetrics.parse_obj(metrics.value)
+                    if metrics.step > self.last_yield_step:
+                        self.steps_metrics.setdefault(metrics.step, dict())
+                        self.steps_metrics[metrics.step][peer] = metrics
 
-        return False
+            if self._is_time_to_yield:
+                step, step_peers_metrics = self.steps_metrics.popitem(last=False)
+                yield step, self._average_peers_metrics(step_peers_metrics.values())
 
-    def _monitor_loop(self) -> None:
-        for step, metrics in self.stream():
-            self._print_metrics(step, metrics)
+                self.last_yield_time = time.monotonic()
+                self.last_yield_step = step
 
+            log.project_console.print('Fetching metrics...', style='salmon1', justify='right')
+            time.sleep(self.refresh_period)
+
+    def start(self) -> None:
+        try:
+            self._monitor_loop()
+
+        except KeyboardInterrupt:
+            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
+        finally:
             if self.wandb_report:
-                wandb.log(metrics.dict(), step=step)
-                # TODO check self.aux_opt.state_path for modification and copy to wandb.run.dir
-                self._upload_state()
-
-    @staticmethod
-    def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
-        loss = sum([item.loss for item in metrics])
-        accuracy = sum([item.accuracy for item in metrics])
-        lr = np.median([item.lr for item in metrics])
-        min_noise = min([item.min_noise for item in metrics])
-        max_noise = max([item.max_noise for item in metrics])
-        samples_accumulated = sum([item.samples_accumulated for item in metrics])
-        samples_per_second = sum([item.samples_per_second for item in metrics])
-        mini_steps = sum([item.mini_steps for item in metrics])
-
-        if mini_steps:
-            loss /= mini_steps
-            accuracy /= mini_steps
-
-        return GlobalMetrics(
-            loss=loss,
-            accuracy=accuracy,
-            lr=lr,
-            min_noise=min_noise,
-            max_noise=max_noise,
-            samples_per_second=samples_per_second,
-            samples_accumulated=samples_accumulated,
-            alive_peers=len(metrics)
-        )
-
-    @staticmethod
-    def _print_metrics(step: int, metrics: GlobalMetrics) -> None:
-        panel_group = Group(
-            Text(f'Global loss: {metrics.loss:.5f}', style='bright_blue', justify='left'),
-            Text(f'Global accuracy: {metrics.accuracy:.5f}', style='bright_blue', justify='left'),
-            Text(f'Learning rate: {metrics.lr}', style='bright_blue', justify='left'),
-            Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
-                 style='bright_blue', justify='left'),
-            Text(f'Samples accumulated: {metrics.samples_accumulated:,}', style='bright_blue', justify='left'),
-            Text(f'Performance: {metrics.samples_per_second:.2f} samples/sec', style='bright_blue', justify='left'),
-            Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
-        )
-
-        log.project_console.print(
-            Panel(panel_group, title=f'Global step {step}', title_align='left', border_style='magenta'),
-            justify='full'
-        )
+                wandb.finish()
 
     def _status(self) -> None:
         if not self.wandb_report:
@@ -155,38 +121,82 @@ class CollaborativeMonitor(object):
                 style='red', justify='right'
             )
 
-    def _upload_state(self) -> None:
-        pass
-        # elif self.aux_opt and self.aux_opt.args.backup_every_step and self.aux_opt.args.backup_every_step > 0:
-        #     wandb.save(str(self.aux_opt.state_path.absolute()),  # TODO change filename
-        #                base_path=str(self.aux_opt.state_path.parent),
-        #                policy='live')
+    @property
+    def _is_time_to_yield(self) -> bool:
+        if len(self.steps_metrics) == 0:
+            return False
+        if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
+            return True
+        if len(self.steps_metrics) > self.delay_in_steps:
+            return True
 
-    def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
-        while True:
-            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
-                for peer, metrics in metrics_dict.items():
-                    metrics = LocalMetrics.parse_obj(metrics.value)
-                    if metrics.step > self.last_yield_step:
-                        self.steps_metrics.setdefault(metrics.step, dict())
-                        self.steps_metrics[metrics.step][peer] = metrics
+        return False
 
-            if self._is_time_to_yield:
-                step, step_peers_metrics = self.steps_metrics.popitem(last=False)
-                yield step, self._average_peers_metrics(step_peers_metrics.values())
+    @property
+    def _is_time_to_upload(self) -> bool:
+        return (
+                self.wandb_report
+                and self.aux_opt
+                and self.aux_opt.state_path.exists()
+                and self.aux_opt.state_path.stat().st_mtime > self.last_upload_time
+        )
 
-                self.last_yield_time = time.monotonic()
-                self.last_yield_step = step
+    @staticmethod
+    def _average_peers_metrics(metrics: List[LocalMetrics]) -> GlobalMetrics:
+        loss = sum([item.loss for item in metrics])
+        accuracy = sum([item.accuracy for item in metrics])
+        lr = np.median([item.lr for item in metrics])
+        min_noise = min([item.min_noise for item in metrics])
+        max_noise = max([item.max_noise for item in metrics])
+        samples_accumulated = sum([item.samples_accumulated for item in metrics])
+        samples_per_second = sum([item.samples_per_second for item in metrics])
+        mini_steps = sum([item.mini_steps for item in metrics])
 
-            log.project_console.print('Fetching metrics...', style='salmon1', justify='right')
-            time.sleep(self.refresh_period)
+        if mini_steps:
+            loss /= mini_steps
+            accuracy /= mini_steps
 
-    def start(self) -> None:
-        try:
-            self._monitor_loop()
+        return GlobalMetrics(
+            loss=loss,
+            accuracy=accuracy,
+            lr=lr,
+            min_noise=min_noise,
+            max_noise=max_noise,
+            samples_per_second=samples_per_second,
+            samples_accumulated=samples_accumulated,
+            alive_peers=len(metrics)
+        )
 
-        except KeyboardInterrupt:
-            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
-        finally:
+    def _monitor_loop(self) -> None:
+        for step, metrics in self.stream():
+            self._print_metrics(step, metrics)
+
             if self.wandb_report:
-                wandb.finish()
+                wandb.log(metrics.dict(), step=step)
+
+            self._upload_state()
+
+    @staticmethod
+    def _print_metrics(step: int, metrics: GlobalMetrics) -> None:
+        panel_group = Group(
+            Text(f'Global loss: {metrics.loss:.5f}', style='bright_blue', justify='left'),
+            Text(f'Global accuracy: {metrics.accuracy:.5f}', style='bright_blue', justify='left'),
+            Text(f'Learning rate: {metrics.lr}', style='bright_blue', justify='left'),
+            Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
+                 style='bright_blue', justify='left'),
+            Text(f'Samples accumulated: {metrics.samples_accumulated:,}', style='bright_blue', justify='left'),
+            Text(f'Performance: {metrics.samples_per_second:.2f} samples/sec', style='bright_blue', justify='left'),
+            Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
+        )
+
+        log.project_console.print(
+            Panel(panel_group, title=f'Global step {step}', title_align='left', border_style='magenta'),
+            justify='full'
+        )
+
+    def _upload_state(self) -> None:
+        if self._is_time_to_upload:
+            wandb.save(str(self.aux_opt.state_path.absolute()),
+                       base_path=str(self.aux_opt.state_path.parent),
+                       policy='now')
+            self.last_upload_time = time.monotonic()
