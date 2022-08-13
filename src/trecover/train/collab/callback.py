@@ -106,19 +106,19 @@ class CollabCheckpoint(Callback):
         self.accuracy = 0
 
     def _print_metrics(self, step: int) -> None:
-        panel_group = Group(Text(f'Local loss: {self.loss / self.steps}',
+        panel_group = Group(Text(f'Local loss: {self.loss / self.steps:.5f}',
                                  style='bright_blue', justify='left'),
-                            Text(f'Local accuracy: {self.accuracy / self.steps}',
+                            Text(f'Local accuracy: {self.accuracy / self.steps:.5f}',
                                  style='bright_blue', justify='left'),
                             Text(f'Learning rate: {self.lr}',
                                  style='bright_blue', justify='left'),
                             Text(f'Min-max noise range: {f"{self.min_noise}-{self.max_noise}"}',
                                  style='bright_blue', justify='left'),
-                            Text(f'Your current contribution: {self.samples} samples',
+                            Text(f'Your current contribution: {self.samples:,} samples',
                                  style='bright_blue', justify='left'),
-                            Text(f'Your total contribution: {self.total_samples_processed} samples',
+                            Text(f'Your total contribution: {self.total_samples_processed:,} samples',
                                  style='bright_blue', justify='left'),
-                            Text(f'Performance: {self.samples_per_second} samples/sec',
+                            Text(f'Performance: {self.samples_per_second:.2f} samples/sec',
                                  style='bright_blue', justify='left'),
                             Text(f'Peers alive: {self.alive_peers}',
                                  style='bright_blue', justify='left'))

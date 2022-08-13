@@ -106,13 +106,13 @@ class CollaborativeMonitor(object):
     @staticmethod
     def _print_metrics(step: int, metrics: GlobalMetrics) -> None:
         panel_group = Group(
-            Text(f'Global loss: {metrics.loss}', style='bright_blue', justify='left'),
-            Text(f'Global accuracy: {metrics.accuracy}', style='bright_blue', justify='left'),
+            Text(f'Global loss: {metrics.loss:.5f}', style='bright_blue', justify='left'),
+            Text(f'Global accuracy: {metrics.accuracy:.5f}', style='bright_blue', justify='left'),
             Text(f'Learning rate: {metrics.lr}', style='bright_blue', justify='left'),
             Text(f'Min-max noise range: {f"{metrics.min_noise}-{metrics.max_noise}"}',
                  style='bright_blue', justify='left'),
-            Text(f'Samples accumulated: {metrics.samples_accumulated}', style='bright_blue', justify='left'),
-            Text(f'Performance: {metrics.samples_per_second} samples/sec', style='bright_blue', justify='left'),
+            Text(f'Samples accumulated: {metrics.samples_accumulated:,}', style='bright_blue', justify='left'),
+            Text(f'Performance: {metrics.samples_per_second:.2f} samples/sec', style='bright_blue', justify='left'),
             Text(f'Peers alive: {metrics.alive_peers}', style='bright_blue', justify='left')
         )
 
