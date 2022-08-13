@@ -37,6 +37,7 @@ class CollaborativeMonitor(object):
         self.delay_in_steps = delay_in_steps
         self.delay_in_seconds = delay_in_seconds
         self.last_yield_time = time.monotonic()
+        self.last_yield_step = -1
         self.refresh_period = refresh_period
         self.upload_state = upload_state
 
@@ -56,6 +57,12 @@ class CollaborativeMonitor(object):
             )
 
         self._status()
+
+    @property
+    def current_step(self) -> int:
+        if self.steps_metrics:
+            return list(self.steps_metrics.keys())[0]
+        return -1
 
     @property
     def _is_time_to_yield(self) -> bool:
@@ -169,8 +176,9 @@ class CollaborativeMonitor(object):
             if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
                 for peer, metrics in metrics_dict.items():
                     metrics = LocalMetrics.parse_obj(metrics.value)
-                    self.steps_metrics.setdefault(metrics.step, dict())
-                    self.steps_metrics[metrics.step][peer] = metrics
+                    if metrics.step > self.last_yield_step:
+                        self.steps_metrics.setdefault(metrics.step, dict())
+                        self.steps_metrics[metrics.step][peer] = metrics
 
             pprint(dict(self.steps_metrics), expand_all=True)
 
@@ -180,6 +188,7 @@ class CollaborativeMonitor(object):
                 log.project_console.print('After pop', justify='center')
                 pprint(dict(self.steps_metrics), expand_all=True)
                 self.last_yield_time = time.monotonic()
+                self.last_yield_step = step
 
             log.project_console.print('Fetching metrics...', style='salmon1', justify='right')
             time.sleep(self.refresh_period)
