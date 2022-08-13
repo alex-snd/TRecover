@@ -40,6 +40,7 @@ class CollaborativeMonitor(object):
         self.refresh_period = refresh_period
         self.upload_state = upload_state
         self.last_upload_time = time.monotonic()
+        self.finished = False
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
@@ -59,7 +60,7 @@ class CollaborativeMonitor(object):
         self._status()
 
     def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
-        while True:
+        while not self.finished or self.steps_metrics:
             if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
                 for peer, metrics in metrics_dict.items():
                     metrics = LocalMetrics.parse_obj(metrics.value)
@@ -84,6 +85,10 @@ class CollaborativeMonitor(object):
         except KeyboardInterrupt:
             log.project_console.print('Monitor is stopped', style='yellow', justify='right')
         finally:
+            self.finished = True
+            self.delay_in_seconds = 0
+            self._monitor_loop()
+
             if self.wandb_report:
                 wandb.finish()
 
