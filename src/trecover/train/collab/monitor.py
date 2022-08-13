@@ -7,7 +7,6 @@ import numpy as np
 import wandb
 from rich.console import Group
 from rich.panel import Panel
-from rich.pretty import pprint
 from rich.text import Text
 from wandb.util import generate_id
 
@@ -59,20 +58,12 @@ class CollaborativeMonitor(object):
         self._status()
 
     @property
-    def current_step(self) -> int:
-        if self.steps_metrics:
-            return list(self.steps_metrics.keys())[0]
-        return -1
-
-    @property
     def _is_time_to_yield(self) -> bool:
         if len(self.steps_metrics) == 0:
             return False
         if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
-            log.project_console.print('Yield because of delay_in_seconds', justify='center')
             return True
         if len(self.steps_metrics) > self.delay_in_steps:
-            log.project_console.print('Yield because of delay_in_steps', justify='center')
             return True
 
         return False
@@ -180,13 +171,10 @@ class CollaborativeMonitor(object):
                         self.steps_metrics.setdefault(metrics.step, dict())
                         self.steps_metrics[metrics.step][peer] = metrics
 
-            pprint(dict(self.steps_metrics), expand_all=True)
-
             if self._is_time_to_yield:
                 step, step_peers_metrics = self.steps_metrics.popitem(last=False)
                 yield step, self._average_peers_metrics(step_peers_metrics.values())
-                log.project_console.print('After pop', justify='center')
-                pprint(dict(self.steps_metrics), expand_all=True)
+
                 self.last_yield_time = time.monotonic()
                 self.last_yield_step = step
 
