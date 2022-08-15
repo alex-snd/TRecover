@@ -565,7 +565,8 @@ class CollaborativeOptimizer(object):
     @torch.no_grad()
     def backup_state(self) -> None:
         t_start = time.monotonic()
-        log.project_console.print('Backup the collab state...', style='magenta', justify='right')
+        log.project_console.print(f'Backup the {self.local_epoch:,}-epoch collab state...',
+                                  style='magenta', justify='right')
         torch.save(self.state_dict(), self.state_path)
         log.project_console.print(
             f'Backup done in {time.monotonic() - t_start:.4} sec', style='magenta', justify='right'
@@ -580,7 +581,8 @@ class CollaborativeOptimizer(object):
             backup_step = state_dict['local_epoch']
 
             if not check_step or backup_step >= current_step:
-                log.project_console.print('Restored state from backup...', style='green', justify='right')
+                log.project_console.print(f'Restoring state from {backup_step:,}-epoch backup...',
+                                          style='green', justify='right')
                 self.load_state_dict(state_dict)
                 log.project_console.print(
                     f'Collab sate is restored from backup in {time.monotonic() - t_start:.4} sec',
@@ -677,8 +679,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
         elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
             log.project_console.print(
-                'WARN: From now, this auxiliary peer will no longer be able to '
-                'synchronize its state with a single one client-mode peer.',
+                'WARN: This auxiliary peer can no longer synchronize its state with a single one client-mode peer.',
                 style='yellow',
                 justify='right'
             )
