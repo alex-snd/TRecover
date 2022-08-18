@@ -243,6 +243,8 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Perform visualization once in this many global steps.')
     parser.add_argument('--visualizer-refresh-period', default=10, type=float,
                         help='Period (in seconds) to check for visualization.')
+    parser.add_argument('--assist-in-averaging', action='store_true',
+                        help='If True, this peer will facilitate averaging for other (training) peers')
 
     return parser
 
@@ -255,8 +257,6 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
     parser.add_argument('--upload-state', action='store_true',
                         help='Whether to upload collab state to Weights & Biases. Default: do not upload.'
                              'Also you need to specify `--backup-every-step` argument')
-    parser.add_argument('--assist-in-averaging', action='store_true',
-                        help='If True, this peer will facilitate averaging for other (training) peers')
 
     return parser
 
