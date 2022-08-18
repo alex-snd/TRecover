@@ -83,11 +83,16 @@ class CollaborativeMonitor(object):
             self._monitor_loop()
 
         except KeyboardInterrupt:
-            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
+            log.project_console.print('Monitor stopping...', style='yellow', justify='right')
         finally:
             self.finished = True
-            self.delay_in_seconds = 0
-            self._monitor_loop()
+
+            if self.steps_metrics:
+                log.project_console.print('Trying to report delayed metrics...', style='yellow', justify='right')
+                self.delay_in_seconds = 0
+                self._monitor_loop()
+
+            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
 
             if self.wandb_report:
                 wandb.finish()
@@ -202,6 +207,6 @@ class CollaborativeMonitor(object):
     def _upload_state(self) -> None:
         if self._is_time_to_upload:
             wandb.save(str(self.aux_opt.state_path.absolute()),
-                       base_path=str(self.aux_opt.state_path.parent),
+                       base_path=str(self.aux_opt.state_path.parent),  # TODO check, change name, delete at max files
                        policy='now')
             self.last_upload_time = time.monotonic()
