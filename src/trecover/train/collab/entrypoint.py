@@ -50,7 +50,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         metrics_monitor.start()
 
     finally:
-        if aux_opt:
+        if aux_opt and args.assist_in_averaging:
             aux_opt.set_finished()
 
 
@@ -155,5 +155,5 @@ def visualize(cli_args: Optional[List[str]] = None) -> None:
         visualizer.start(attach=True)
 
     finally:
-        if aux_opt:
+        if aux_opt and args.assist_in_averaging:
             aux_opt.set_finished()
