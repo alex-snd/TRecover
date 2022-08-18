@@ -1,24 +1,19 @@
 from argparse import Namespace
 from pathlib import Path
 from time import time
-from typing import Dict, Any, Iterable, Optional, Tuple, List, Union
+from typing import List, Dict, Any, Optional, Tuple
 
 import pytorch_lightning as pl
 import torch
-from rich.console import Group
-from rich.panel import Panel
-from rich.text import Text
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from trecover.config import log
 from trecover.model import TRecover
 from trecover.train.data import WikiDataset, StandardCollate
 from trecover.train.loss import CustomCrossEntropyLoss
 from trecover.utils.train import transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target
-from trecover.utils.visualization import visualize_columns, visualize_target
 
 
 class BaseModelWrapper(pl.LightningModule):
@@ -49,6 +44,29 @@ class BaseModelWrapper(pl.LightningModule):
                                 betas=(self.args.adam_beta1, self.args.adam_beta2),
                                 eps=self.args.adam_epsilon,
                                 weight_decay=self.args.weight_decay)
+
+    @torch.no_grad()
+    def perform(self) -> List[Tuple[List[str], List[str], List[str]]]:
+        performance = list()
+
+        for batch_idx, vis_tensors in enumerate(self.performance_dataloader(), start=1):
+            src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
+
+            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
+            tgt_out = tgt_out.reshape(-1, self.model.token_size)
+            prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
+
+            for i in range(src.shape[0]):
+                columns = tensor_to_columns(src[i, :])
+                predicted = tensor_to_target(prediction[i, : self.args.n_columns_to_show])
+                original = tensor_to_target(tgt[i, : self.args.n_columns_to_show])
+
+                performance.append((columns, predicted, original))
+
+        return performance
+
+    def performance_dataloader(self) -> DataLoader:
+        return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size)
 
     def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
@@ -103,44 +121,6 @@ class FullModelWrapper(PeerModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
         super(FullModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
-    def validation_epoch_end(self, step_outputs: Union[Dict[str, Tensor], List[Dict[str, Tensor]]]) -> None:
-        self.visualize_on_epoch_end()
-
-    # TODO move out
-    @torch.no_grad()
-    def visualize_on_epoch_end(self) -> None:
-        for batch_idx, vis_tensors in enumerate(self.vis_dataloader(), start=1):
-            src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
-
-            tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-            tgt_out = tgt_out.reshape(-1, self.model.token_size)
-            prediction = torch.argmax(tgt_out, dim=1).view_as(tgt)
-
-            for i in range(src.shape[0]):
-                columns = tensor_to_columns(src[i, : self.args.n_columns_to_show])
-                columns = visualize_columns(columns, delimiter=self.args.delimiter, as_rows=True)
-                columns = (Text(row, style='bright_blue', overflow='ellipsis', no_wrap=True) for row in columns)
-                target = tensor_to_target(prediction[i, : self.args.n_columns_to_show])
-                predicted = visualize_target(target, delimiter=self.args.delimiter)
-                original = tensor_to_target(tgt[i, : self.args.n_columns_to_show])
-                original = visualize_target(original, delimiter=self.args.delimiter)
-
-                panel_group = Group(
-                    Text('Columns', style='magenta', justify='center'),
-                    *columns,
-                    Text('Predicted', style='magenta', justify='center'),
-                    Text(predicted, style='cyan', justify='center', overflow='ellipsis'),
-                    Text('Original', style='magenta', justify='center'),
-                    Text(original, justify='center', overflow='ellipsis')
-                )
-
-                log.project_console.print('\n')
-                log.project_console.print(
-                    Panel(panel_group, title=f'Example {(batch_idx - 1) * self.batch_size + i + 1}',
-                          border_style='magenta'),
-                    justify='center'
-                )
-
     def test_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                   *args, **kwargs
                   ) -> Dict[str, Tensor]:
@@ -157,6 +137,3 @@ class FullModelWrapper(PeerModelWrapper):
 
     def test_dataloader(self) -> DataLoader:
         return self._create_dataloader(self.args.test_files, self.args.test_dataset_size)
-
-    def vis_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size)

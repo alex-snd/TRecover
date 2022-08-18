@@ -172,34 +172,9 @@ def get_dht_parser(add_help: bool = True) -> ArgumentParser:
     return parser
 
 
-def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
-    parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
-                            parents=[
-                                get_dht_parser(add_help=False),
-                                get_model_parser(add_help=False),
-                                get_data_parser(add_help=False),
-                                get_optimization_parser(add_help=False)
-                            ])
+def get_wandb_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('W&B arguments', add_help=add_help)
 
-    parser.add_argument('--assist-refresh', default=5, type=float,
-                        help='Period (in seconds) for trying to assist averaging')
-    parser.add_argument('--as-active-peer', action='store_true',
-                        help='Allow to share state with other peers otherwise only assist in averaging')
-
-    return parser
-
-
-def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
-    parser = ArgumentParser('Monitor arguments', add_help=add_help, parents=[get_auxiliary_parser(add_help=False)])
-
-    parser.add_argument('--delay-in-steps', default=1, type=int,
-                        help='The delay in displaying (reporting to W&B) the current status '
-                             'of metrics in such a number of steps')
-    parser.add_argument('--delay-in-seconds', default=300, type=float,
-                        help='The delay in displaying (reporting to W&B) the current status '
-                             'of metrics for a maximum of such time in seconds')
-    parser.add_argument('--refresh-period', default=10, type=float,
-                        help='Period (in seconds) for fetching the metrics from DHT')
     parser.add_argument('--wandb-project', default='TRecover', type=str,
                         help='Name of Weights & Biases project to report the training progress to')
     parser.add_argument('--wandb-id', default=None, type=str,
@@ -208,11 +183,12 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
                         help='Weights & Biases credentials token to log in')
     parser.add_argument('--wandb-registry', default=exp_var.WANDB_REGISTRY_DIR, type=Path,
                         help='Default path for Weights & Biases logs and weights')
-    parser.add_argument('--upload-state', action='store_true',
-                        help='Whether to upload collab state to Weights & Biases. Default: do not upload.'
-                             'Also you need to specify `--backup-every-step` argument')
-    parser.add_argument('--assist-in-averaging', action='store_true',
-                        help='If True, this peer will facilitate averaging for other (training) peers')
+    parser.add_argument('--delay-in-steps', default=1, type=int,
+                        help='The delay in displaying (reporting to W&B) the current status '
+                             'of metrics (visualization) in such a number of steps')
+    parser.add_argument('--delay-in-seconds', default=300, type=float,
+                        help='The delay in displaying (reporting to W&B) the current status '
+                             'of metrics (visualization) for a maximum of such time in seconds')
 
     return parser
 
@@ -236,6 +212,55 @@ def get_tune_parser(add_help: bool = True) -> ArgumentParser:
     return parser
 
 
+def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
+                            parents=[
+                                get_dht_parser(add_help=False),
+                                get_model_parser(add_help=False),
+                                get_data_parser(add_help=False),
+                                get_optimization_parser(add_help=False)
+                            ])
+
+    parser.add_argument('--assist-refresh', default=5, type=float,
+                        help='Period (in seconds) for trying to assist averaging')
+    parser.add_argument('--as-active-peer', action='store_true',
+                        help='Allow to share state with other peers otherwise only assist in averaging')
+
+    return parser
+
+
+def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Visualization arguments',
+                            add_help=add_help,
+                            parents=[
+                                get_wandb_parser(add_help=False),
+                                get_auxiliary_parser(add_help=False)
+                            ])
+
+    parser.add_argument('--delimiter', default='', type=str,
+                        help='Visualization columns delimiter')
+    parser.add_argument('--visualize-every-step', default=5, type=int,
+                        help='Perform visualization once in this many global steps.')
+    parser.add_argument('--visualizer-refresh-period', default=10, type=float,
+                        help='Period (in seconds) to check for visualization.')
+
+    return parser
+
+
+def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Monitor arguments', add_help=add_help, parents=[get_visualization_parser(add_help=False)])
+
+    parser.add_argument('--refresh-period', default=10, type=float,
+                        help='Period (in seconds) for fetching the metrics from DHT')
+    parser.add_argument('--upload-state', action='store_true',
+                        help='Whether to upload collab state to Weights & Biases. Default: do not upload.'
+                             'Also you need to specify `--backup-every-step` argument')
+    parser.add_argument('--assist-in-averaging', action='store_true',
+                        help='If True, this peer will facilitate averaging for other (training) peers')
+
+    return parser
+
+
 def get_train_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Train loop arguments', add_help=add_help,
                             parents=[
@@ -254,16 +279,5 @@ def get_train_parser(add_help: bool = True) -> ArgumentParser:
                         help='Number of epochs for training')
     parser.add_argument('--statistics-expiration', default=600, type=float,
                         help='Statistics will be removed if not updated in this many seconds')
-
-    return parser
-
-
-def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
-    parser = ArgumentParser('Visualization arguments', add_help=add_help)
-
-    parser.add_argument('--n-columns-to-show', default=96, type=int,
-                        help='Number of visualization columns to show')
-    parser.add_argument('--delimiter', default='', type=str,
-                        help='Visualization columns delimiter')
 
     return parser

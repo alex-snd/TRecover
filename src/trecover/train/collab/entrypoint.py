@@ -5,19 +5,20 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_only
 
 from trecover.config import log
-from trecover.train.collab.arguments import get_monitor_parser, get_train_parser, get_auxiliary_parser, sync_base_args
+from trecover.train.collab import arguments
 from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import CollaborativeMonitor
 from trecover.train.collab.optim import AuxiliaryOptimizer
 from trecover.train.collab.strategy import CollaborativeStrategy
+from trecover.train.collab.visualization import CollaborativeVisualizer
 from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
 
 rank_zero_only.rank = 1
 
 
 def monitor(cli_args: Optional[List[str]] = None) -> None:
-    args = sync_base_args(get_monitor_parser().parse_args(cli_args))
+    args = arguments.sync_base_args(arguments.get_monitor_parser().parse_args(cli_args))
 
     if args.assist_in_averaging and args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
@@ -54,7 +55,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:
-    args = sync_base_args(get_train_parser().parse_args(cli_args))
+    args = arguments.sync_base_args(arguments.get_train_parser().parse_args(cli_args))
 
     os.system('ulimit -n 16384')
 
@@ -83,7 +84,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
 
 
 def tune(cli_args: Optional[List[str]] = None) -> int:
-    args = sync_base_args(get_train_parser().parse_args(cli_args))
+    args = arguments.sync_base_args(arguments.get_train_parser().parse_args(cli_args))
 
     log.project_console.print('Trying to find appropriate batch size for this machine', style='magenta')
 
@@ -113,7 +114,7 @@ def tune(cli_args: Optional[List[str]] = None) -> int:
 
 
 def auxiliary(cli_args: Optional[List[str]] = None) -> None:
-    args = sync_base_args(get_auxiliary_parser().parse_args(cli_args))
+    args = arguments.sync_base_args(arguments.get_auxiliary_parser().parse_args(cli_args))
 
     if args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
@@ -126,4 +127,33 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
 
 
 def visualize(cli_args: Optional[List[str]] = None) -> None:
-    pass
+    args = arguments.sync_base_args(arguments.get_visualization_parser().parse_args(cli_args))
+
+    if args.assist_in_averaging and args.client_mode:
+        log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
+        return
+
+    dht_manager = DHTManager(args)
+    aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
+                                 wrapped_model=BaseModelWrapper(args),
+                                 args=args)
+
+    if args.assist_in_averaging:
+        aux_opt.start_assistant()
+
+    try:
+        visualizer = CollaborativeVisualizer(aux_opt=aux_opt,
+                                             delimiter=args.delimiter,
+                                             visualize_every_step=args.visualize_every_step,
+                                             refresh_period=args.visualizer_refresh_period,
+                                             delay_in_steps=args.delay_in_steps,
+                                             delay_in_seconds=args.delay_in_seconds,
+                                             wandb_key=args.wandb_key,
+                                             wandb_project=args.wandb_project,
+                                             wandb_id=args.wandb_id,
+                                             wandb_registry=args.wandb_registry)
+        visualizer.start(attach=True)
+
+    finally:
+        if aux_opt:
+            aux_opt.set_finished()
