@@ -58,8 +58,8 @@ class BaseModelWrapper(pl.LightningModule):
 
             for i in range(src.shape[0]):
                 columns = tensor_to_columns(src[i, :])
-                predicted = tensor_to_target(prediction[i, : self.args.n_columns_to_show])
-                original = tensor_to_target(tgt[i, : self.args.n_columns_to_show])
+                predicted = tensor_to_target(prediction[i, :])
+                original = tensor_to_target(tgt[i, :])
 
                 performance.append((columns, predicted, original))
 
