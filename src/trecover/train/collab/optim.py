@@ -2,6 +2,7 @@ import math
 import threading
 import time
 from argparse import Namespace
+from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, Optional, Iterable, Callable, Union, Tuple
 
@@ -16,6 +17,17 @@ from torch.optim.lr_scheduler import LambdaLR
 from trecover.config import log
 from trecover.train.collab.wrapper import BaseModelWrapper
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
+
+_ATOMIC_RLOCK = threading.RLock()
+
+
+def atomic(method: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(method)
+    def atomic_method(*args, **kwargs) -> Any:
+        with _ATOMIC_RLOCK:
+            return method(*args, **kwargs)
+
+    return atomic_method
 
 
 class CPULamb8Bit(Optimizer2State):
@@ -326,6 +338,8 @@ class CPULamb8Bit(Optimizer2State):
 
 
 class CollaborativeOptimizer(object):
+    transaction = _ATOMIC_RLOCK
+
     def __init__(self,
                  dht: hivemind.DHT,
                  wrapped_model: BaseModelWrapper,
@@ -342,7 +356,16 @@ class CollaborativeOptimizer(object):
         self._opt = None
         self._original_allow_state_sharing = None
 
+    def __enter__(self) -> 'CollaborativeOptimizer':
+        self.transaction.acquire()
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.transaction.release()
+
     @property
+    @atomic
     def trainable_params(self) -> Iterable[Dict[str, Any]]:
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -385,6 +408,7 @@ class CollaborativeOptimizer(object):
         return scheduler
 
     @property
+    @atomic
     def opt(self) -> hivemind.Optimizer:
         if not self._opt:
             assert (self.batch_size_per_step is None and self.auxiliary) or \
@@ -432,18 +456,22 @@ class CollaborativeOptimizer(object):
         return self._opt
 
     @property
+    @atomic
     def run_id(self) -> str:
         return self.opt.run_id
 
     @property
+    @atomic
     def allow_state_sharing(self) -> bool:
         return self.opt.state_averager.allow_state_sharing
 
     @allow_state_sharing.setter
+    @atomic
     def allow_state_sharing(self, value: bool) -> None:
         self.opt.state_averager.allow_state_sharing = value
 
     @property
+    @atomic
     def original_allow_state_sharing(self) -> bool:
         if self._original_allow_state_sharing is None:
             return self.allow_state_sharing
@@ -451,34 +479,42 @@ class CollaborativeOptimizer(object):
         return self._original_allow_state_sharing
 
     @property
+    @atomic
     def num_peers(self) -> int:
         return self.opt.tracker.global_progress.num_peers
 
     @property
+    @atomic
     def num_client_peers(self) -> int:
         return self.opt.tracker.global_progress.num_clients
 
     @property
+    @atomic
     def num_non_client_peers(self) -> int:
         return self.num_peers - self.num_client_peers
 
     @property
+    @atomic
     def global_epoch(self) -> int:
         return self.opt.tracker.global_epoch
 
     @property
+    @atomic
     def local_epoch(self) -> int:
         return self.opt.local_epoch
 
     @property
+    @atomic
     def local_samples_accumulated(self) -> int:
         return self.opt.grad_averager.local_samples_accumulated
 
     @property
+    @atomic
     def samples_per_second(self) -> float:
         return self.opt.tracker.performance_ema.samples_per_second
 
     @property
+    @atomic
     def lr(self) -> float:
         return self.opt.opt.param_groups[0]['lr']
 
@@ -497,6 +533,7 @@ class CollaborativeOptimizer(object):
 
         return self.args.bandwidth
 
+    @atomic
     def recover_state(self) -> None:
         log.project_console.print('Trying to recover collab state...', style='yellow', justify='right')
 
@@ -518,6 +555,7 @@ class CollaborativeOptimizer(object):
 
     @property
     @torch.no_grad()
+    @atomic
     def params_are_finite(self) -> bool:
         for param in self.wrapped_model.model.parameters():
             if not torch.all(torch.isfinite(param)):
@@ -526,6 +564,7 @@ class CollaborativeOptimizer(object):
         return True
 
     @torch.no_grad()
+    @atomic
     def sync_state(self) -> None:
         t_start = time.monotonic()
         log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
@@ -535,6 +574,7 @@ class CollaborativeOptimizer(object):
         )
 
     @torch.no_grad()
+    @atomic
     def state_dict(self) -> Dict[str, Any]:
         return {
             'model': self.wrapped_model.model.state_dict(),
@@ -544,6 +584,7 @@ class CollaborativeOptimizer(object):
         }
 
     @torch.no_grad()
+    @atomic
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.wrapped_model.model.load_state_dict(state_dict['model'])
         self.opt.load_state_dict(state_dict['optimizer'])
@@ -563,6 +604,7 @@ class CollaborativeOptimizer(object):
                 offloaded_param.copy_(main_param, non_blocking=True)
 
     @torch.no_grad()
+    @atomic
     def backup_state(self) -> None:
         t_start = time.monotonic()
         log.project_console.print(f'Backup the {self.local_epoch:,}-epoch collab state...',
@@ -573,6 +615,7 @@ class CollaborativeOptimizer(object):
         )
 
     @torch.no_grad()
+    @atomic
     def restore_from_backup(self, check_step: bool = False) -> None:
         if self.state_path.exists():
             t_start = time.monotonic()
@@ -609,17 +652,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                                                  verbose=args.verbose)
 
         self.auxiliary = not args.as_active_peer
-        self.lock = threading.Lock()
         self.finished = threading.Event()
         self.last_reported_step = None
-
-    def __enter__(self) -> 'AuxiliaryOptimizer':
-        self.lock.acquire()
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self.lock.release()
 
     @property
     def _is_time_to_backup(self) -> bool:
@@ -634,19 +668,20 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
     def _assist_averaging_in_background(self) -> None:
         log.project_console.print('Start assistant', style='bright_blue', justify='right')
 
-        self.restore_from_backup()
-        self.sync_state()
+        with self.transaction:
+            self.restore_from_backup()
+            self.sync_state()
 
-        if self.allow_state_sharing or self.args.backup_every_step:
-            self.backup_state()
-            self.last_reported_step = self.local_epoch
+            if self.allow_state_sharing or self.args.backup_every_step:
+                self.backup_state()
+                self.last_reported_step = self.local_epoch
 
         self._assistant_loop()
 
     def _assistant_loop(self) -> None:
         while not self.finished.is_set():
             try:
-                with self:
+                with self.transaction:
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()

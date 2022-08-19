@@ -60,8 +60,8 @@ class CollaborativeVisualizer(object):
 
     def stream(self) -> Generator[Tuple[int, List[Panel]], None, None]:
         while not self.finished.is_set() or self.steps_performance:
-            if self._is_time_to_visualize:
-                with self.aux_opt:
+            with self.aux_opt.transaction:
+                if self._is_time_to_visualize:
                     if self.aux_opt.local_epoch != self.aux_opt.global_epoch:  # TODO test
                         log.project_console.print(
                             'Need to synchronize this peer before visualization',
