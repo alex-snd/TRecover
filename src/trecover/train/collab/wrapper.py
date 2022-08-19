@@ -66,14 +66,14 @@ class BaseModelWrapper(pl.LightningModule):
         return performance
 
     def performance_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size)
+        return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size, batch_size=self.batch_size or 1)
 
-    def _create_dataloader(self, files: Path, dataset_size: int) -> DataLoader:
+    def _create_dataloader(self, files: Path, dataset_size: int, batch_size: int) -> DataLoader:
         files = [files / file for file in files.iterdir()]
         dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,
                               max_threshold=self.args.max_threshold, dataset_size=dataset_size)
 
-        return dataset.create_dataloader(batch_size=self.batch_size,
+        return dataset.create_dataloader(batch_size=batch_size,
                                          collate=self.collate,
                                          num_workers=self.args.n_workers)
 
@@ -111,10 +111,10 @@ class PeerModelWrapper(BaseModelWrapper):
         return {'loss': loss, 'accuracy': accuracy}
 
     def train_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.train_files, self.args.train_dataset_size)
+        return self._create_dataloader(self.args.train_files, self.args.train_dataset_size, self.batch_size)
 
     def val_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.val_files, self.args.val_dataset_size)
+        return self._create_dataloader(self.args.val_files, self.args.val_dataset_size, self.batch_size)
 
 
 class FullModelWrapper(PeerModelWrapper):
@@ -136,4 +136,4 @@ class FullModelWrapper(PeerModelWrapper):
         return {'loss': loss, 'accuracy': accuracy}
 
     def test_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.test_files, self.args.test_dataset_size)
+        return self._create_dataloader(self.args.test_files, self.args.test_dataset_size, self.batch_size)
