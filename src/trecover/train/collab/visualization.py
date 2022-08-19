@@ -62,7 +62,7 @@ class CollaborativeVisualizer(object):
         while not self.finished.is_set() or self.steps_performance:
             if self._is_time_to_visualize:
                 with self.aux_opt:
-                    if (self.aux_opt.local_epoch + 1) != self.aux_opt.global_epoch:  # TODO test
+                    if self.aux_opt.local_epoch != self.aux_opt.global_epoch:  # TODO test
                         log.project_console.print(
                             'Need to synchronize this peer before visualization',
                             style='salmon1',
@@ -163,7 +163,7 @@ class CollaborativeVisualizer(object):
                         for visualization in step_visualizations:
                             wandb_recorder.print(visualization, justify='full')
 
-                    wandb.log(wandb.Html(wandb_recorder.export_html()), step=step, commit=True)
+                    wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step, commit=True)
 
         except KeyboardInterrupt:
             log.project_console.print('Visualizer is stopped', style='yellow', justify='right')
