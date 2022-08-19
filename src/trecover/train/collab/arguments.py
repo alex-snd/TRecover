@@ -245,6 +245,8 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Period (in seconds) to check for visualization.')
     parser.add_argument('--assist-in-averaging', action='store_true',
                         help='If True, this peer will facilitate averaging for other (training) peers')
+    parser.add_argument('--visualize', action='store_true',
+                        help='If True, this peer will perform train progress visualization')
 
     return parser
 

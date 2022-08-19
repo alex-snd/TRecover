@@ -26,14 +26,28 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
     dht_manager = DHTManager(args)
     aux_opt = None
+    visualizer = None
 
-    if args.upload_state or args.assist_in_averaging:
+    if args.upload_state or args.assist_in_averaging or args.visualize:
         aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
                                      wrapped_model=BaseModelWrapper(args),
                                      args=args)
 
         if args.assist_in_averaging:
             aux_opt.start_assistant()
+
+        if args.visualize:
+            visualizer = CollaborativeVisualizer(aux_opt=aux_opt,
+                                                 delimiter=args.delimiter,
+                                                 visualize_every_step=args.visualize_every_step,
+                                                 refresh_period=args.visualizer_refresh_period,
+                                                 delay_in_steps=args.delay_in_steps,
+                                                 delay_in_seconds=args.delay_in_seconds,
+                                                 wandb_key=args.wandb_key,
+                                                 wandb_project=args.wandb_project,
+                                                 wandb_id=args.wandb_id,
+                                                 wandb_registry=args.wandb_registry)
+            visualizer.start()
 
     try:
         metrics_monitor = CollaborativeMonitor(dht=dht_manager.dht,
@@ -50,6 +64,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         metrics_monitor.start()
 
     finally:
+        if visualizer and args.visualize:
+            visualizer.set_finished()
         if aux_opt and args.assist_in_averaging:
             aux_opt.set_finished()
 
