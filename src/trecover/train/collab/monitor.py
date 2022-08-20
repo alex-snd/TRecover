@@ -91,6 +91,7 @@ class CollaborativeMonitor(object):
                 log.project_console.print(f'Trying to report {self.steps_metrics} delayed metrics...', style='yellow',
                                           justify='right')
                 self.delay_in_seconds = 0
+                self.refresh_period = 0
                 self._monitor_loop()
 
             log.project_console.print('Monitor is stopped', style='yellow', justify='right')

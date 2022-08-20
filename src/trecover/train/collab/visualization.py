@@ -166,6 +166,7 @@ class CollaborativeVisualizer(object):
                 log.project_console.print(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
                                           style='yellow', justify='right')
                 self.delay_in_seconds = 0
+                self.refresh_period = 0
                 self._visualizer_loop()
 
             log.project_console.print('Visualizer is stopped', style='yellow', justify='right')
