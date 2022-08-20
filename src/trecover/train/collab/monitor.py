@@ -88,7 +88,8 @@ class CollaborativeMonitor(object):
             self.finished = True
 
             if self.steps_metrics:
-                log.project_console.print('Trying to report delayed metrics...', style='yellow', justify='right')
+                log.project_console.print(f'Trying to report {self.steps_metrics} delayed metrics...', style='yellow',
+                                          justify='right')
                 self.delay_in_seconds = 0
                 self._monitor_loop()
 

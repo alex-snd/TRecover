@@ -698,10 +698,11 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 time.sleep(self.args.assist_refresh)
 
             except KeyboardInterrupt:
-                log.project_console.print('Assistant is stopped', style='yellow', justify='right')
-                return
+                break
             except Exception as e:
                 log.project_logger.exception(e, exc_info=True)
+
+        log.project_console.print('Assistant is stopped', style='yellow', justify='right')
 
     def _update_state_sharing_status_step(self) -> None:
         if self.allow_state_sharing and self.num_peers == 1 and self.num_non_client_peers == 1:
@@ -781,5 +782,4 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             averaging_thread.start()
 
     def set_finished(self) -> None:
-        log.project_console.print('Stop assistant...', style='yellow', justify='right')
         self.finished.set()
