@@ -93,13 +93,13 @@ class CollaborativeVisualizer(object):
             visualizer_thread.start()
 
     def set_finished(self) -> None:
-        log.project_console.print('Stop visualizer...', style='yellow', justify='right')
         self.finished.set()
 
     @property
     def _is_time_to_visualize(self) -> bool:
         return (
-                self.aux_opt.global_epoch != self.last_performance_step
+                not self.finished.is_set()
+                and self.aux_opt.global_epoch != self.last_performance_step
                 and self.aux_opt.global_epoch != 0
                 and self.visualize_every_step > 0
                 and self.aux_opt.global_epoch % self.visualize_every_step == 0
@@ -154,20 +154,33 @@ class CollaborativeVisualizer(object):
     def _visualize_in_background(self) -> None:
         log.project_console.print('Start visualizer', style='bright_blue', justify='right')
 
-        self._visualizer_loop()
-
-    def _visualizer_loop(self) -> None:
         try:
-            for step, step_visualizations in self.stream():
-                for visualization in step_visualizations:
-                    log.project_console.print(visualization, justify='full')
-
-                if self.wandb_report:
-                    with (wandb_recorder := Console(record=True)).capture():
-                        for visualization in step_visualizations:
-                            wandb_recorder.print(visualization, justify='full')
-
-                    wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
+            self._visualizer_loop()
 
         except KeyboardInterrupt:
+            log.project_console.print('Visualizer stopping...', style='yellow', justify='right')
+        finally:
+            self.set_finished()
+
+            if self.steps_performance:
+                log.project_console.print(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
+                                          style='yellow', justify='right')
+                self.delay_in_seconds = 0
+                self._visualizer_loop()
+
             log.project_console.print('Visualizer is stopped', style='yellow', justify='right')
+
+            if self.wandb_report:
+                wandb.finish()
+
+    def _visualizer_loop(self) -> None:
+        for step, step_visualizations in self.stream():
+            for visualization in step_visualizations:
+                log.project_console.print(visualization, justify='full')
+
+            if self.wandb_report:
+                with (wandb_recorder := Console(record=True)).capture():
+                    for visualization in step_visualizations:
+                        wandb_recorder.print(visualization, justify='full')
+
+                wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
