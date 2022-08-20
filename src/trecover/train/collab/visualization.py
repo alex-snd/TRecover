@@ -70,11 +70,8 @@ class CollaborativeVisualizer(object):
                         )
                         self.aux_opt.sync_state()
 
-                    step = self.aux_opt.local_epoch - 1
-                    performance = self.aux_opt.wrapped_model.perform()
-
-                    self.steps_performance[step] = performance
-                    self.last_performance_step = step
+                    self.steps_performance[self.aux_opt.local_epoch - 1] = self.aux_opt.wrapped_model.perform()
+                    self.last_performance_step = self.aux_opt.local_epoch
 
             if self._is_time_to_yield:
                 step, step_performance = self.steps_performance.popitem(last=False)
@@ -163,7 +160,11 @@ class CollaborativeVisualizer(object):
                         for visualization in step_visualizations:
                             wandb_recorder.print(visualization, justify='full')
 
-                    wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step, commit=True)
+                    wandb.log(data={
+                        'visualization': wandb.Html(wandb_recorder.export_html()),
+                        'vis_step': step
+                    },
+                        commit=True)
 
         except KeyboardInterrupt:
             log.project_console.print('Visualizer is stopped', style='yellow', justify='right')
