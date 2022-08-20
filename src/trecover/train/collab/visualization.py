@@ -43,7 +43,7 @@ class CollaborativeVisualizer(object):
         self.wandb_report = wandb_key is not None
         self.finished = threading.Event()
 
-        if self.wandb_report:
+        if self.wandb_report and wandb.run is None:
             wandb.login(key=wandb_key)
 
             if wandb_id is None:
@@ -167,11 +167,7 @@ class CollaborativeVisualizer(object):
                         for visualization in step_visualizations:
                             wandb_recorder.print(visualization, justify='full')
 
-                    wandb.log(data={
-                        'visualization': wandb.Html(wandb_recorder.export_html()),
-                        'vis_step': step
-                    },
-                        commit=True)
+                    wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
 
         except KeyboardInterrupt:
             log.project_console.print('Visualizer is stopped', style='yellow', justify='right')

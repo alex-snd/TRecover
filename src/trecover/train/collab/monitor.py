@@ -182,7 +182,7 @@ class CollaborativeMonitor(object):
             self._print_metrics(step, metrics)
 
             if self.wandb_report:
-                wandb.log(metrics.dict(), step=step, commit=True)
+                wandb.log(metrics.dict(), step=step)
 
             self._upload_state()
 
