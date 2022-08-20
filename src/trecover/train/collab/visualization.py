@@ -62,7 +62,7 @@ class CollaborativeVisualizer(object):
         while not self.finished.is_set() or self.steps_performance:
             with self.aux_opt.transaction:
                 if self._is_time_to_visualize:
-                    if self.aux_opt.local_epoch != self.aux_opt.global_epoch:  # TODO test
+                    if self.aux_opt.local_epoch != self.aux_opt.global_epoch:
                         log.project_console.print(
                             'Need to synchronize this peer before visualization',
                             style='salmon1',
@@ -70,11 +70,11 @@ class CollaborativeVisualizer(object):
                         )
                         self.aux_opt.sync_state()
 
-                    step = self.aux_opt.local_epoch
+                    step = self.aux_opt.local_epoch - 1
                     performance = self.aux_opt.wrapped_model.perform()
 
-                self.steps_performance[step] = performance
-                self.last_performance_step = step
+                    self.steps_performance[step] = performance
+                    self.last_performance_step = step
 
             if self._is_time_to_yield:
                 step, step_performance = self.steps_performance.popitem(last=False)
@@ -105,7 +105,7 @@ class CollaborativeVisualizer(object):
                 self.aux_opt.global_epoch != self.last_performance_step
                 and self.aux_opt.global_epoch != 0
                 and self.visualize_every_step > 0
-                and (self.aux_opt.global_epoch + 1) % self.visualize_every_step == 0
+                and self.aux_opt.global_epoch % self.visualize_every_step == 0
         )
 
     @property
@@ -141,7 +141,7 @@ class CollaborativeVisualizer(object):
             )
 
             visualizations.append(
-                Panel(panel_group, title=f'Step {step:,}, example {idx + 1}',
+                Panel(panel_group, title=f'Step {step:_}, example {idx + 1}',
                       title_align='left', border_style='magenta')
             )
 
