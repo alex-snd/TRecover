@@ -124,7 +124,7 @@ class CollabCheckpoint(Callback):
                                  style='bright_blue', justify='left'))
 
         log.project_console.print(
-            Panel(panel_group, title=f'Local step {step}', title_align='left', border_style='magenta'),
+            Panel(panel_group, title=f'Local step {step:_}', title_align='left', border_style='magenta'),
             justify='full'
         )
 
