@@ -1,6 +1,6 @@
 import time
 from collections import OrderedDict
-from typing import Generator, List, Optional, Tuple
+from typing import Generator, List, Optional, Tuple, Dict
 
 import hivemind
 import numpy as np
@@ -61,7 +61,7 @@ class CollaborativeMonitor(object):
 
     def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
         while not self.finished or self.steps_metrics:
-            if (metrics_entry := self.dht.get(self.metrics_key, latest=True)) and (metrics_dict := metrics_entry.value):
+            if metrics_dict := self._fetch_metrics_dict():
                 for peer, metrics in metrics_dict.items():
                     metrics = LocalMetrics.parse_obj(metrics.value)
                     if metrics.step > self.last_yield_step:
@@ -130,6 +130,14 @@ class CollaborativeMonitor(object):
                 'Unable to upload collab state to the W&B since backup frequency is specified incorrectly.',
                 style='red', justify='right'
             )
+
+    def _fetch_metrics_dict(self) -> Optional[Dict]:
+        if (
+                not self.finished
+                and (metrics_entry := self.dht.get(self.metrics_key, latest=True))
+                and (metrics_dict := metrics_entry.value)
+        ):
+            return metrics_dict
 
     @property
     def _is_time_to_yield(self) -> bool:
