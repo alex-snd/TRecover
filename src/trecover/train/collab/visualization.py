@@ -15,7 +15,7 @@ from trecover.train.collab.optim import AuxiliaryOptimizer
 from trecover.utils.visualization import visualize_columns, visualize_target
 
 
-# TODO from rich.status import Status
+# from rich.status import Status  # TODO
 
 
 class CollaborativeVisualizer(object):
@@ -42,6 +42,7 @@ class CollaborativeVisualizer(object):
         self.last_yield_time = time.monotonic()
         self.wandb_report = wandb_key is not None
         self.finished = threading.Event()
+        self.visualizer_thread: Optional[threading.Thread] = None
 
         if self.wandb_report and wandb.run is None:
             wandb.login(key=wandb_key)
@@ -87,13 +88,16 @@ class CollaborativeVisualizer(object):
         if attach:
             self._visualize_in_background()
         else:
-            visualizer_thread = threading.Thread(name='VisualizerThread',
-                                                 target=self._visualize_in_background,
-                                                 daemon=True)
-            visualizer_thread.start()
+            self.visualizer_thread = threading.Thread(name='VisualizerThread',
+                                                      target=self._visualize_in_background,
+                                                      daemon=True)
+            self.visualizer_thread.start()
 
-    def set_finished(self) -> None:
+    def finish(self, join: bool = True) -> None:
         self.finished.set()
+
+        if self.visualizer_thread and join:
+            self.visualizer_thread.join()
 
     @property
     def _is_time_to_visualize(self) -> bool:
@@ -160,7 +164,7 @@ class CollaborativeVisualizer(object):
         except KeyboardInterrupt:
             log.project_console.print('Visualizer stopping...', style='yellow', justify='right')
         finally:
-            self.set_finished()
+            self.finish()
 
             if self.steps_performance:
                 log.project_console.print(f'Trying to report {len(self.steps_performance)} delayed visualizations...',

@@ -65,9 +65,9 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
     finally:
         if visualizer and args.visualize:
-            visualizer.set_finished()
+            visualizer.finish(join=True)
         if aux_opt and args.assist_in_averaging:
-            aux_opt.set_finished()
+            aux_opt.finish(join=True)
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:
@@ -172,4 +172,4 @@ def visualize(cli_args: Optional[List[str]] = None) -> None:
 
     finally:
         if aux_opt and args.assist_in_averaging:
-            aux_opt.set_finished()
+            aux_opt.finish(join=True)

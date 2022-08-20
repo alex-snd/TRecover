@@ -652,9 +652,10 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                                                  batch_size_per_step=0 if args.as_active_peer else None,
                                                  verbose=args.verbose)
 
-        self.auxiliary = not args.as_active_peer
+        self.auxiliary: bool = not args.as_active_peer
         self.finished = threading.Event()
-        self.last_reported_step = None
+        self.averaging_thread: Optional[threading.Thread] = None
+        self.last_reported_step: int = -1
 
     @property
     def _is_time_to_backup(self) -> bool:
@@ -776,10 +777,13 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         if attach:
             self._assist_averaging_in_background()
         else:
-            averaging_thread = threading.Thread(name='AveragingAuxThread',
-                                                target=self._assist_averaging_in_background,
-                                                daemon=True)
-            averaging_thread.start()
+            self.averaging_thread = threading.Thread(name='AveragingAuxThread',
+                                                     target=self._assist_averaging_in_background,
+                                                     daemon=True)
+            self.averaging_thread.start()
 
-    def set_finished(self) -> None:
+    def finish(self, join: bool = True) -> None:
         self.finished.set()
+
+        if self.averaging_thread and join:
+            self.averaging_thread.join()
