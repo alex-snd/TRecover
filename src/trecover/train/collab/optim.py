@@ -550,7 +550,8 @@ class CollaborativeOptimizer(object):
         self.allow_state_sharing = self.original_allow_state_sharing
 
         log.project_console.print(
-            f'Collab state is recovered in {time.monotonic() - t_start:.4} sec', style='yellow', justify='right'
+            f'{self.local_epoch:_}-epoch collab state is recovered in {time.monotonic() - t_start:.4} sec',
+            style='yellow', justify='right'
         )
 
     @property
@@ -607,7 +608,7 @@ class CollaborativeOptimizer(object):
     @atomic
     def backup_state(self) -> None:
         t_start = time.monotonic()
-        log.project_console.print(f'Backup the {self.local_epoch:,}-epoch collab state...',
+        log.project_console.print(f'Backup the {self.local_epoch:_}-epoch collab state...',
                                   style='magenta', justify='right')
         torch.save(self.state_dict(), self.state_path)
         log.project_console.print(
@@ -624,7 +625,7 @@ class CollaborativeOptimizer(object):
             backup_step = state_dict['local_epoch']
 
             if not check_step or backup_step >= current_step:
-                log.project_console.print(f'Restoring state from {backup_step:,}-epoch backup...',
+                log.project_console.print(f'Restoring state from {backup_step:_}-epoch backup...',
                                           style='green', justify='right')
                 self.load_state_dict(state_dict)
                 log.project_console.print(
