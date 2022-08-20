@@ -62,7 +62,7 @@ class CollaborativeVisualizer(object):
         while not self.finished.is_set() or self.steps_performance:
             with self.aux_opt.transaction:
                 if self._is_time_to_visualize:
-                    if self.aux_opt.local_epoch != self.aux_opt.global_epoch:
+                    if self._need_to_sync:
                         log.project_console.print(
                             'Need to synchronize this peer before visualization',
                             style='salmon1',
@@ -103,6 +103,13 @@ class CollaborativeVisualizer(object):
                 and self.aux_opt.global_epoch != 0
                 and self.visualize_every_step > 0
                 and self.aux_opt.global_epoch % self.visualize_every_step == 0
+        )
+
+    @property
+    def _need_to_sync(self) -> bool:
+        return (
+                self.aux_opt.local_epoch != self.aux_opt.global_epoch or
+                self.aux_opt.original_allow_state_sharing and not self.aux_opt.allow_state_sharing
         )
 
     @property
