@@ -130,7 +130,8 @@ class CollabCollate(StandardCollate):
                 log.project_console.print('CollabCollate arguments are synchronized', style='salmon1', justify='right')
 
         elif verbose:
-            log.project_console.print('Unable to synchronize CollabCollate arguments', style='yellow', justify='right')
+            log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments', style='yellow',
+                                      justify='right')
 
 
 class WikiDataset(Dataset):
