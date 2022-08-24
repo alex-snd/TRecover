@@ -27,7 +27,7 @@ class BaseModelWrapper(pl.LightningModule):
         self.batch_size = args.batch_size
         # self._collate = None
 
-        if args.args_sync:
+        if args.sync_args:
             self.collate = CollabCollate()
         else:
             self.collate = StandardCollate(min_noise=args.min_noise, max_noise=args.max_noise)
@@ -35,7 +35,7 @@ class BaseModelWrapper(pl.LightningModule):
     # @property
     # def collate(self) -> BaseCollate:
     #     if self._collate is None:
-    #         if self.args.args_sync:
+    #         if self.args.sync_args:
     #             self._collate = CollabCollate()
     #         else:
     #             self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
