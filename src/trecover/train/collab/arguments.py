@@ -134,7 +134,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
                         help='Number of steps for gradients accumulation')
-    parser.add_argument('--target-batch-size', default=4096, type=int,
+    parser.add_argument('--target-batch-size', default=1024, type=int,
                         help='Perform optimizer step after all peers collectively accumulate this many samples')
     parser.add_argument('--matchmaking-time', default=50, type=float,
                         help='Averaging group will wait for stragglers for at most this many seconds')
