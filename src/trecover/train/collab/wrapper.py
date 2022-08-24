@@ -90,7 +90,7 @@ class BaseModelWrapper(pl.LightningModule):
 
 class PeerModelWrapper(BaseModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(PeerModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
+        super().__init__(args, *pl_args, **pl_kwargs)
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
@@ -129,7 +129,7 @@ class PeerModelWrapper(BaseModelWrapper):
 
 class FullModelWrapper(PeerModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super(FullModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
+        super().__init__(args, *pl_args, **pl_kwargs)
 
     def test_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                   *args, **kwargs
