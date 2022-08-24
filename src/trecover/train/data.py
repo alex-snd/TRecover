@@ -119,8 +119,8 @@ class CollabCollate(StandardCollate):
         max_noise = remote_args.get('max_noise', default=-1)
 
         if 0 <= min_noise <= max_noise <= len(var.ALPHABET):
-            self.min_noise = min_noise
-            self.max_noise = max_noise
+            self.min_noise = 3  # min_noise
+            self.max_noise = 8  # max_noise
 
             if verbose:
                 log.project_console.print('CollabCollate arguments are synchronized', style='salmon1', justify='right')
