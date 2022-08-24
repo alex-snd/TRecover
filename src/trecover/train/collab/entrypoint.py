@@ -30,7 +30,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     aux_opt = None
     visualizer = None
 
-    if args.upload_state or args.assist_in_averaging or args.visualize:
+    if args.upload_state or args.assist_in_averaging or args.visualize_every_step:
         aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
                                      wrapped_model=BaseModelWrapper(args),
                                      args=args,
@@ -39,7 +39,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         if args.assist_in_averaging:
             aux_opt.start_assistant()
 
-        if args.visualize:
+        if args.visualize_every_step:
             visualizer = CollaborativeVisualizer(aux_opt=aux_opt,
                                                  delimiter=args.delimiter,
                                                  visualize_every_step=args.visualize_every_step,
@@ -71,7 +71,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     finally:
         if aux_opt and args.assist_in_averaging:
             aux_opt.finish(join=True)
-        if visualizer and args.visualize:
+        if visualizer and args.visualize_every_step:
             visualizer.finish(join=True)
 
         common_status.disable()

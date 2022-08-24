@@ -249,14 +249,12 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
 
     parser.add_argument('--delimiter', default='', type=str,
                         help='Visualization columns delimiter')
-    parser.add_argument('--visualize-every-step', default=5, type=int,
+    parser.add_argument('--visualize-every-step', default=None, type=int,
                         help='Perform visualization once in this many global steps.')
     parser.add_argument('--visualizer-refresh-period', default=10, type=float,
                         help='Period (in seconds) to check for visualization.')
     parser.add_argument('--assist-in-averaging', action='store_true',
                         help='If True, this peer will facilitate averaging for other (training) peers')
-    parser.add_argument('--visualize', action='store_true',
-                        help='If True, this peer will perform train progress visualization')
 
     return parser
 
