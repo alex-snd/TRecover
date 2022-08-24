@@ -18,7 +18,8 @@ class CollabCheckpoint(Callback):
     def __init__(self,
                  dht_manager: DHTManager,
                  statistics_expiration: float,
-                 backup_every_step: int):
+                 backup_every_step: int,
+                 sync_period: Optional[int] = None):
         self.dht_manager: DHTManager = dht_manager
         self.wrapped_model: Optional[BaseModelWrapper] = None
         self.collab_opt: Optional[CollaborativeOptimizer] = None
@@ -36,6 +37,7 @@ class CollabCheckpoint(Callback):
         self.samples_per_second = 0
         self.alive_peers = 0
         self.backup_every_step = backup_every_step
+        self.sync_period = sync_period
 
     def on_train_batch_end(self,
                            trainer: pl.Trainer,
@@ -47,13 +49,11 @@ class CollabCheckpoint(Callback):
             assert len(trainer.strategy.optimizers) == 1, 'Hivemind only supports training with one optimizer.'
             self.collab_opt = trainer.strategy.collab_opt
             self.last_reported_step = self.collab_opt.local_epoch
-            self.min_noise = self.collab_opt.args.min_noise
-            self.max_noise = self.collab_opt.args.max_noise
 
         if not self.collab_opt.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
             self.collab_opt.recover_state()
-            return  # TODO reset accumulated metrics?
+            return
 
         self.steps += 1
         self.loss += outputs['loss'].item()
@@ -67,6 +67,9 @@ class CollabCheckpoint(Callback):
             else:
                 log.project_console.print('Skip backup', style='yellow', justify='right')
 
+            if self.sync_period and current_step % self.sync_period == 0:
+                self.collab_opt.sync_collate()
+
             self.last_reported_step = current_step
 
         self.samples = self.collab_opt.local_samples_accumulated
@@ -75,6 +78,8 @@ class CollabCheckpoint(Callback):
         self.total_samples_processed += self.samples
         self.samples_per_second = self.collab_opt.samples_per_second
         self.lr = self.collab_opt.lr
+        self.min_noise = self.collab_opt.min_noise
+        self.max_noise = self.collab_opt.max_noise
         self.alive_peers = self.collab_opt.num_peers
 
         statistics = LocalMetrics(

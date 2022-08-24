@@ -91,7 +91,8 @@ def train(cli_args: Optional[List[str]] = None) -> None:
 
     collab_checkpoint = CollabCheckpoint(dht_manager=dht_manager,
                                          statistics_expiration=args.statistics_expiration,
-                                         backup_every_step=args.backup_every_step)
+                                         backup_every_step=args.backup_every_step,
+                                         sync_period=args.sync_period if args.sync_args else None)
 
     trainer = pl.Trainer(default_root_dir=args.pl_registry,
                          max_epochs=args.n_epochs,

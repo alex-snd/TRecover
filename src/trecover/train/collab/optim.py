@@ -520,6 +520,7 @@ class CollaborativeOptimizer(object):
         return self.opt.opt.param_groups[0]['lr']
 
     @property
+    @atomic
     def bandwidth(self) -> Optional[float]:
         if not self.args.bandwidth:
             try:
@@ -533,6 +534,16 @@ class CollaborativeOptimizer(object):
                 return None
 
         return self.args.bandwidth
+
+    @property
+    @atomic
+    def min_noise(self) -> int:
+        return self.wrapped_model.collate.min_noise
+
+    @property
+    @atomic
+    def max_noise(self) -> int:
+        return self.wrapped_model.collate.max_noise
 
     @atomic
     def recover_state(self) -> None:
@@ -564,6 +575,11 @@ class CollaborativeOptimizer(object):
                 return False
 
         return True
+
+    @atomic
+    def sync_collate(self) -> None:
+        log.project_console.print('Sync CollabCollate arguments with torch.hub...', style='salmon1', justify='right')
+        self.wrapped_model.collate.sync(verbose=True)
 
     @torch.no_grad()
     @atomic
