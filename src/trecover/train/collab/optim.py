@@ -538,12 +538,12 @@ class CollaborativeOptimizer(object):
     @property
     @atomic
     def min_noise(self) -> int:
-        return self.wrapped_model.collate.min_noise
+        return self.wrapped_model.batch_collate.min_noise
 
     @property
     @atomic
     def max_noise(self) -> int:
-        return self.wrapped_model.collate.max_noise
+        return self.wrapped_model.batch_collate.max_noise
 
     @atomic
     def recover_state(self) -> None:
@@ -579,7 +579,7 @@ class CollaborativeOptimizer(object):
     @atomic
     def sync_collate(self) -> None:
         log.project_console.print('Sync CollabCollate arguments with torch.hub...', style='salmon1', justify='right')
-        self.wrapped_model.collate.sync(verbose=True)
+        self.wrapped_model.batch_collate.sync(verbose=True)
 
     @torch.no_grad()
     @atomic

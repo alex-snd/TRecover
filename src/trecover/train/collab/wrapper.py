@@ -28,7 +28,7 @@ class BaseModelWrapper(pl.LightningModule):
         self._collate = None
 
     @property
-    def collate(self) -> BaseCollate:
+    def batch_collate(self) -> BaseCollate:
         if self._collate is None:
             if self.args.no_args_sync:
                 self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
@@ -84,7 +84,7 @@ class BaseModelWrapper(pl.LightningModule):
                               max_threshold=self.args.max_threshold, dataset_size=dataset_size)
 
         return dataset.create_dataloader(batch_size=batch_size,
-                                         collate=self.collate,
+                                         collate=self.batch_collate,
                                          num_workers=self.args.n_workers)
 
 
@@ -92,17 +92,17 @@ class PeerModelWrapper(BaseModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
         super(PeerModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
-    @property
-    def collate(self) -> BaseCollate:
-        from trecover.config import log
-        log.project_console.print('PeerModelWrapper.collate', style='yellow', justify='center')
-        if self._collate is None:
-            if self.args.no_args_sync:
-                self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
-            else:
-                self._collate = CollabCollate()
-
-        return self._collate
+    # @property
+    # def batch_collate(self) -> BaseCollate:
+    #     from trecover.config import log
+    #     log.project_console.print('PeerModelWrapper.collate', style='yellow', justify='center')
+    #     if self._collate is None:
+    #         if self.args.no_args_sync:
+    #             self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
+    #         else:
+    #             self._collate = CollabCollate()
+    #
+    #     return self._collate
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
