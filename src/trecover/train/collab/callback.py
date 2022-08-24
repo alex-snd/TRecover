@@ -37,7 +37,7 @@ class CollabCheckpoint(Callback):
         self.samples_per_second = 0
         self.alive_peers = 0
         self.backup_every_step = backup_every_step
-        self.sync_period = sync_period
+        self.sync_period = 5  # sync_period  # TODO
 
     def on_train_batch_end(self,
                            trainer: pl.Trainer,

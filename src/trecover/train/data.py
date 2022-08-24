@@ -62,7 +62,7 @@ class StandardCollate(BaseCollate):
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         log.project_console.print(f'Batch generation with min_noise={self.min_noise}, max_noise={self.max_noise}',
-                                  justify='center')
+                                  justify='center')  # TODO
 
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
@@ -122,7 +122,7 @@ class CollabCollate(StandardCollate):
         max_noise = remote_args.get('max_noise', default=-1)
 
         if 0 <= min_noise <= max_noise <= len(var.ALPHABET):
-            self.min_noise = 3  # min_noise
+            self.min_noise = 3  # min_noise   # TODO
             self.max_noise = 8  # max_noise
 
             if verbose:
