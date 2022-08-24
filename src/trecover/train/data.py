@@ -50,7 +50,8 @@ class BaseCollate(object):
 
     def sync(self, verbose: bool = False) -> None:
         if verbose:
-            log.project_console.print('Unable to synchronize CollabCollate arguments', style='yellow', justify='right')
+            log.project_console.print('BaseCollate:Unable to synchronize CollabCollate arguments', style='yellow',
+                                      justify='right')
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
