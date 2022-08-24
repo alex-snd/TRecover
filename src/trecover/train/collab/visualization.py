@@ -12,10 +12,8 @@ from wandb.util import generate_id
 
 from trecover.config import log
 from trecover.train.collab.optim import AuxiliaryOptimizer
+from trecover.train.collab.status import CommonStatus, Status
 from trecover.utils.visualization import visualize_columns, visualize_target
-
-
-# from rich.status import Status  # TODO
 
 
 class CollaborativeVisualizer(object):
@@ -29,7 +27,8 @@ class CollaborativeVisualizer(object):
                  wandb_key: Optional[str] = None,
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
-                 wandb_registry: Optional[str] = None):
+                 wandb_registry: Optional[str] = None,
+                 common_status: Optional[CommonStatus] = None):
         self.aux_opt = aux_opt
         self.delimiter = delimiter
         self.visualize_every_step = visualize_every_step
@@ -41,8 +40,11 @@ class CollaborativeVisualizer(object):
         self.last_yield_step = -1
         self.last_yield_time = time.monotonic()
         self.wandb_report = wandb_key is not None
-        self.finished = threading.Event()
+        self.stopped = threading.Event()
+        self.finishing = False
         self.visualizer_thread: Optional[threading.Thread] = None
+        self.status = Status(name='Visualizer', name_style='dark_violet', status_style='bright_blue',
+                             common_status=common_status)
 
         if self.wandb_report and wandb.run is None:
             wandb.login(key=wandb_key)
@@ -60,7 +62,8 @@ class CollaborativeVisualizer(object):
             )
 
     def stream(self) -> Generator[Tuple[int, List[Panel]], None, None]:
-        while not self.finished.is_set() or self.steps_performance:
+        self.status.update('Pending...')
+        while not self.stopped.is_set() or (self.steps_performance and self.finishing):
             with self.aux_opt.transaction:
                 if self._is_time_to_visualize:
                     if self._need_to_sync:
@@ -69,10 +72,14 @@ class CollaborativeVisualizer(object):
                             style='salmon1',
                             justify='right'
                         )
+                        self.status.update('Need to synchronize this peer before visualization...')
                         self.aux_opt.sync_state()
+
+                    self.status.update(f'Perform visualization for {self.aux_opt.local_epoch - 1}-step')
 
                     self.steps_performance[self.aux_opt.local_epoch - 1] = self.aux_opt.wrapped_model.perform()
                     self.last_performance_step = self.aux_opt.local_epoch
+                    self.status.update('Pending...')
 
             if self._is_time_to_yield:
                 step, step_performance = self.steps_performance.popitem(last=False)
@@ -81,7 +88,6 @@ class CollaborativeVisualizer(object):
                 self.last_yield_time = time.monotonic()
                 self.last_yield_step = step
 
-            log.project_console.print('Visualize progress...', style='cyan', justify='right')
             time.sleep(self.refresh_period)
 
     def start(self, attach: bool = False) -> None:
@@ -94,15 +100,15 @@ class CollaborativeVisualizer(object):
             self.visualizer_thread.start()
 
     def finish(self, join: bool = True) -> None:
-        self.finished.set()
+        self.stopped.set()
 
-        if self.visualizer_thread and join:
+        if self.visualizer_thread.is_alive() and join:
             self.visualizer_thread.join()
 
     @property
     def _is_time_to_visualize(self) -> bool:
         return (
-                not self.finished.is_set()
+                not self.stopped.is_set()
                 and self.aux_opt.global_epoch != self.last_performance_step
                 and self.aux_opt.global_epoch != 0
                 and self.visualize_every_step > 0
@@ -156,27 +162,23 @@ class CollaborativeVisualizer(object):
         return visualizations
 
     def _visualize_in_background(self) -> None:
-        log.project_console.print('Start visualizer', style='bright_blue', justify='right')
-
         try:
+            self.status.enable()
             self._visualizer_loop()
 
         except KeyboardInterrupt:
-            log.project_console.print('Visualizer stopping...', style='yellow', justify='right')
+            self.status.update('Stopping...', style='yellow')
         finally:
-            self.finish()
-
             if self.steps_performance:
-                log.project_console.print(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
-                                          style='yellow', justify='right')
+                self.status.update(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
+                                   style='yellow')
                 self.delay_in_seconds = 0
                 self.refresh_period = 0
+                self.finishing = True
                 self._visualizer_loop()
 
-            log.project_console.print('Visualizer is stopped', style='yellow', justify='right')
-
-            if self.wandb_report:
-                wandb.finish()
+            self.status.update('Is Stopped', style='yellow')
+            self.status.disable()
 
     def _visualizer_loop(self) -> None:
         for step, step_visualizations in self.stream():

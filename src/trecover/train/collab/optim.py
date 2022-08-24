@@ -15,6 +15,7 @@ from speedtest import Speedtest, SpeedtestException
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
+from trecover.train.collab.status import CommonStatus, Status
 from trecover.train.collab.wrapper import BaseModelWrapper
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
 
@@ -645,7 +646,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
     def __init__(self,
                  dht: hivemind.DHT,
                  wrapped_model: BaseModelWrapper,
-                 args: Namespace):
+                 args: Namespace,
+                 common_status: Optional[CommonStatus] = None):
         super(AuxiliaryOptimizer, self).__init__(dht=dht,
                                                  wrapped_model=wrapped_model,
                                                  args=args,
@@ -653,9 +655,11 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                                                  verbose=args.verbose)
 
         self.auxiliary: bool = not args.as_active_peer
-        self.finished = threading.Event()
+        self.stopped = threading.Event()
         self.averaging_thread: Optional[threading.Thread] = None
         self.last_reported_step: int = -1
+        self.status = Status(name='Assistant', name_style='dark_violet', status_style=self._status_style,
+                             common_status=common_status)
 
     @property
     def _is_time_to_backup(self) -> bool:
@@ -667,23 +671,37 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 and (self.local_epoch + 1) % self.args.backup_every_step == 0
         )
 
+    @property
+    def _status_style(self) -> str:
+        return 'bright_blue' if self.allow_state_sharing else 'blue'
+
     def _assist_averaging_in_background(self) -> None:
-        log.project_console.print('Start assistant', style='bright_blue', justify='right')
+        try:
+            self.status.enable()
 
-        with self.transaction:
-            self.restore_from_backup()
-            self.sync_state()
+            with self.transaction:
+                self.restore_from_backup()
+                self.sync_state()
 
-            if self.allow_state_sharing or self.args.backup_every_step:
-                self.backup_state()
-                self.last_reported_step = self.local_epoch
+                if self.allow_state_sharing or self.args.backup_every_step:
+                    self.backup_state()
+                    self.last_reported_step = self.local_epoch
 
-        self._assistant_loop()
+            self._assistant_loop()
+
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.status.update('Is Stopped', style='yellow')
+            self.status.disable()
 
     def _assistant_loop(self) -> None:
-        while not self.finished.is_set():
+
+        while not self.stopped.is_set():
             try:
+                self.status.update('Pending...', style=self._status_style)
                 with self.transaction:
+                    self.status.update('Assist in averaging...', style=self._status_style)
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()
@@ -691,19 +709,12 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                     if self._is_time_to_backup:
                         self._backup_step()
 
-                log.project_console.print(
-                    'Assist in averaging...',
-                    style='bright_blue' if self.allow_state_sharing else 'blue',
-                    justify='right'
-                )
                 time.sleep(self.args.assist_refresh)
 
             except KeyboardInterrupt:
-                break
+                raise
             except Exception as e:
                 log.project_logger.exception(e, exc_info=True)
-
-        log.project_console.print('Assistant is stopped', style='yellow', justify='right')
 
     def _update_state_sharing_status_step(self) -> None:
         if self.allow_state_sharing and self.num_peers == 1 and self.num_non_client_peers == 1:
@@ -714,6 +725,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 style='yellow',
                 justify='right'
             )
+            self.status.update('Assist in averaging...', style=self._status_style)
 
         elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
             log.project_console.print(
@@ -729,11 +741,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             )
 
         elif self.original_allow_state_sharing and not self.allow_state_sharing and self.num_peers != 1:
-            log.project_console.print(
-                'Need to synchronize this auxiliary peer to enable state sharing',
-                style='salmon1',
-                justify='right'
-            )
+            self.status.update('Need to synchronize this auxiliary peer to enable state sharing',
+                               style=self._status_style)
 
             self.sync_state()
             self.allow_state_sharing = True
@@ -743,31 +752,37 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 style='green',
                 justify='right'
             )
+            self.status.update('Assist in averaging...', style=self._status_style)
 
     def _check_finiteness_step(self) -> None:
         if self.allow_state_sharing and not self.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
+            self.status.update('State recovering...', style='yellow')
             self.recover_state()
+            self.status.update('Assist in averaging...', style=self._status_style)
 
     def _backup_step(self) -> None:
-        if self.auxiliary:
-            log.project_console.print(
-                'Since this peer is not active, we need to sync it with others before backup',
-                style='magenta', justify='right'
-            )
+        try:
+            if self.auxiliary:
+                self.status.update('Since this peer is not active, we need to sync it with others before backup...',
+                                   style=self._status_style)
 
-            self.sync_state()
+                self.sync_state()
 
-            if not self.params_are_finite:
-                log.project_console.print(
-                    'It is not possible to make a backup since the parameters '
-                    'that have just been synchronized are not finite',
-                    style='red', justify='right'
-                )
-                return
+                if not self.params_are_finite:
+                    log.project_console.print(
+                        'It is not possible to make a backup since the parameters '
+                        'that have just been synchronized are not finite',
+                        style='red', justify='right'
+                    )
+                    return
 
-        self.backup_state()
-        self.last_reported_step = self.local_epoch
+            self.status.update('Backup state...', style=self._status_style)
+            self.backup_state()
+            self.last_reported_step = self.local_epoch
+
+        finally:
+            self.status.update('Pending...', style=self._status_style)
 
     def start_assistant(self, attach: bool = False) -> None:
         if self.args.client_mode:
@@ -783,7 +798,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.averaging_thread.start()
 
     def finish(self, join: bool = True) -> None:
-        self.finished.set()
+        self.stopped.set()
 
-        if self.averaging_thread and join:
+        if self.averaging_thread.is_alive() and join:
             self.averaging_thread.join()

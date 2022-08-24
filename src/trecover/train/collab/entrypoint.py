@@ -10,6 +10,7 @@ from trecover.train.collab.callback import CollabCheckpoint
 from trecover.train.collab.dht import DHTManager
 from trecover.train.collab.monitor import CollaborativeMonitor
 from trecover.train.collab.optim import AuxiliaryOptimizer
+from trecover.train.collab.status import CommonStatus
 from trecover.train.collab.strategy import CollaborativeStrategy
 from trecover.train.collab.visualization import CollaborativeVisualizer
 from trecover.train.collab.wrapper import BaseModelWrapper, PeerModelWrapper
@@ -24,6 +25,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
 
+    common_status = CommonStatus()
     dht_manager = DHTManager(args)
     aux_opt = None
     visualizer = None
@@ -31,7 +33,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     if args.upload_state or args.assist_in_averaging or args.visualize:
         aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
                                      wrapped_model=BaseModelWrapper(args),
-                                     args=args)
+                                     args=args,
+                                     common_status=common_status)
 
         if args.assist_in_averaging:
             aux_opt.start_assistant()
@@ -46,7 +49,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
                                                  wandb_key=args.wandb_key,
                                                  wandb_project=args.wandb_project,
                                                  wandb_id=args.wandb_id,
-                                                 wandb_registry=args.wandb_registry)
+                                                 wandb_registry=args.wandb_registry,
+                                                 common_status=common_status)
             visualizer.start()
 
     try:
@@ -60,14 +64,17 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
                                                wandb_project=args.wandb_project,
                                                wandb_id=args.wandb_id,
                                                wandb_registry=args.wandb_registry,
-                                               aux_opt=aux_opt)
+                                               aux_opt=aux_opt,
+                                               common_status=common_status)
         metrics_monitor.start()
 
     finally:
-        if visualizer and args.visualize:
-            visualizer.finish(join=True)
         if aux_opt and args.assist_in_averaging:
             aux_opt.finish(join=True)
+        if visualizer and args.visualize:
+            visualizer.finish(join=True)
+
+        common_status.disable()
 
 
 def train(cli_args: Optional[List[str]] = None) -> None:

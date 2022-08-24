@@ -13,6 +13,7 @@ from wandb.util import generate_id
 from trecover.config import log
 from trecover.train.collab.dht import LocalMetrics, GlobalMetrics
 from trecover.train.collab.optim import AuxiliaryOptimizer
+from trecover.train.collab.status import CommonStatus, Status
 
 
 class CollaborativeMonitor(object):
@@ -27,7 +28,8 @@ class CollaborativeMonitor(object):
                  wandb_project: Optional[str] = None,
                  wandb_id: Optional[str] = None,
                  wandb_registry: Optional[str] = None,
-                 aux_opt: Optional[AuxiliaryOptimizer] = None):
+                 aux_opt: Optional[AuxiliaryOptimizer] = None,
+                 common_status: Optional[CommonStatus] = None):
         self.dht = dht
         self.metrics_key = f'{experiment_prefix}_metrics'
         self.aux_opt = aux_opt
@@ -40,7 +42,9 @@ class CollaborativeMonitor(object):
         self.refresh_period = refresh_period
         self.upload_state = upload_state
         self.last_upload_time = time.monotonic()
-        self.finished = False
+        self.stopped = False
+        self.status = Status(name='Monitor', name_style='dark_violet', status_style='bright_blue',
+                             common_status=common_status)
 
         if self.wandb_report:
             wandb.login(key=wandb_key)
@@ -57,10 +61,12 @@ class CollaborativeMonitor(object):
                 anonymous='never'
             )
 
-        self._status()
+        self._peer_status()
 
     def stream(self) -> Generator[Tuple[int, GlobalMetrics], None, None]:
-        while not self.finished or self.steps_metrics:
+        self.status.update('Fetching metrics...')
+
+        while not self.stopped or self.steps_metrics:
             if metrics_dict := self._fetch_metrics_dict():
                 for peer, metrics in metrics_dict.items():
                     metrics = LocalMetrics.parse_obj(metrics.value)
@@ -75,31 +81,28 @@ class CollaborativeMonitor(object):
                 self.last_yield_time = time.monotonic()
                 self.last_yield_step = step
 
-            log.project_console.print('Fetching metrics...', style='salmon1', justify='right')
             time.sleep(self.refresh_period)
 
     def start(self) -> None:
         try:
+            self.status.enable()
             self._monitor_loop()
 
         except KeyboardInterrupt:
-            log.project_console.print('Monitor stopping...', style='yellow', justify='right')
+            self.status.update('Stopping...', style='yellow')
         finally:
-            self.finished = True
+            self.stopped = True
 
             if self.steps_metrics:
-                log.project_console.print(f'Trying to report {len(self.steps_metrics)} delayed metrics...',
-                                          style='yellow', justify='right')
+                self.status.update(f'Trying to report {len(self.steps_metrics)} delayed metrics...', style='yellow')
                 self.delay_in_seconds = 0
                 self.refresh_period = 0
                 self._monitor_loop()
 
-            log.project_console.print('Monitor is stopped', style='yellow', justify='right')
+            self.status.update('Is stopped', style='yellow')
+            self.status.disable()
 
-            if self.wandb_report:
-                wandb.finish()
-
-    def _status(self) -> None:
+    def _peer_status(self) -> None:
         if not self.wandb_report:
             log.project_console.print(
                 'This peer does not report metrics to the W&B',
@@ -135,7 +138,7 @@ class CollaborativeMonitor(object):
 
     def _fetch_metrics_dict(self) -> Optional[Dict]:
         if (
-                not self.finished
+                not self.stopped
                 and (metrics_entry := self.dht.get(self.metrics_key, latest=True))
                 and (metrics_dict := metrics_entry.value)
         ):
