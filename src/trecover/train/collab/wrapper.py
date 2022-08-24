@@ -25,22 +25,22 @@ class BaseModelWrapper(pl.LightningModule):
                               args.n_heads, args.d_ff, args.dropout)
         self.criterion = CustomCrossEntropyLoss(ignore_index=-1)
         self.batch_size = args.batch_size
-        self._collate = None
+        # self._collate = None
 
-        # if args.args_sync:
-        #     self.collate = CollabCollate()
-        # else:
-        #     self.collate = StandardCollate(min_noise=args.min_noise, max_noise=args.max_noise)
+        if args.args_sync:
+            self.collate = CollabCollate()
+        else:
+            self.collate = StandardCollate(min_noise=args.min_noise, max_noise=args.max_noise)
 
-    @property
-    def collate(self) -> BaseCollate:
-        if self._collate is None:
-            if self.args.args_sync:
-                self._collate = CollabCollate()
-            else:
-                self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
-
-        return self._collate
+    # @property
+    # def collate(self) -> BaseCollate:
+    #     if self._collate is None:
+    #         if self.args.args_sync:
+    #             self._collate = CollabCollate()
+    #         else:
+    #             self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
+    #
+    #     return self._collate
 
     def forward(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]
                 ) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor, Tensor]:
