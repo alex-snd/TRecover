@@ -75,6 +75,8 @@ class CollaborativeVisualizer(object):
                         self.status.update('Need to synchronize this peer before visualization...')
                         self.aux_opt.sync_state()
 
+                    self.aux_opt.sync_collate()
+
                     self.status.update(f'Perform visualization for {self.aux_opt.local_epoch - 1}-step')
 
                     self.steps_performance[self.aux_opt.local_epoch - 1] = self.aux_opt.wrapped_model.perform()
