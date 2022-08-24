@@ -28,7 +28,7 @@ class BaseModelWrapper(pl.LightningModule):
         self._collate = None
 
     @property
-    def batch_collate(self) -> BaseCollate:
+    def collate(self) -> BaseCollate:
         if self._collate is None:
             if self.args.no_args_sync:
                 self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
@@ -84,7 +84,7 @@ class BaseModelWrapper(pl.LightningModule):
                               max_threshold=self.args.max_threshold, dataset_size=dataset_size)
 
         return dataset.create_dataloader(batch_size=batch_size,
-                                         collate=self.batch_collate,
+                                         collate=self.collate,
                                          num_workers=self.args.n_workers)
 
 
