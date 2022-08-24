@@ -80,6 +80,8 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 def train(cli_args: Optional[List[str]] = None) -> None:
     args = arguments.sync_base_args(arguments.get_train_parser().parse_args(cli_args))
 
+    args.sync_args = True  # TODO
+
     os.system('ulimit -n 16384')
 
     if args.batch_size is None:
