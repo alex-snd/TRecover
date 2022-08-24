@@ -27,11 +27,6 @@ class BaseModelWrapper(pl.LightningModule):
         self.batch_size = args.batch_size
         self._collate = None
 
-        # if args.sync_args:
-        #     self.collate = CollabCollate()
-        # else:
-        #     self.collate = StandardCollate(min_noise=args.min_noise, max_noise=args.max_noise)
-
     @property
     def collate(self) -> BaseCollate:
         if self._collate is None:
@@ -96,18 +91,6 @@ class BaseModelWrapper(pl.LightningModule):
 class PeerModelWrapper(BaseModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
         super(PeerModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
-
-    # @property
-    # def batch_collate(self) -> BaseCollate:
-    #     from trecover.config import log
-    #     log.project_console.print('PeerModelWrapper.collate', style='yellow', justify='center')
-    #     if self._collate is None:
-    #         if self.args.no_args_sync:
-    #             self._collate = StandardCollate(min_noise=self.args.min_noise, max_noise=self.args.max_noise)
-    #         else:
-    #             self._collate = CollabCollate()
-    #
-    #     return self._collate
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
