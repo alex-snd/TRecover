@@ -119,8 +119,8 @@ class CollabCollate(StandardCollate):
 
     def sync(self, verbose: bool = False) -> None:
         remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
-        min_noise = remote_args.get('min_noise', default=-1)
-        max_noise = remote_args.get('max_noise', default=-1)
+        min_noise = remote_args.get('min_noise', -1)
+        max_noise = remote_args.get('max_noise', -1)
 
         if 0 <= min_noise <= max_noise <= len(var.ALPHABET):
             self.min_noise = 3  # min_noise   # TODO
