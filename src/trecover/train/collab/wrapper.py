@@ -58,6 +58,7 @@ class BaseModelWrapper(pl.LightningModule):
 
     @torch.no_grad()
     def perform(self) -> List[Tuple[List[str], List[str], List[str]]]:
+        log.project_console.print(f'Start performance', style='yellow', justify='center')  # TODO
         performance = list()
 
         for batch_idx, vis_tensors in enumerate(self.performance_dataloader(), start=1):
@@ -77,9 +78,11 @@ class BaseModelWrapper(pl.LightningModule):
 
             log.project_console.print(f'End performance batch', justify='center')  # TODO
 
+        log.project_console.print(f'End performance', style='yellow', justify='center')  # TODO
         return performance
 
     def performance_dataloader(self) -> DataLoader:
+        log.project_console.print(f'Create new Performance Datalodaer', style='yellow', justify='center')  # TODO
         return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size, batch_size=self.batch_size or 1)
 
     def _create_dataloader(self, files: Path, dataset_size: int, batch_size: int) -> DataLoader:
