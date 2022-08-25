@@ -1,4 +1,5 @@
 import platform
+from http.client import HTTPException
 from multiprocessing import Value
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict
@@ -51,7 +52,7 @@ class BaseCollate(object):
     def sync(self, verbose: bool = False) -> None:
         if verbose:
             log.project_console.print('BaseCollate:Unable to synchronize CollabCollate arguments', style='yellow',
-                                      justify='right')
+                                      justify='right')  # TODO
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
@@ -118,20 +119,23 @@ class CollabCollate(StandardCollate):
         # self.sync(verbose=False)  # TODO
 
     def sync(self, verbose: bool = False) -> None:
-        remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
-        min_noise = remote_args.get('min_noise', -1)
-        max_noise = remote_args.get('max_noise', -1)
+        try:
+            remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
+            min_noise = remote_args.get('min_noise', -1)
+            max_noise = remote_args.get('max_noise', -1)
 
-        if 0 <= min_noise <= max_noise <= len(var.ALPHABET):
+            assert 0 <= min_noise <= max_noise <= len(var.ALPHABET)
+
             self.min_noise = 3  # min_noise   # TODO
             self.max_noise = 8  # max_noise
 
+        except (HTTPException, AssertionError):
+            if verbose:
+                log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments',
+                                          style='yellow', justify='right')  # TODO
+        else:
             if verbose:
                 log.project_console.print('CollabCollate arguments are synchronized', style='salmon1', justify='right')
-
-        elif verbose:
-            log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments', style='yellow',
-                                      justify='right')
 
 
 class WikiDataset(Dataset):
