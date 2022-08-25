@@ -718,6 +718,9 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             try:
                 self.status.update('Pending...', style=self._status_style)
                 with self.transaction:
+                    if self.stopped.is_set():
+                        return
+
                     self.status.update('Assist in averaging...', style=self._status_style)
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
