@@ -59,11 +59,11 @@ class BaseModelWrapper(pl.LightningModule):
 
     @torch.no_grad()
     def perform(self) -> List[Tuple[List[str], List[str], List[str]]]:
-        log.project_console.print(f'Start performance, PID:{os.getpid()}', style='yellow', justify='center')  # TODO
+        log.project_console.print(f'Start performance, PID: {os.getpid()}', style='yellow', justify='center')  # TODO
         performance = list()
 
         for batch_idx, vis_tensors in enumerate(self.performance_dataloader(), start=1):
-            log.project_console.print(f'Start performance batch, PID:{os.getpid()}', style='magenta',
+            log.project_console.print(f'Start performance batch, PID: {os.getpid()}', style='magenta',
                                       justify='center')  # TODO
             src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
 
@@ -78,14 +78,14 @@ class BaseModelWrapper(pl.LightningModule):
 
                 performance.append((columns, predicted, original))
 
-            log.project_console.print(f'End performance batch, PID:{os.getpid()}', style='magenta',
+            log.project_console.print(f'End performance batch, PID: {os.getpid()}', style='magenta',
                                       justify='center')  # TODO
 
-        log.project_console.print(f'End performance, PID:{os.getpid()}', style='yellow', justify='center')  # TODO
+        log.project_console.print(f'End performance, PID: {os.getpid()}', style='yellow', justify='center')  # TODO
         return performance
 
     def performance_dataloader(self) -> DataLoader:
-        log.project_console.print(f'Create new Performance Datalodaer, PID:{os.getpid()}', style='yellow',
+        log.project_console.print(f'Create new Performance Datalodaer, PID: {os.getpid()}', style='yellow',
                                   justify='center')  # TODO
         return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size, batch_size=self.batch_size or 1)
 

@@ -71,7 +71,7 @@ class StandardCollate(BaseCollate):
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         log.project_console.print(
-            f'Batch generation with min_noise={self.min_noise}, max_noise={self.max_noise}, PID:{os.getpid()}',
+            f'Batch generation with min_noise={self.min_noise}, max_noise={self.max_noise}, PID: {os.getpid()}',
             justify='center')  # TODO
 
         batch = [list(entry) for entry in batch]
@@ -118,7 +118,7 @@ class StandardCollate(BaseCollate):
             empty_token_pad_mask = torch.zeros((batch_size, 1), dtype=torch.bool, device=self.device)
             tgt_inp_pad_mask = torch.cat([empty_token_pad_mask, src_pad_mask[:, :-1]], dim=1)
 
-        log.project_console.print(f'Batch generation end, PID:{os.getpid()}', justify='center')  # TODO
+        log.project_console.print(f'Batch generation end, PID: {os.getpid()}', justify='center')  # TODO
 
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
