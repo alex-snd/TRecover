@@ -9,6 +9,7 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
+from trecover.config import log
 from trecover.model import TRecover
 from trecover.train.data import WikiDataset, BaseCollate, StandardCollate, CollabCollate
 from trecover.train.loss import CustomCrossEntropyLoss
@@ -60,6 +61,7 @@ class BaseModelWrapper(pl.LightningModule):
         performance = list()
 
         for batch_idx, vis_tensors in enumerate(self.performance_dataloader(), start=1):
+            log.project_console.print(f'Start performance batch', justify='center')  # TODO
             src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
 
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
@@ -72,6 +74,8 @@ class BaseModelWrapper(pl.LightningModule):
                 original = tensor_to_target(tgt[i, :])
 
                 performance.append((columns, predicted, original))
+
+            log.project_console.print(f'End performance batch', justify='center')  # TODO
 
         return performance
 
