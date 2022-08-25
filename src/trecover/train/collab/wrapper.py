@@ -63,7 +63,8 @@ class BaseModelWrapper(pl.LightningModule):
         performance = list()
 
         for batch_idx, vis_tensors in enumerate(self.performance_dataloader(), start=1):
-            log.project_console.print(f'Start performance batch, PID:{os.getpid()}', justify='center')  # TODO
+            log.project_console.print(f'Start performance batch, PID:{os.getpid()}', style='magenta',
+                                      justify='center')  # TODO
             src, tgt_inp, tgt, src_pad_mask, tgt_pad_mask, tgt_attn_mask = transfer(vis_tensors, to_device=self.device)
 
             tgt_out = self.model(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
@@ -77,7 +78,8 @@ class BaseModelWrapper(pl.LightningModule):
 
                 performance.append((columns, predicted, original))
 
-            log.project_console.print(f'End performance batch, PID:{os.getpid()}', justify='center')  # TODO
+            log.project_console.print(f'End performance batch, PID:{os.getpid()}', style='magenta',
+                                      justify='center')  # TODO
 
         log.project_console.print(f'End performance, PID:{os.getpid()}', style='yellow', justify='center')  # TODO
         return performance
