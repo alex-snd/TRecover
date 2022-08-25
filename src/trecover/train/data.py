@@ -124,14 +124,14 @@ class CollabCollate(StandardCollate):
             min_noise = remote_args.get('min_noise', -1)
             max_noise = remote_args.get('max_noise', -1)
 
-            assert 0 <= min_noise <= max_noise <= len(var.ALPHABET)
+            assert 0 <= min_noise <= max_noise <= len(var.ALPHABET), 'Bad arguments'
 
             self.min_noise = 3  # min_noise   # TODO
             self.max_noise = 8  # max_noise
 
-        except (HTTPException, AssertionError):
+        except (HTTPException, AssertionError) as e:
             if verbose:
-                log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments',
+                log.project_console.print(f'CollabCollate: Unable to synchronize CollabCollate arguments - {e}',
                                           style='yellow', justify='right')  # TODO
         else:
             if verbose:
