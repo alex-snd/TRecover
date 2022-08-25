@@ -131,8 +131,9 @@ class CollabCollate(StandardCollate):
 
         except (HTTPException, AssertionError) as e:
             if verbose:
-                log.project_console.print(f'CollabCollate: Unable to synchronize CollabCollate arguments - {e}',
+                log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments -',
                                           style='yellow', justify='right')  # TODO
+                log.project_console.print(e, style='yellow', justify='right')
         else:
             if verbose:
                 log.project_console.print('CollabCollate arguments are synchronized', style='salmon1', justify='right')
