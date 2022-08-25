@@ -110,6 +110,8 @@ class StandardCollate(BaseCollate):
             empty_token_pad_mask = torch.zeros((batch_size, 1), dtype=torch.bool, device=self.device)
             tgt_inp_pad_mask = torch.cat([empty_token_pad_mask, src_pad_mask[:, :-1]], dim=1)
 
+        log.project_console.print(f'Batch generation end', justify='center')  # TODO
+
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
 
