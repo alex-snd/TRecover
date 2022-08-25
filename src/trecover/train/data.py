@@ -31,7 +31,9 @@ class BaseCollate(object):
 
     @property
     def min_noise(self) -> int:
+        log.project_console.print(f'Trying to get min_noise', justify='center')  # TODO
         with self._min_noise.get_lock():
+            log.project_console.print(f'Get min_noise end', justify='center')  # TODO
             return self._min_noise.value
 
     @min_noise.setter
@@ -41,7 +43,9 @@ class BaseCollate(object):
 
     @property
     def max_noise(self) -> int:
+        log.project_console.print(f'Trying to get max_noise', justify='center')  # TODO
         with self._max_noise.get_lock():
+            log.project_console.print(f'Get max_noise end', justify='center')  # TODO
             return self._max_noise.value
 
     @max_noise.setter
