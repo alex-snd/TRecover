@@ -115,7 +115,7 @@ class StandardCollate(BaseCollate):
 class CollabCollate(StandardCollate):
     def __init__(self, device: Optional[torch.device] = None):
         super(CollabCollate, self).__init__(min_noise=0, max_noise=0, device=device)
-        self.sync(verbose=False)
+        # self.sync(verbose=False)  # TODO
 
     def sync(self, verbose: bool = False) -> None:
         remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
