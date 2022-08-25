@@ -68,7 +68,10 @@ class CollabCheckpoint(Callback):
                 log.project_console.print('Skip backup', style='yellow', justify='right')
 
             if self.sync_period and current_step % self.sync_period == 0:
-                self.collab_opt.sync_collate()
+                # self.collab_opt.sync_collate()  # TODO
+                log.project_console.print('Fictive Sync CollabCollate arguments with torch.hub...', style='salmon1',
+                                          justify='right')
+                pass
 
             self.last_reported_step = current_step
 
