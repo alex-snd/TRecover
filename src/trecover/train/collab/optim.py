@@ -731,6 +731,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 raise
             except Exception as e:
                 log.project_logger.exception(e, exc_info=True)
+            finally:
+                self.stopped.set()
 
     def _update_state_sharing_status_step(self) -> None:
         if self.allow_state_sharing and self.num_peers == 1 and self.num_non_client_peers == 1:

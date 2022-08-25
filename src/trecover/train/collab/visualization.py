@@ -171,6 +171,8 @@ class CollaborativeVisualizer(object):
         except KeyboardInterrupt:
             self.status.update('Stopping...', style='yellow')
         finally:
+            self.stopped.set()
+
             if self.steps_performance:
                 self.status.update(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
                                    style='yellow')
