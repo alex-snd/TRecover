@@ -12,7 +12,7 @@ class CommonStatus(object):
             TextColumn(text_format='{task.description}'),
             console=log.project_console,
             refresh_per_second=3,
-            redirect_stdout=True,
+            redirect_stdout=True,  # TODO check if false
             redirect_stderr=True
         )
         self.progress.start()
