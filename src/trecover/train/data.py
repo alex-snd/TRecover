@@ -181,7 +181,7 @@ class WikiDataset(Dataset):
             line = f.read(line_size)
             # return f.read(line_size)
 
-        log.project_console.print(f'__getitem__ start, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
+        log.project_console.print(f'__getitem__ end, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
         return line
 
     def __len__(self) -> int:
