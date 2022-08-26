@@ -11,7 +11,9 @@ class CommonStatus(object):
             SpinnerColumn(spinner_name=spinner_name, style=spinner_style, speed=0.5),
             TextColumn(text_format='{task.description}'),
             console=log.project_console,
-            refresh_per_second=3
+            refresh_per_second=3,
+            redirect_stdout=True,
+            redirect_stderr=True
         )
         self.progress.start()
 
@@ -43,9 +45,11 @@ class Status(object):
         self.common_status.progress.stop_task(self.id)
 
     def update(self, status: str, style: Optional[str] = None) -> None:
+        log.project_console.print(f'Update status to {status}', style=style, justify='left')
         if style:
             self.status_style = style
 
         self.common_status.progress.update(
             self.id, description=f'[{self.name_style}]{self.name}: [{self.status_style}]{status}'
         )
+        log.project_console.print(f'End update status to {status}', style=style, justify='left')
