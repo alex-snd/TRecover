@@ -20,7 +20,7 @@ from trecover.utils.transform import tensor_to_columns, tensor_to_target
 
 class BaseModelWrapper(pl.LightningModule):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super().__init__(*pl_args, **pl_kwargs)
+        super(BaseModelWrapper, self).__init__(*pl_args, **pl_kwargs)
 
         self.args = args
         self.model = TRecover(args.token_size, args.pe_max_len, args.n_layers, args.d_model,
@@ -101,7 +101,7 @@ class BaseModelWrapper(pl.LightningModule):
 
 class PeerModelWrapper(BaseModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super().__init__(args, *pl_args, **pl_kwargs)
+        super(PeerModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                       *args, **kwargs
@@ -140,7 +140,7 @@ class PeerModelWrapper(BaseModelWrapper):
 
 class FullModelWrapper(PeerModelWrapper):
     def __init__(self, args: Namespace, *pl_args: Any, **pl_kwargs: Any):
-        super().__init__(args, *pl_args, **pl_kwargs)
+        super(FullModelWrapper, self).__init__(args, *pl_args, **pl_kwargs)
 
     def test_step(self, batch: Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor],
                   *args, **kwargs
