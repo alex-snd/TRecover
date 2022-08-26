@@ -1,7 +1,7 @@
 import os
 import platform
 from http.client import HTTPException
-# from multiprocessing import Value
+from multiprocessing import Value
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict
 
@@ -20,10 +20,10 @@ class BaseCollate(object):
         assert min_noise <= max_noise <= len(var.ALPHABET), \
             f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
 
-        self.min_noise = min_noise
-        self.max_noise = max_noise
-        # self._min_noise = Value('i', min_noise)
-        # self._max_noise = Value('i', max_noise)
+        # self.min_noise = min_noise
+        # self.max_noise = max_noise
+        self._min_noise = Value('i', min_noise)
+        self._max_noise = Value('i', max_noise)
         self.device = device or torch.device("cpu")
 
     def __str__(self) -> str:
@@ -32,31 +32,31 @@ class BaseCollate(object):
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         raise NotImplementedError
 
-    # @property
-    # def min_noise(self) -> int:
-    #     # return self._min_noise.value
-    #     # log.project_console.print(f'Trying to get min_noise', justify='center')  # TODO
-    #     with self._min_noise.get_lock():
-    #         # log.project_console.print(f'Get min_noise end', justify='center')  # TODO
-    #         return self._min_noise.value
-    #
-    # @min_noise.setter
-    # def min_noise(self, value: int) -> None:
-    #     with self._min_noise.get_lock():
-    #         self._min_noise.value = value
-    #
-    # @property
-    # def max_noise(self) -> int:
-    #     # return self._max_noise.value
-    #     # log.project_console.print(f'Trying to get max_noise', justify='center')  # TODO
-    #     with self._max_noise.get_lock():
-    #         # log.project_console.print(f'Get max_noise end', justify='center')  # TODO
-    #         return self._max_noise.value
-    #
-    # @max_noise.setter
-    # def max_noise(self, value: int) -> None:
-    #     with self._max_noise.get_lock():
-    #         self._max_noise.value = value
+    @property
+    def min_noise(self) -> int:
+        # return self._min_noise.value
+        # log.project_console.print(f'Trying to get min_noise', justify='center')  # TODO
+        with self._min_noise.get_lock():
+            # log.project_console.print(f'Get min_noise end', justify='center')  # TODO
+            return self._min_noise.value
+
+    @min_noise.setter
+    def min_noise(self, value: int) -> None:
+        with self._min_noise.get_lock():
+            self._min_noise.value = value
+
+    @property
+    def max_noise(self) -> int:
+        # return self._max_noise.value
+        # log.project_console.print(f'Trying to get max_noise', justify='center')  # TODO
+        with self._max_noise.get_lock():
+            # log.project_console.print(f'Get max_noise end', justify='center')  # TODO
+            return self._max_noise.value
+
+    @max_noise.setter
+    def max_noise(self, value: int) -> None:
+        with self._max_noise.get_lock():
+            self._max_noise.value = value
 
     def sync(self, verbose: bool = False) -> None:
         if verbose:
