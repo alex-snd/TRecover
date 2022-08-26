@@ -722,6 +722,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                         return
 
                     self.status.update('Assist in averaging...', style=self._status_style)
+
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()
@@ -747,7 +748,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 style='yellow',
                 justify='right'
             )
-            self.status.update('Assist in averaging...', style=self._status_style)
+            # self.status.update('Assist in averaging...', style=self._status_style)
 
         elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
             log.project_console.print(
@@ -804,7 +805,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.last_reported_step = self.local_epoch
 
         finally:
-            self.status.update('Pending...', style=self._status_style)
+            self.status.update('Assist in averaging...', style=self._status_style)
 
     def start_assistant(self, attach: bool = False) -> None:
         if self.args.client_mode:
