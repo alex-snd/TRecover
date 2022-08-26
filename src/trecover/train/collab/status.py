@@ -45,11 +45,12 @@ class Status(object):
         self.common_status.progress.stop_task(self.id)
 
     def update(self, status: str, style: Optional[str] = None) -> None:
-        log.project_console.print(f'Update status to {status}', style=style, justify='left')
         if style:
             self.status_style = style
+
+        log.project_console.print(f'[{self.name}] Update status to {status}', style=self.status_style, justify='left')
 
         self.common_status.progress.update(
             self.id, description=f'[{self.name_style}]{self.name}: [{self.status_style}]{status}'
         )
-        log.project_console.print(f'End update status to {status}', style=style, justify='left')
+        log.project_console.print(f'[{self.name}] End update status to {status}', style=style, justify='left')
