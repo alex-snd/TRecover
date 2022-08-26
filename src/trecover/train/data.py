@@ -226,9 +226,6 @@ class WikiDataset(Dataset):
 
             pin_memory = False
 
-        else:
-            pin_memory = False  # TODO investigate
-
         return DataLoader(dataset=self,
                           batch_size=batch_size,
                           shuffle=False,
