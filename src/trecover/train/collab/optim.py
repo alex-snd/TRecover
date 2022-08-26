@@ -713,10 +713,10 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.status.disable()
 
     def _assistant_loop(self) -> None:
+        self.status.update('Pending...', style=self._status_style)
 
         while not self.stopped.is_set():
             try:
-                self.status.update('Pending...', style=self._status_style)
                 with self.transaction:
                     if self.stopped.is_set():
                         return
@@ -728,6 +728,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
                     if self._is_time_to_backup:
                         self._backup_step()
+
+                    self.status.update('Pending...', style=self._status_style)
 
                 time.sleep(self.args.assist_refresh)
 
