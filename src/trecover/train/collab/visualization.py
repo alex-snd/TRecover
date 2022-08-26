@@ -199,5 +199,8 @@ class CollaborativeVisualizer(object):
                             wandb_recorder.print(visualization, justify='full')
 
                     wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
+
+        except Exception as e:
+            log.project_console.print(f'Exit from _visualizer_loop with error {e}', style='red', justify='center')
         finally:
             log.project_console.print('Exit from _visualizer_loop', style='red', justify='center')
