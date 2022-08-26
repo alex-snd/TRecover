@@ -125,6 +125,7 @@ class StandardCollate(BaseCollate):
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
 
+# TODO FictiveCollate
 class CollabCollate(StandardCollate):
     def __init__(self, device: Optional[torch.device] = None):
         super(CollabCollate, self).__init__(min_noise=0, max_noise=0, device=device)
@@ -167,6 +168,7 @@ class WikiDataset(Dataset):
         self.dataset_size = dataset_size
 
     def __getitem__(self, idx: int) -> str:
+        log.project_console.print(f'__getitem__ start, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
         np.random.seed(None)
 
         file_id = np.random.choice(self.n_files, p=self.distribution)
@@ -176,7 +178,11 @@ class WikiDataset(Dataset):
         with open(self.datafiles[file_id], mode="r") as f:
             f.seek(shift)
 
-            return f.read(line_size)
+            line = f.read(line_size)
+            # return f.read(line_size)
+
+        log.project_console.print(f'__getitem__ start, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
+        return line
 
     def __len__(self) -> int:
         return self.dataset_size

@@ -85,11 +85,12 @@ class BaseModelWrapper(pl.LightningModule):
         return performance
 
     def performance_dataloader(self) -> DataLoader:
-        log.project_console.print(f'Create new Performance Datalodaer, PID: {os.getpid()}', style='yellow',
-                                  justify='center')  # TODO
         return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size, batch_size=self.batch_size or 1)
 
     def _create_dataloader(self, files: Path, dataset_size: int, batch_size: int) -> DataLoader:
+        log.project_console.print(f'Create new Performance Dataloader with batch_size={batch_size}, PID: {os.getpid()}',
+                                  style='yellow', justify='center')  # TODO
+
         files = [files / file for file in files.iterdir()]
         dataset = WikiDataset(datafiles=files, min_threshold=self.args.min_threshold,
                               max_threshold=self.args.max_threshold, dataset_size=dataset_size)
