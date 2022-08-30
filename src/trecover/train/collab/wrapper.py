@@ -85,9 +85,12 @@ class BaseModelWrapper(pl.LightningModule):
         return performance
 
     def performance_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.vis_files, self.args.vis_dataset_size, batch_size=self.batch_size or 1)
+        return self._create_dataloader(files=self.args.vis_files,
+                                       dataset_size=self.args.vis_dataset_size,
+                                       batch_size=self.batch_size or 1,
+                                       num_workers=self.args.n_workers)
 
-    def _create_dataloader(self, files: Path, dataset_size: int, batch_size: int) -> DataLoader:
+    def _create_dataloader(self, files: Path, dataset_size: int, batch_size: int, num_workers: int) -> DataLoader:
         log.project_console.print(f'Create new Performance Dataloader with batch_size={batch_size}, PID: {os.getpid()}',
                                   style='yellow', justify='center')  # TODO
 
@@ -97,7 +100,7 @@ class BaseModelWrapper(pl.LightningModule):
 
         return dataset.create_dataloader(batch_size=batch_size,
                                          collate=self.collate,
-                                         num_workers=self.args.n_workers)
+                                         num_workers=num_workers)
 
 
 class PeerModelWrapper(BaseModelWrapper):
@@ -133,10 +136,12 @@ class PeerModelWrapper(BaseModelWrapper):
         return {'loss': loss, 'accuracy': accuracy}
 
     def train_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.train_files, self.args.train_dataset_size, self.batch_size)
+        return self._create_dataloader(self.args.train_files, self.args.train_dataset_size, self.batch_size,
+                                       self.args.n_workers)
 
     def val_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.val_files, self.args.val_dataset_size, self.batch_size)
+        return self._create_dataloader(self.args.val_files, self.args.val_dataset_size, self.batch_size,
+                                       self.args.n_workers)
 
 
 class FullModelWrapper(PeerModelWrapper):
@@ -158,4 +163,5 @@ class FullModelWrapper(PeerModelWrapper):
         return {'loss': loss, 'accuracy': accuracy}
 
     def test_dataloader(self) -> DataLoader:
-        return self._create_dataloader(self.args.test_files, self.args.test_dataset_size, self.batch_size)
+        return self._create_dataloader(self.args.test_files, self.args.test_dataset_size, self.batch_size,
+                                       self.args.n_workers)
