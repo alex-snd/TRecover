@@ -1,4 +1,3 @@
-import os
 import platform
 from http.client import HTTPException
 from multiprocessing import Value
@@ -34,10 +33,7 @@ class BaseCollate(object):
 
     @property
     def min_noise(self) -> int:
-        # return self._min_noise.value
-        # log.project_console.print(f'Trying to get min_noise', justify='center')  # TODO
         with self._min_noise.get_lock():
-            # log.project_console.print(f'Get min_noise end', justify='center')  # TODO
             return self._min_noise.value
 
     @min_noise.setter
@@ -47,10 +43,7 @@ class BaseCollate(object):
 
     @property
     def max_noise(self) -> int:
-        # return self._max_noise.value
-        # log.project_console.print(f'Trying to get max_noise', justify='center')  # TODO
         with self._max_noise.get_lock():
-            # log.project_console.print(f'Get max_noise end', justify='center')  # TODO
             return self._max_noise.value
 
     @max_noise.setter
@@ -61,7 +54,7 @@ class BaseCollate(object):
     def sync(self, verbose: bool = False) -> None:
         if verbose:
             log.project_console.print('BaseCollate:Unable to synchronize CollabCollate arguments', style='yellow',
-                                      justify='right')  # TODO
+                                      justify='right')
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
@@ -72,10 +65,6 @@ class StandardCollate(BaseCollate):
         super(StandardCollate, self).__init__(min_noise=min_noise, max_noise=max_noise, device=device)
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
-        log.project_console.print(
-            f'Batch generation with min_noise={self.min_noise}, max_noise={self.max_noise}, PID: {os.getpid()}',
-            justify='center')  # TODO
-
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
@@ -120,12 +109,9 @@ class StandardCollate(BaseCollate):
             empty_token_pad_mask = torch.zeros((batch_size, 1), dtype=torch.bool, device=self.device)
             tgt_inp_pad_mask = torch.cat([empty_token_pad_mask, src_pad_mask[:, :-1]], dim=1)
 
-        log.project_console.print(f'Batch generation end, PID: {os.getpid()}', justify='center')  # TODO
-
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
 
 
-# TODO FictiveCollate
 class CollabCollate(StandardCollate):
     def __init__(self, device: Optional[torch.device] = None):
         super(CollabCollate, self).__init__(min_noise=0, max_noise=0, device=device)
@@ -145,7 +131,7 @@ class CollabCollate(StandardCollate):
         except (HTTPException, AssertionError) as e:
             if verbose:
                 log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments -',
-                                          style='yellow', justify='right')  # TODO
+                                          style='yellow', justify='right')
                 log.project_console.print(e, style='yellow', justify='right')
         else:
             if verbose:
@@ -168,7 +154,6 @@ class WikiDataset(Dataset):
         self.dataset_size = dataset_size
 
     def __getitem__(self, idx: int) -> str:
-        log.project_console.print(f'__getitem__ start, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
         np.random.seed(None)
 
         file_id = np.random.choice(self.n_files, p=self.distribution)
@@ -178,11 +163,7 @@ class WikiDataset(Dataset):
         with open(self.datafiles[file_id], mode="r") as f:
             f.seek(shift)
 
-            line = f.read(line_size)
-            # return f.read(line_size)
-
-        log.project_console.print(f'__getitem__ end, PID: {os.getpid()}', style='magenta', justify='center')  # TODO
-        return line
+            return f.read(line_size)
 
     def __len__(self) -> int:
         return self.dataset_size

@@ -76,9 +76,7 @@ class CollaborativeVisualizer(object):
                         time.sleep(3)
                         # self.aux_opt.sync_state()  # TODO
 
-                    # self.aux_opt.sync_collate()
-                    log.project_console.print('Fictive Sync CollabCollate arguments with torch.hub...', style='salmon1',
-                                              justify='right')
+                    self.aux_opt.sync_collate()
 
                     self.status.update(f'Perform visualization for {self.aux_opt.local_epoch - 1}-step')
 
