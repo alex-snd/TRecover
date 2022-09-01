@@ -747,7 +747,6 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 style='yellow',
                 justify='right'
             )
-            # self.status.update('Assist in averaging...', style=self._status_style)
 
         elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
             log.project_console.print(

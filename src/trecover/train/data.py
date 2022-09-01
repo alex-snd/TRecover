@@ -1,4 +1,3 @@
-import os
 import platform
 from http.client import HTTPException
 from pathlib import Path
@@ -20,8 +19,6 @@ class BaseCollate(object):
         assert min_noise <= max_noise <= len(var.ALPHABET), \
             f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
 
-        # self.min_noise = min_noise
-        # self.max_noise = max_noise
         self._min_noise = Value('i', min_noise)
         self._max_noise = Value('i', max_noise)
         self.device = device or torch.device("cpu")
@@ -116,7 +113,7 @@ class StandardCollate(BaseCollate):
 class CollabCollate(StandardCollate):
     def __init__(self, device: Optional[torch.device] = None):
         super(CollabCollate, self).__init__(min_noise=0, max_noise=0, device=device)
-        # self.sync(verbose=False)  # TODO
+        self.sync(verbose=False)
 
     def sync(self, verbose: bool = False) -> None:
         if verbose:
@@ -129,8 +126,8 @@ class CollabCollate(StandardCollate):
 
             assert 0 <= min_noise <= max_noise <= len(var.ALPHABET), 'Bad arguments'
 
-            self.min_noise = 3  # min_noise   # TODO
-            self.max_noise = 8  # max_noise
+            self.min_noise = min_noise
+            self.max_noise = max_noise
 
         except (HTTPException, AssertionError) as e:
             if verbose:
