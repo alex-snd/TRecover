@@ -1,12 +1,12 @@
 import platform
 from http.client import HTTPException
-from multiprocessing import Value
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict
 
 import numpy as np
 import torch
 from torch import Tensor
+from torch.multiprocessing import Value
 from torch.utils.data import Dataset, DataLoader
 
 from trecover.config import var, log
