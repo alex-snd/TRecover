@@ -121,6 +121,9 @@ class CollabCollate(StandardCollate):
         # self.sync(verbose=False)  # TODO
 
     def sync(self, verbose: bool = False) -> None:
+        if verbose:
+            log.project_console.print('Sync CollabCollate arguments with torch.hub...',
+                                      style='salmon1', justify='right')
         try:
             remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
             min_noise = remote_args.get('min_noise', -1)

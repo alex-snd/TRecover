@@ -578,7 +578,6 @@ class CollaborativeOptimizer(object):
 
     @atomic
     def sync_collate(self) -> None:
-        log.project_console.print('Sync CollabCollate arguments with torch.hub...', style='salmon1', justify='right')
         self.wrapped_model.collate.sync(verbose=True)
 
     @torch.no_grad()
