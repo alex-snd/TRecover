@@ -520,6 +520,7 @@ class CollaborativeOptimizer(object):
         return self.opt.opt.param_groups[0]['lr']
 
     @property
+    @atomic
     def bandwidth(self) -> Optional[float]:
         if not self.args.bandwidth:
             try:
@@ -533,6 +534,16 @@ class CollaborativeOptimizer(object):
                 return None
 
         return self.args.bandwidth
+
+    @property
+    @atomic
+    def min_noise(self) -> int:
+        return self.wrapped_model.collate.min_noise
+
+    @property
+    @atomic
+    def max_noise(self) -> int:
+        return self.wrapped_model.collate.max_noise
 
     @atomic
     def recover_state(self) -> None:
@@ -564,6 +575,10 @@ class CollaborativeOptimizer(object):
                 return False
 
         return True
+
+    @atomic
+    def sync_collate(self) -> None:
+        self.wrapped_model.collate.sync(verbose=True)
 
     @torch.no_grad()
     @atomic
@@ -692,22 +707,29 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         except KeyboardInterrupt:
             pass
         finally:
+            self.stopped.set()
             self.status.update('Is Stopped', style='yellow')
             self.status.disable()
 
     def _assistant_loop(self) -> None:
+        self.status.update('Pending...', style=self._status_style)
 
         while not self.stopped.is_set():
             try:
-                self.status.update('Pending...', style=self._status_style)
                 with self.transaction:
+                    if self.stopped.is_set():
+                        return
+
                     self.status.update('Assist in averaging...', style=self._status_style)
+
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()
 
                     if self._is_time_to_backup:
                         self._backup_step()
+
+                    self.status.update('Pending...', style=self._status_style)
 
                 time.sleep(self.args.assist_refresh)
 
@@ -725,7 +747,6 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                 style='yellow',
                 justify='right'
             )
-            self.status.update('Assist in averaging...', style=self._status_style)
 
         elif self.allow_state_sharing and self.num_peers == 1 and self.num_client_peers == 1:
             log.project_console.print(
@@ -782,7 +803,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.last_reported_step = self.local_epoch
 
         finally:
-            self.status.update('Pending...', style=self._status_style)
+            self.status.update('Assist in averaging...', style=self._status_style)
 
     def start_assistant(self, attach: bool = False) -> None:
         if self.args.client_mode:

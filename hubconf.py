@@ -84,6 +84,6 @@ def collab_args() -> Dict[str, Any]:
         'experiment_prefix': 'trecover',
         'target_batch_size': 4096,
         'min_noise': 0,
-        'max_noise': 1,
+        'max_noise': 1,  # TODO model params
 
     }

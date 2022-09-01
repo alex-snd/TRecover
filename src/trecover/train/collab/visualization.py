@@ -75,6 +75,8 @@ class CollaborativeVisualizer(object):
                         self.status.update('Need to synchronize this peer before visualization...')
                         self.aux_opt.sync_state()
 
+                    self.aux_opt.sync_collate()
+
                     self.status.update(f'Perform visualization for {self.aux_opt.local_epoch - 1}-step')
 
                     self.steps_performance[self.aux_opt.local_epoch - 1] = self.aux_opt.wrapped_model.perform()
@@ -118,7 +120,7 @@ class CollaborativeVisualizer(object):
     @property
     def _need_to_sync(self) -> bool:
         return (
-                self.aux_opt.local_epoch != self.aux_opt.global_epoch or
+                self.aux_opt.local_epoch != self.aux_opt.global_epoch or  # TODO check without as-active-peer
                 self.aux_opt.original_allow_state_sharing and not self.aux_opt.allow_state_sharing
         )
 
@@ -169,6 +171,8 @@ class CollaborativeVisualizer(object):
         except KeyboardInterrupt:
             self.status.update('Stopping...', style='yellow')
         finally:
+            self.stopped.set()
+
             if self.steps_performance:
                 self.status.update(f'Trying to report {len(self.steps_performance)} delayed visualizations...',
                                    style='yellow')

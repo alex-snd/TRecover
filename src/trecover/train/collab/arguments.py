@@ -7,7 +7,7 @@ from trecover.config import var, exp_var
 
 
 def sync_base_args(args: Namespace) -> Namespace:
-    if args.no_args_sync:
+    if not args.sync_args:
         return args
 
     base_args = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
@@ -27,6 +27,17 @@ def sync_base_args(args: Namespace) -> Namespace:
             args.initial_peers = initial_peers
 
     return args
+
+
+def get_sync_parser(add_help: bool = True) -> ArgumentParser:
+    parser = ArgumentParser('Synchronization arguments', add_help=add_help)
+
+    parser.add_argument('--sync-period', default=5, type=int,
+                        help='Period (in collaborative steps) for arguments resynchronization')
+    parser.add_argument('--sync-args', action='store_true',
+                        help='Sync base collaborative arguments with torch.hub')
+
+    return parser
 
 
 def get_model_parser(add_help: bool = True) -> ArgumentParser:
@@ -123,7 +134,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
                         help='Number of steps for gradients accumulation')
-    parser.add_argument('--target-batch-size', default=4096, type=int,
+    parser.add_argument('--target-batch-size', default=2048, type=int,
                         help='Perform optimizer step after all peers collectively accumulate this many samples')
     parser.add_argument('--matchmaking-time', default=50, type=float,
                         help='Averaging group will wait for stragglers for at most this many seconds')
@@ -166,8 +177,6 @@ def get_dht_parser(add_help: bool = True) -> ArgumentParser:
                         help='Visible multiaddrs the host announces for external connections from other p2p instances')
     parser.add_argument('--identity-path', type=Path,
                         help='Path to a pre-generated private key file. If defined, makes the peer ID deterministic')
-    parser.add_argument('--no-args-sync', action='store_true',
-                        help='Do not sync base collaborative arguments with torch.hub')
 
     return parser
 
@@ -215,6 +224,7 @@ def get_tune_parser(add_help: bool = True) -> ArgumentParser:
 def get_auxiliary_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Auxiliary arguments', add_help=add_help,
                             parents=[
+                                get_sync_parser(add_help=False),
                                 get_dht_parser(add_help=False),
                                 get_model_parser(add_help=False),
                                 get_data_parser(add_help=False),
@@ -239,14 +249,12 @@ def get_visualization_parser(add_help: bool = True) -> ArgumentParser:
 
     parser.add_argument('--delimiter', default='', type=str,
                         help='Visualization columns delimiter')
-    parser.add_argument('--visualize-every-step', default=5, type=int,
+    parser.add_argument('--visualize-every-step', default=None, type=int,
                         help='Perform visualization once in this many global steps.')
     parser.add_argument('--visualizer-refresh-period', default=10, type=float,
                         help='Period (in seconds) to check for visualization.')
     parser.add_argument('--assist-in-averaging', action='store_true',
                         help='If True, this peer will facilitate averaging for other (training) peers')
-    parser.add_argument('--visualize', action='store_true',
-                        help='If True, this peer will perform train progress visualization')
 
     return parser
 
@@ -266,6 +274,7 @@ def get_monitor_parser(add_help: bool = True) -> ArgumentParser:
 def get_train_parser(add_help: bool = True) -> ArgumentParser:
     parser = ArgumentParser('Train loop arguments', add_help=add_help,
                             parents=[
+                                get_sync_parser(add_help=False),
                                 get_dht_parser(add_help=False),
                                 get_model_parser(add_help=False),
                                 get_data_parser(add_help=False),

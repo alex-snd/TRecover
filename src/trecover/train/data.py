@@ -1,24 +1,58 @@
 import platform
+from http.client import HTTPException
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 import numpy as np
 import torch
 from torch import Tensor
+from torch.multiprocessing import Value
 from torch.utils.data import Dataset, DataLoader
 
 from trecover.config import var, log
 
 
 class BaseCollate(object):
-    def __init__(self, device: Optional[torch.device] = None):
+    def __init__(self, min_noise: int, max_noise: int, device: Optional[torch.device] = None):
+        assert 0 <= min_noise <= len(var.ALPHABET), \
+            f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
+        assert min_noise <= max_noise <= len(var.ALPHABET), \
+            f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
+
+        self._min_noise = Value('i', min_noise)
+        self._max_noise = Value('i', max_noise)
         self.device = device or torch.device("cpu")
 
     def __str__(self) -> str:
-        raise NotImplementedError
+        return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         raise NotImplementedError
+
+    @property
+    def min_noise(self) -> int:
+        with self._min_noise.get_lock():
+            return self._min_noise.value
+
+    @min_noise.setter
+    def min_noise(self, value: int) -> None:
+        with self._min_noise.get_lock():
+            self._min_noise.value = value
+
+    @property
+    def max_noise(self) -> int:
+        with self._max_noise.get_lock():
+            return self._max_noise.value
+
+    @max_noise.setter
+    def max_noise(self, value: int) -> None:
+        with self._max_noise.get_lock():
+            self._max_noise.value = value
+
+    def sync(self, verbose: bool = False) -> None:
+        if verbose:
+            log.project_console.print('BaseCollate:Unable to synchronize CollabCollate arguments', style='yellow',
+                                      justify='right')
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
@@ -26,17 +60,7 @@ class BaseCollate(object):
 
 class StandardCollate(BaseCollate):
     def __init__(self, min_noise: int, max_noise: int, device: Optional[torch.device] = None):
-        assert 0 <= min_noise <= len(var.ALPHABET), \
-            f'min_noise should be between 0 and {len(var.ALPHABET)} inclusive'
-        assert min_noise <= max_noise <= len(var.ALPHABET), \
-            f'max_noise should be between {min_noise} and {len(var.ALPHABET)} inclusive'
-
-        super().__init__(device)
-        self.min_noise = min_noise
-        self.max_noise = max_noise
-
-    def __str__(self) -> str:
-        return f'<Collate(min_noise={self.min_noise}, max_noise={self.max_noise})>'
+        super(StandardCollate, self).__init__(min_noise=min_noise, max_noise=max_noise, device=device)
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
         batch = [list(entry) for entry in batch]
@@ -84,6 +108,35 @@ class StandardCollate(BaseCollate):
             tgt_inp_pad_mask = torch.cat([empty_token_pad_mask, src_pad_mask[:, :-1]], dim=1)
 
         return src, tgt_inp, tgt, src_pad_mask, tgt_inp_pad_mask, subsequent_mask
+
+
+class CollabCollate(StandardCollate):
+    def __init__(self, device: Optional[torch.device] = None):
+        super(CollabCollate, self).__init__(min_noise=0, max_noise=0, device=device)
+        self.sync(verbose=False)
+
+    def sync(self, verbose: bool = False) -> None:
+        if verbose:
+            log.project_console.print('Sync CollabCollate arguments with torch.hub...',
+                                      style='salmon1', justify='right')
+        try:
+            remote_args: Dict = torch.hub.load('alex-snd/TRecover', 'collab_args', force_reload=True, verbose=False)
+            min_noise = remote_args.get('min_noise', -1)
+            max_noise = remote_args.get('max_noise', -1)
+
+            assert 0 <= min_noise <= max_noise <= len(var.ALPHABET), 'Bad arguments'
+
+            self.min_noise = min_noise
+            self.max_noise = max_noise
+
+        except (HTTPException, AssertionError) as e:
+            if verbose:
+                log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments -',
+                                          style='yellow', justify='right')
+                log.project_console.print(e, style='yellow', justify='right')
+        else:
+            if verbose:
+                log.project_console.print('CollabCollate arguments are synchronized', style='salmon1', justify='right')
 
 
 class WikiDataset(Dataset):
