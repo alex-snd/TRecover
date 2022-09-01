@@ -11,9 +11,7 @@ class CommonStatus(object):
             SpinnerColumn(spinner_name=spinner_name, style=spinner_style, speed=0.5),
             TextColumn(text_format='{task.description}'),
             console=log.project_console,
-            refresh_per_second=3,
-            redirect_stdout=False,  # TODO check if false
-            redirect_stderr=True
+            refresh_per_second=3
         )
         self.progress.start()
 
