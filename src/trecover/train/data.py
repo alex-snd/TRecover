@@ -66,8 +66,8 @@ class StandardCollate(BaseCollate):
         super(StandardCollate, self).__init__(min_noise=min_noise, max_noise=max_noise, device=device)
 
     def __call__(self, batch: List[str]) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor], Optional[Tensor], Tensor]:
-        log.project_console.print(f'Create batch with min_noise={self.min_noise}, max_noise={self.max_noise},'
-                                  f'pid={os.getpid()}', style='yellow', justify='center')  # TODO
+        # log.project_console.print(f'Create batch with min_noise={self.min_noise}, max_noise={self.max_noise},'
+        #                           f'pid={os.getpid()}', style='yellow', justify='center')  # TODO
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
         batch_size, seq_len, token_size = len(batch), max(sizes), len(var.ALPHABET)
