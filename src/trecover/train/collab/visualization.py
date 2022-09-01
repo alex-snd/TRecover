@@ -186,19 +186,13 @@ class CollaborativeVisualizer(object):
             self.status.disable()
 
     def _visualizer_loop(self) -> None:
-        try:
-            for step, step_visualizations in self.stream():
-                for visualization in step_visualizations:
-                    log.project_console.print(visualization, justify='full')
+        for step, step_visualizations in self.stream():
+            for visualization in step_visualizations:
+                log.project_console.print(visualization, justify='full')
 
-                if self.wandb_report:
-                    with (wandb_recorder := Console(record=True)).capture():
-                        for visualization in step_visualizations:
-                            wandb_recorder.print(visualization, justify='full')
+            if self.wandb_report:
+                with (wandb_recorder := Console(record=True)).capture():
+                    for visualization in step_visualizations:
+                        wandb_recorder.print(visualization, justify='full')
 
-                    wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
-
-        except Exception as e:
-            log.project_console.print(f'Exit from _visualizer_loop with error {e}', style='red', justify='center')
-        finally:
-            log.project_console.print('Exit from _visualizer_loop', style='red', justify='center')
+                wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)

@@ -1,4 +1,3 @@
-import os
 from argparse import Namespace
 from pathlib import Path
 from time import time
@@ -10,7 +9,6 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from trecover.config import log
 from trecover.model import TRecover
 from trecover.train.data import WikiDataset, BaseCollate, StandardCollate, CollabCollate
 from trecover.train.loss import CustomCrossEntropyLoss
