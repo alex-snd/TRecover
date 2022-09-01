@@ -3,17 +3,20 @@ workflows:
     help: 'Starts collaborative training'
     provider: bash
     python: 3.8
+    ports: 1
     commands:
-      - apt update && apt upgrade -y && apt install git -y
+      - apt update && apt upgrade -y && apt install curl git -y
+      - curl -s ipinfo.io > ipinfo.json
+      - export ANNOUNCE_IP=`python3 -c "import json; ipinfo = json.load(open('ipinfo.json')); print(ipinfo['ip'])"`
       - git clone https://github.com/alex-snd/TRecover.git
-      - cd TRecover
-      - pip install ".[collab]"
+      - pip install "TRecover/.[collab]"
       - trecover init
       - trecover download data
-      - trecover collab train --initial-peers /ip4/95.216.202.215/tcp/34234/p2p/QmS2mYPX8Q78RDQzxMf17phVYPashi4C6ixVbA3jrj9yxt --client-mode --batch-size 24  --experiment-prefix demo4 --train-dataset-size 1000000 --bandwidth 500 --backup-every-step 1 --no-args-sync
+      - trecover collab train --host-maddrs /ip4/0.0.0.0/tcp/$PORT_0 --announce-maddrs /ip4/$ANNOUNCE_IP/tcp/$PORT_0 --batch-size 24 --bandwidth 500 --backup-every-step 1 --sync-args
+    artifacts:
+      - experiments
     resources:
       shm_size: '16GB'
       gpu:
-        name: 'V100'
         memory: '16GB'
         count: 1
