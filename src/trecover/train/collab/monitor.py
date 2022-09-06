@@ -220,6 +220,6 @@ class CollaborativeMonitor(object):
     def _upload_state(self) -> None:
         if self._is_time_to_upload:
             wandb.save(str(self.aux_opt.state_path.absolute()),
-                       base_path=str(self.aux_opt.state_path.parent),  # TODO check, change name, delete at max files
+                       base_path=str(self.aux_opt.state_path.parent),
                        policy='now')
             self.last_upload_time = time.monotonic()

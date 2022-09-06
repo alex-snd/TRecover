@@ -21,8 +21,6 @@ rank_zero_only.rank = 1
 def monitor(cli_args: Optional[List[str]] = None) -> None:
     args = arguments.sync_base_args(arguments.get_monitor_parser().parse_args(cli_args))
 
-    args.sync_args = True  # TODO
-
     if args.assist_in_averaging and args.client_mode:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
@@ -81,8 +79,6 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
 
 def train(cli_args: Optional[List[str]] = None) -> None:
     args = arguments.sync_base_args(arguments.get_train_parser().parse_args(cli_args))
-
-    args.sync_args = True  # TODO
 
     os.system('ulimit -n 16384')
 
