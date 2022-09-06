@@ -120,8 +120,8 @@ class CollaborativeVisualizer(object):
     @property
     def _need_to_sync(self) -> bool:
         return (
-                self.aux_opt.local_epoch != self.aux_opt.global_epoch or  # TODO check without as-active-peer
-                self.aux_opt.original_allow_state_sharing and not self.aux_opt.allow_state_sharing
+                self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1
+                or not self.aux_opt.allow_state_sharing
         )
 
     @property
