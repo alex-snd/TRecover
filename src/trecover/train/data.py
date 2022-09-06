@@ -129,7 +129,7 @@ class CollabCollate(StandardCollate):
             self.min_noise = min_noise
             self.max_noise = max_noise
 
-        except (HTTPException, AssertionError) as e:
+        except (HTTPException, OSError, AssertionError) as e:
             if verbose:
                 log.project_console.print('CollabCollate: Unable to synchronize CollabCollate arguments -',
                                           style='yellow', justify='right')
