@@ -136,11 +136,11 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Number of steps for gradients accumulation')
     parser.add_argument('--target-batch-size', default=4096, type=int,
                         help='Perform optimizer step after all peers collectively accumulate this many samples')
-    parser.add_argument('--matchmaking-time', default=60, type=float,
+    parser.add_argument('--matchmaking-time', default=30, type=float,
                         help='Averaging group will wait for stragglers for at most this many seconds')
     parser.add_argument('--allreduce-timeout', default=80, type=float,
                         help='Give up on a given all-reduce round after this many seconds')
-    parser.add_argument('--averaging-timeout', default=300, type=float,
+    parser.add_argument('--averaging-timeout', default=200, type=float,
                         help='Give up on averaging step after this many seconds')
     parser.add_argument('--no-reuse-grad-buffers', action='store_true',
                         help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
