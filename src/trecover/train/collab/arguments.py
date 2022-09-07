@@ -195,7 +195,7 @@ def get_wandb_parser(add_help: bool = True) -> ArgumentParser:
     parser.add_argument('--delay-in-steps', default=1, type=int,
                         help='The delay in displaying (reporting to W&B) the current status '
                              'of metrics (visualization) in such a number of steps')
-    parser.add_argument('--delay-in-seconds', default=300, type=float,
+    parser.add_argument('--delay-in-seconds', default=1300, type=float,
                         help='The delay in displaying (reporting to W&B) the current status '
                              'of metrics (visualization) for a maximum of such time in seconds')
 
