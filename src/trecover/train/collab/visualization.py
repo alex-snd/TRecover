@@ -129,8 +129,10 @@ class CollaborativeVisualizer(object):
         if len(self.steps_performance) == 0:
             return False
         if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
+            log.project_console.print('Yield because of delay_in_seconds', justify='center')
             return True
         if len(self.steps_performance) > self.delay_in_steps:
+            log.project_console.print(f'Yield because of delay_in_steps, {self.delay_in_steps}', justify='center')
             return True
 
         return False
