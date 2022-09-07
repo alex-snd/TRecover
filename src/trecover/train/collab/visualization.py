@@ -119,6 +119,10 @@ class CollaborativeVisualizer(object):
 
     @property
     def _need_to_sync(self) -> bool:
+        if self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1:
+            log.project_console.print('self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1')
+        if not self.aux_opt.allow_state_sharing:
+            log.project_console.print('not self.aux_opt.allow_state_sharing')
         return (
                 self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1
                 or not self.aux_opt.allow_state_sharing
