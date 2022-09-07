@@ -8,11 +8,11 @@ workflows:
       - apt update && apt upgrade -y && apt install curl git -y
       - curl -s ipinfo.io > ipinfo.json
       - export ANNOUNCE_IP=`python3 -c "import json; ipinfo = json.load(open('ipinfo.json')); print(ipinfo['ip'])"`
-      - git clone https://github.com/alex-snd/TRecover.git
+      - git clone -b big https://github.com/alex-snd/TRecover.git
       - pip install "TRecover/.[collab]"
       - trecover init
       - trecover download data
-      - trecover collab train --host-maddrs /ip4/0.0.0.0/tcp/$PORT_0 --announce-maddrs /ip4/$ANNOUNCE_IP/tcp/$PORT_0 --batch-size 24 --bandwidth 500 --backup-every-step 1 --sync-args
+      - trecover collab train --initial-peers /ip4/95.216.202.215/tcp/34234/p2p/QmS2mYPX8Q78RDQzxMf17phVYPashi4C6ixVbA3jrj9yxt --experiment-prefix big --host-maddrs /ip4/0.0.0.0/tcp/$PORT_0 --announce-maddrs /ip4/$ANNOUNCE_IP/tcp/$PORT_0 --batch-size 16 --bandwidth 500 --backup-every-step 1
     artifacts:
       - experiments
     resources:
