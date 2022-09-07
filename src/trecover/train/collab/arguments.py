@@ -45,9 +45,9 @@ def get_model_parser(add_help: bool = True) -> ArgumentParser:
 
     parser.add_argument('--token-size', default=len(var.ALPHABET), type=int,
                         help='Token size')
-    parser.add_argument('--pe-max-len', default=256, type=int,
+    parser.add_argument('--pe-max-len', default=512, type=int,
                         help='Positional encoding max length')
-    parser.add_argument('--n-layers', default=5, type=int,
+    parser.add_argument('--n-layers', default=8, type=int,
                         help='Number of encoder and decoder blocks')
     parser.add_argument('--d-model', default=768, type=int,
                         help='Model dimension - number of expected features in the encoder (decoder) input')
@@ -72,9 +72,9 @@ def get_data_parser(add_help: bool = True) -> ArgumentParser:
                         help='Path to visualization files folder')
     parser.add_argument('--test-files', default=exp_var.VIS_DATA, type=str,
                         help='Path to test files folder')
-    parser.add_argument('--min-threshold', default=256, type=int,
+    parser.add_argument('--min-threshold', default=512, type=int,
                         help='Min sentence lengths')
-    parser.add_argument('--max-threshold', default=256, type=int,
+    parser.add_argument('--max-threshold', default=512, type=int,
                         help='Max sentence lengths')
     parser.add_argument('--train-dataset-size', default=1_000_000, type=int,
                         help='Train dataset size')
@@ -134,13 +134,13 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Batch size that fits into accelerator memory')
     parser.add_argument('--accumulate-batches', default=1, type=int,
                         help='Number of steps for gradients accumulation')
-    parser.add_argument('--target-batch-size', default=2048, type=int,
+    parser.add_argument('--target-batch-size', default=4096, type=int,
                         help='Perform optimizer step after all peers collectively accumulate this many samples')
-    parser.add_argument('--matchmaking-time', default=50, type=float,
+    parser.add_argument('--matchmaking-time', default=60, type=float,
                         help='Averaging group will wait for stragglers for at most this many seconds')
     parser.add_argument('--allreduce-timeout', default=80, type=float,
                         help='Give up on a given all-reduce round after this many seconds')
-    parser.add_argument('--averaging-timeout', default=200, type=float,
+    parser.add_argument('--averaging-timeout', default=600, type=float,
                         help='Give up on averaging step after this many seconds')
     parser.add_argument('--no-reuse-grad-buffers', action='store_true',
                         help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
