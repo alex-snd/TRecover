@@ -14,7 +14,7 @@ workflows:
       - trecover download data
       - trecover collab train --initial-peers /ip4/95.216.202.215/tcp/34234/p2p/QmS2mYPX8Q78RDQzxMf17phVYPashi4C6ixVbA3jrj9yxt --experiment-prefix big --host-maddrs /ip4/0.0.0.0/tcp/$PORT_0 --announce-maddrs /ip4/$ANNOUNCE_IP/tcp/$PORT_0 --batch-size 4 --bandwidth 500 --backup-every-step 1
     artifacts:
-      - experiments
+      - path: experiments
     resources:
       shm_size: '16GB'
       gpu:
