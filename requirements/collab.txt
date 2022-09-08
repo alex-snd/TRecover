@@ -1,5 +1,5 @@
 pytorch-lightning==1.6.4
-hivemind==1.0.1
+hivemind==0.9.9.post1
 protobuf==3.20.1
 bitsandbytes @ git+https://github.com/alex-snd/bitsandbytes.git@f3f8720eaa3a84da9d42d547c3eb88e67458e0ce
 speedtest-cli==2.1.3
