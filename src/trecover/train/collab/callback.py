@@ -50,11 +50,6 @@ class CollabCheckpoint(Callback):
             self.collab_opt = trainer.strategy.collab_opt
             self.last_reported_step = self.collab_opt.local_epoch
 
-        import time
-        log.project_console.print('Sleep in callback on_train_batch_end', style='yellow', justify='center')
-        time.sleep(10)
-        log.project_console.print('End Sleep in callback on_train_batch_end', style='yellow', justify='center')
-
         if not self.collab_opt.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
             self.collab_opt.recover_state()
