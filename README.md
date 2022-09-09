@@ -10,10 +10,10 @@
     <img src="https://img.shields.io/badge/demo-%F0%9F%A4%97%20Hugging%20Face-blue?color=%2348466D" alt="Hugging Face demo"/>
   </a>
   <a href="https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-alone.ipynb">
-    <img src="https://badgen.net/badge/icon/Open in Colab/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/google_colab.svg?raw=true&label" alt="Open In Colab"/>
+    <img src="https://badgen.net/badge/icon/Open%20in%20Colab/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/google_colab.svg?raw=true&label" alt="Open In Colab"/>
   </a>
   <a href="https://wandb.ai/snd/TRecover?workspace=user-snd">
-    <img src="https://badgen.net/badge/icon/Visualize in W&B/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/wandb_dots_logo.svg?raw=true&label" alt="Visualize in W&B"/>
+    <img src="https://badgen.net/badge/icon/Visualize%20in%20W&B/48466D?icon=https://github.com/alex-snd/TRecover/blob/assets/wandb_dots_logo.svg?raw=true&label" alt="Visualize in W&B"/>
   </a>
   <a href="https://alex-snd.github.io/TRecover">
     <img src="https://img.shields.io/badge/docs-MkDocs-blue.svg?color=%2348466D" alt="MkDocs link"/>
