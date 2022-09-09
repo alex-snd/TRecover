@@ -126,6 +126,8 @@ class CollaborativeStrategy(Strategy):
 
             self._init_collab_opt()
 
+        log.project_console.print('Strategy training_step', style='yellow', justify='center')
+
         with self.precision_plugin.train_step_context():
             return self.model.training_step(batch, *args, **kwargs)
 
