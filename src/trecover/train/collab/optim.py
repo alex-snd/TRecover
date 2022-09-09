@@ -546,7 +546,7 @@ class CollaborativeOptimizer(object):
         return self.wrapped_model.collate.max_noise
 
     @atomic
-    def recover_state(self) -> None:
+    def recover_state(self, sync: bool = False) -> None:
         log.project_console.print('Trying to recover collab state...', style='yellow', justify='right')
 
         if not self.state_path.exists():
@@ -555,9 +555,12 @@ class CollaborativeOptimizer(object):
         t_start = time.monotonic()
         self.allow_state_sharing = False
 
-        while not self.params_are_finite:
+        if sync:  # TODO
+            while not self.params_are_finite:
+                self.restore_from_backup()
+                self.sync_state()
+        else:
             self.restore_from_backup()
-            self.sync_state()
 
         self.allow_state_sharing = self.original_allow_state_sharing
 
