@@ -119,10 +119,6 @@ class CollaborativeVisualizer(object):
 
     @property
     def _need_to_sync(self) -> bool:
-        if self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1:
-            log.project_console.print('self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1')
-        if not self.aux_opt.allow_state_sharing:
-            log.project_console.print('not self.aux_opt.allow_state_sharing')
         return (
                 self.aux_opt.local_epoch < self.aux_opt.global_epoch - 1
                 or not self.aux_opt.allow_state_sharing
@@ -133,10 +129,8 @@ class CollaborativeVisualizer(object):
         if len(self.steps_performance) == 0:
             return False
         if time.monotonic() - self.last_yield_time > self.delay_in_seconds:
-            log.project_console.print('Yield because of delay_in_seconds', justify='center')
             return True
         if len(self.steps_performance) > self.delay_in_steps:
-            log.project_console.print(f'Yield because of delay_in_steps, {self.delay_in_steps}', justify='center')
             return True
 
         return False
