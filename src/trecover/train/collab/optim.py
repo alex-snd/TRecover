@@ -555,8 +555,9 @@ class CollaborativeOptimizer(object):
     @property
     @atomic
     def outrun(self) -> bool:
+        import rich
         if status_dict := self._fetch_status_dict():
-            log.project_console.print(status_dict)
+            log.project_console.print(dict(status_dict))
             for status in status_dict.values():
                 status = OptimizerStatus.parse_obj(status.value)
                 if self.opt.local_epoch > status.step + self.args.outrun_gap:
