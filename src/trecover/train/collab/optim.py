@@ -697,6 +697,8 @@ class CollaborativeOptimizer(object):
     def _fetch_status_dict(self) -> Optional[Dict]:
         if ((status_entry := self.dht_manager.dht.get(self.status_key, latest=True))
                 and (status_dict := status_entry.value)):
+            log.project_console.print(self.dht_manager.local_public_key, style='red')
+            log.project_console.print(status_dict.keys(), style='red')
             status_dict.pop(self.dht_manager.local_public_key)
 
             return status_dict
