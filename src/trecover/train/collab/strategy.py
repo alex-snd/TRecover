@@ -4,7 +4,6 @@ from typing import Tuple, Dict, Any, Callable, Optional, Union
 import hivemind
 import pytorch_lightning as pl
 import torch
-from hivemind import DHT
 from pytorch_lightning.strategies.strategy import Strategy, TBroadcast
 from pytorch_lightning.utilities.data import extract_batch_size
 from pytorch_lightning.utilities.enums import PrecisionType
@@ -20,7 +19,7 @@ from trecover.train.collab.optim import CollaborativeOptimizer
 class CollaborativeStrategy(Strategy):
     def __init__(self,
                  args: Namespace,
-                 dht: Optional[hivemind.DHT] = None,
+                 dht_manager: Optional[DHTManager] = None,
                  use_init_peers: Optional[bool] = None,
                  verbose: Optional[bool] = None,
                  tune: bool = False):
@@ -31,7 +30,7 @@ class CollaborativeStrategy(Strategy):
         self.use_init_peers = not tune if use_init_peers is None else use_init_peers
         self.verbose = not tune if verbose is None else verbose
         self.tune = tune
-        self._dht: Optional[hivemind.DHT] = dht
+        self._dht_manager: Optional[DHTManager] = dht_manager
         self._collab_opt: Optional[CollaborativeOptimizer] = None
         self._optimizer_zero_grad_original: Optional[Callable] = None
         self._collab_opt_initialized = False
@@ -58,11 +57,11 @@ class CollaborativeStrategy(Strategy):
         return True
 
     @property
-    def dht(self) -> DHT:
-        if self._dht is None:
-            self._dht = DHTManager(self.args, self.use_init_peers).dht
+    def dht_manager(self) -> DHTManager:
+        if self._dht_manager is None:
+            self._dht_manager = DHTManager(self.args, self.use_init_peers)
 
-        return self._dht
+        return self._dht_manager
 
     @property
     def collab_opt(self) -> CollaborativeOptimizer:
@@ -85,7 +84,7 @@ class CollaborativeStrategy(Strategy):
         else:
             batch_size_per_step = self.args.batch_size * self.args.accumulate_batches
 
-        self._collab_opt = CollaborativeOptimizer(dht=self.dht,
+        self._collab_opt = CollaborativeOptimizer(dht_manager=self.dht_manager,
                                                   wrapped_model=self.lightning_module,
                                                   args=self.args,
                                                   batch_size_per_step=batch_size_per_step,
@@ -170,11 +169,11 @@ class CollaborativeStrategy(Strategy):
             self._collab_opt = None
             self._collab_opt_initialized = False
 
-        if self._dht:
+        if self._dht_manager:
             if self.verbose:
                 log.project_console.print('Shutting down hivemind DHT', style='yellow')
 
-            self._dht.shutdown()
-            self._dht = None
+            self._dht_manager.dht.shutdown()
+            self._dht_manager = None
 
         super().teardown()

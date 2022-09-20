@@ -142,6 +142,12 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Give up on a given all-reduce round after this many seconds')
     parser.add_argument('--averaging-timeout', default=200, type=float,
                         help='Give up on averaging step after this many seconds')
+    parser.add_argument('--status-expiration', default=5, type=float,
+                        help='Optimizer status will be removed if not updated in this many seconds')
+    parser.add_argument('--outrun-gap', default=2, type=int,
+                        help='The number of optimizer steps that considered to be ahead of the other peers')
+    parser.add_argument('--wait-period', default=7, type=float,
+                        help='Period (in seconds) to check for lagging peers.')
     parser.add_argument('--no-reuse-grad-buffers', action='store_true',
                         help="Whether or not to use model's grad buffers for accumulating gradients across local steps."
                              " This optimization reduces GPU memory consumption but may result in incorrect gradients "

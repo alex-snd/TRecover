@@ -31,7 +31,7 @@ def monitor(cli_args: Optional[List[str]] = None) -> None:
     visualizer = None
 
     if args.upload_state or args.assist_in_averaging or args.visualize_every_step:
-        aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
+        aux_opt = AuxiliaryOptimizer(dht_manager=dht_manager,
                                      wrapped_model=BaseModelWrapper(args),
                                      args=args,
                                      common_status=common_status)
@@ -87,7 +87,7 @@ def train(cli_args: Optional[List[str]] = None) -> None:
 
     dht_manager = DHTManager(args)
     wrapped_model = PeerModelWrapper(args)
-    collab_strategy = CollaborativeStrategy(args=args, dht=dht_manager.dht)
+    collab_strategy = CollaborativeStrategy(args=args, dht_manager=dht_manager)
 
     collab_checkpoint = CollabCheckpoint(dht_manager=dht_manager,
                                          statistics_expiration=args.statistics_expiration,
@@ -145,7 +145,7 @@ def auxiliary(cli_args: Optional[List[str]] = None) -> None:
         return
 
     os.system('ulimit -n 16384')
-    aux_optimizer = AuxiliaryOptimizer(dht=DHTManager(args).dht, wrapped_model=BaseModelWrapper(args), args=args)
+    aux_optimizer = AuxiliaryOptimizer(dht_manager=DHTManager(args), wrapped_model=BaseModelWrapper(args), args=args)
 
     aux_optimizer.start_assistant(attach=True)
 
@@ -157,8 +157,7 @@ def visualize(cli_args: Optional[List[str]] = None) -> None:
         log.project_console.print('Client-mode peers cannot assist in averaging', style='red')
         return
 
-    dht_manager = DHTManager(args)
-    aux_opt = AuxiliaryOptimizer(dht=dht_manager.dht,
+    aux_opt = AuxiliaryOptimizer(dht_manager=DHTManager(args),
                                  wrapped_model=BaseModelWrapper(args),
                                  args=args)
 

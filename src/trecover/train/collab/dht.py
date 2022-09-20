@@ -7,7 +7,7 @@ from hivemind.dht.schema import BytesWithPublicKey, SchemaValidator
 from hivemind.dht.validation import RecordValidatorBase
 from hivemind.utils.networking import choose_ip_address
 from multiaddr import Multiaddr
-from pydantic import BaseModel, StrictFloat, confloat, conint
+from pydantic import BaseModel, StrictFloat, StrictBool, confloat, conint
 
 from trecover.config.log import project_console
 
@@ -24,6 +24,11 @@ class LocalMetrics(BaseModel):
     step: conint(ge=0, strict=True)
 
 
+class OptimizerStatus(BaseModel):
+    step: conint(ge=0, strict=True)
+    client: StrictBool
+
+
 class GlobalMetrics(BaseModel):
     loss: StrictFloat
     accuracy: confloat(ge=0, le=1)
@@ -35,8 +40,12 @@ class GlobalMetrics(BaseModel):
     alive_peers: conint(ge=0, strict=True)
 
 
-class MetricSchema(BaseModel):
+class MetricsSchema(BaseModel):
     metrics: Dict[BytesWithPublicKey, LocalMetrics]
+
+
+class StatusSchema(BaseModel):
+    metrics: Dict[BytesWithPublicKey, OptimizerStatus]
 
 
 class DHTManager:
@@ -87,6 +96,10 @@ class DHTManager:
 
     def make_validators(self) -> Tuple[List[RecordValidatorBase], bytes]:
         signature_validator = RSASignatureValidator()
-        validators = [SchemaValidator(MetricSchema, prefix=self.args.experiment_prefix), signature_validator]
+        validators = [
+            SchemaValidator(MetricsSchema, prefix=self.args.experiment_prefix),
+            SchemaValidator(StatusSchema, prefix=self.args.experiment_prefix),
+            signature_validator
+        ]
 
         return validators, signature_validator.local_public_key
