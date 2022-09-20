@@ -64,6 +64,13 @@ class CollabCheckpoint(Callback):
             self.collab_opt.wait_lagging_peers()
 
         if (current_step := self.collab_opt.local_epoch) != self.last_reported_step and current_step != 0:
+
+            # TODO
+            log.project_console.print(
+                f'OUTRUN: local_epoch={self.collab_opt.local_epoch}', style='red', justify='center')
+            if status_dict := self.collab_opt._fetch_status_dict():
+                log.project_console.print(dict(status_dict))
+
             self._report_metrics(step=current_step)
 
             if not self._should_skip_saving_checkpoint(trainer):
