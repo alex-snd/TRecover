@@ -60,7 +60,7 @@ class CollabCheckpoint(Callback):
         self.accuracy += outputs['accuracy']
         self.collab_opt.report_status()
 
-        if self.collab_opt.client_mode and self.collab_opt.outrun:
+        if self.collab_opt.client_mode and self.collab_opt.outrun():
             self.collab_opt.wait_lagging_peers()
 
         if (current_step := self.collab_opt.local_epoch) != self.last_reported_step and current_step != 0:

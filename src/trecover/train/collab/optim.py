@@ -552,15 +552,15 @@ class CollaborativeOptimizer(object):
     def max_noise(self) -> int:
         return self.wrapped_model.collate.max_noise
 
-    @property
     @atomic
-    def outrun(self) -> bool:
-        # log.project_console.print(f'OUTRUN: local_epoch={self.opt.local_epoch}', style='red', justify='center')  # TODO
+    def outrun(self, gap: Optional[int] = None) -> bool:
+        if gap is None:
+            gap = self.args.outrun_gap
+
         if status_dict := self._fetch_status_dict():
-            # log.project_console.print(dict(status_dict))  # TODO
             for status in status_dict.values():
                 status = OptimizerStatus.parse_obj(status.value)
-                if self.opt.local_epoch > status.step + self.args.outrun_gap:
+                if self.opt.local_epoch > status.step + gap:
                     return True
 
         return False
@@ -568,7 +568,7 @@ class CollaborativeOptimizer(object):
     @atomic
     def wait_lagging_peers(self) -> None:
         log.project_console.print('Waiting for lagging peers...', style='magenta', justify='right')
-        while self.outrun:
+        while self.outrun(gap=0):
             time.sleep(self.args.wait_period)
         log.project_console.print('Stop waiting for lagging peers', style='magenta', justify='right')
 
