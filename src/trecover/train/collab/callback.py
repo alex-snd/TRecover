@@ -52,7 +52,7 @@ class CollabCheckpoint(Callback):
 
         if not self.collab_opt.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
-            self.collab_opt.recover_state(sync=False)
+            self.collab_opt.recover_state(sync=True)
             return
 
         self.steps += 1

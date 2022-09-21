@@ -826,7 +826,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         if self.allow_state_sharing and not self.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
             self.status.update('State recovering...', style='yellow')
-            self.recover_state(sync=False)
+            self.recover_state(sync=True)
             self.status.update('Assist in averaging...', style=self._status_style)
 
     def _backup_step(self) -> None:
