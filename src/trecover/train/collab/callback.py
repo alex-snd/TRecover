@@ -145,7 +145,8 @@ class CollabCheckpoint(Callback):
 
     def _should_skip_saving_checkpoint(self, trainer: pl.Trainer) -> bool:
         return (
-                trainer.fast_dev_run  # disable checkpointing with fast_dev_run
+                not self.collab_opt.params_are_finite
+                or trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
                 or trainer.sanity_checking  # don't save anything during sanity check
                 or self.last_reported_step == self.collab_opt.local_epoch  # already saved the last step
