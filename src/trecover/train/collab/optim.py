@@ -582,6 +582,7 @@ class CollaborativeOptimizer(object):
             return_future=True
         )
 
+    @torch.no_grad()
     @atomic
     def recover_state(self, sync: bool = False) -> None:
         log.project_console.print('Trying to recover collab state...', style='yellow', justify='right')
