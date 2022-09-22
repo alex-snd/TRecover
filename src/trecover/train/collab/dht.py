@@ -57,7 +57,7 @@ class DHTManager:
         self.validators, self.local_public_key = self.make_validators()
         self._ip = None
 
-        if not args.client_mode and self.ip and args.announce_maddrs is None:
+        if not args.client_mode and args.announce_maddrs is None and self.ip:
             args.announce_maddrs = [
                 re.sub(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', self.ip, host_maddr)
                 for host_maddr in args.host_maddrs if 'tcp/0' not in host_maddr and 'udp/0' not in host_maddr
