@@ -144,7 +144,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Give up on averaging step after this many seconds')
     parser.add_argument('--average-state-every', default=3, type=float,  # TODO
                         help='Average collab state with peers every this many epochs')
-    parser.add_argument('--status-expiration', default=10, type=float,
+    parser.add_argument('--status-expiration', default=15, type=float,
                         help='Optimizer status will be removed if not updated in this many seconds')
     parser.add_argument('--outrun-gap', default=1, type=int,
                         help='The number of optimizer steps that considered to be ahead of the other peers')
