@@ -773,6 +773,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()
+                    self.report_status()
 
                     if self._is_time_to_backup:
                         self._backup_step()
