@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from trecover.model import TRecover
 from trecover.train.data import WikiDataset, BaseCollate, StandardCollate, CollabCollate
-from trecover.train.loss import CustomCrossEntropyLoss
+from trecover.train.loss import CustomPenaltyLoss
 from trecover.utils.train import transfer
 from trecover.utils.transform import tensor_to_columns, tensor_to_target
 
@@ -23,7 +23,7 @@ class BaseModelWrapper(pl.LightningModule):
         self.args = args
         self.model = TRecover(args.token_size, args.pe_max_len, args.n_layers, args.d_model,
                               args.n_heads, args.d_ff, args.dropout)
-        self.criterion = CustomCrossEntropyLoss(ignore_index=-1)
+        self.criterion = CustomPenaltyLoss(coefficient=0.7, ignore_index=-1)
         self.batch_size = args.batch_size
         self._collate = None
 
