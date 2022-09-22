@@ -142,7 +142,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Give up on a given all-reduce round after this many seconds')
     parser.add_argument('--averaging-timeout', default=200, type=float,
                         help='Give up on averaging step after this many seconds')
-    parser.add_argument('--status-expiration', default=5, type=float,
+    parser.add_argument('--status-expiration', default=10, type=float,
                         help='Optimizer status will be removed if not updated in this many seconds')
     parser.add_argument('--outrun-gap', default=2, type=int,
                         help='The number of optimizer steps that considered to be ahead of the other peers')
