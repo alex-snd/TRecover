@@ -1,3 +1,4 @@
+import re
 from argparse import Namespace
 from typing import List, Dict, Tuple, Optional
 
@@ -8,6 +9,7 @@ from hivemind.dht.validation import RecordValidatorBase
 from hivemind.utils.networking import choose_ip_address
 from multiaddr import Multiaddr
 from pydantic import BaseModel, StrictFloat, StrictBool, confloat, conint
+from speedtest import Speedtest, SpeedtestException
 
 from trecover.config.log import project_console
 
@@ -53,6 +55,12 @@ class DHTManager:
         self.args = args
         self.use_init_peers = use_init_peers
         self.validators, self.local_public_key = self.make_validators()
+        self._ip = None
+
+        if not args.client_mode and self.ip and args.announce_maddrs is None:
+            args.announce_maddrs = [
+                re.sub(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', self.ip, host_maddr) for host_maddr in args.host_maddrs
+            ]
 
         if args.initial_peers and self.use_init_peers:
             project_console.print(f'Found {len(args.initial_peers)} initial peers: ', style='bright_blue')
@@ -93,6 +101,16 @@ class DHTManager:
             return None
 
         return ' '.join(peers) if as_str else peers or None
+
+    @property
+    def ip(self) -> Optional[str]:
+        if self._ip is None:
+            try:
+                self._ip = Speedtest().config['client']['ip']
+            except SpeedtestException:
+                return None
+
+        return self._ip
 
     def make_validators(self) -> Tuple[List[RecordValidatorBase], bytes]:
         signature_validator = RSASignatureValidator()
