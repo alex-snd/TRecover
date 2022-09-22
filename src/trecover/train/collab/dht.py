@@ -11,7 +11,7 @@ from multiaddr import Multiaddr
 from pydantic import BaseModel, StrictFloat, StrictBool, confloat, conint
 from speedtest import Speedtest, SpeedtestException
 
-from trecover.config.log import project_console
+from trecover.config import log
 
 
 class LocalMetrics(BaseModel):
@@ -63,8 +63,8 @@ class DHTManager:
             ]
 
         if args.initial_peers and self.use_init_peers:
-            project_console.print(f'Found {len(args.initial_peers)} initial peers: ', style='bright_blue')
-            project_console.print_json(data=args.initial_peers)
+            log.project_console.print(f'Found {len(args.initial_peers)} initial peers: ', style='bright_blue')
+            log.project_console.print_json(data=args.initial_peers)
 
         self.dht = hivemind.DHT(
             start=True,
@@ -80,14 +80,14 @@ class DHTManager:
         self.visible_maddrs = self.dht.get_visible_maddrs()
 
         if args.client_mode:
-            project_console.print(f'Created client mode peer with peer_id={self.dht.peer_id}', style='bright_blue')
+            log.project_console.print(f'Created client mode peer with peer_id={self.dht.peer_id}', style='bright_blue')
         elif self.use_init_peers:
             if initial_peers := self.get_initial_peers(as_str=True):
-                project_console.print(f'To connect other peers to this one over the Internet, use '
-                                      f'--initial-peers {initial_peers}', style='bright_blue')
+                log.project_console.print(f'To connect other peers to this one over the Internet, use '
+                                          f'--initial-peers {initial_peers}', style='bright_blue')
 
-            project_console.print(f'Full list of visible multi addresses: ', style='bright_blue')
-            project_console.print_json(data=[str(addr) for addr in self.visible_maddrs])
+            log.project_console.print(f'Full list of visible multi addresses: ', style='bright_blue')
+            log.project_console.print_json(data=[str(addr) for addr in self.visible_maddrs])
 
     def get_initial_peers(self, as_str: bool = False) -> Optional[List[str]]:
         if self.args.use_ipfs:
@@ -108,6 +108,7 @@ class DHTManager:
             try:
                 self._ip = Speedtest().config['client']['ip']
             except SpeedtestException:
+                log.project_console.print('Unable to determine ip address to announce', style='red', justify='right')
                 return None
 
         return self._ip
