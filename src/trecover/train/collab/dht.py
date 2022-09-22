@@ -107,7 +107,9 @@ class DHTManager:
     def ip(self) -> Optional[str]:
         if self._ip is None:
             try:
+                log.project_console.print('Trying to determine ip address...', style='salmon1', justify='right')
                 self._ip = Speedtest().config['client']['ip']
+                log.project_console.print(f"Peer's ip address: {self._ip}", style='salmon1', justify='right')
             except SpeedtestException:
                 log.project_console.print('Unable to determine ip address for announcement',
                                           style='red', justify='right')
