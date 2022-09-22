@@ -140,7 +140,7 @@ def get_optimization_parser(add_help: bool = True) -> ArgumentParser:
                         help='Averaging group will wait for stragglers for at most this many seconds')
     parser.add_argument('--allreduce-timeout', default=80, type=float,
                         help='Give up on a given all-reduce round after this many seconds')
-    parser.add_argument('--averaging-timeout', default=300, type=float,
+    parser.add_argument('--averaging-timeout', default=400, type=float,
                         help='Give up on averaging step after this many seconds')
     parser.add_argument('--average-state-every', default=3, type=float,  # TODO
                         help='Average collab state with peers every this many epochs')
