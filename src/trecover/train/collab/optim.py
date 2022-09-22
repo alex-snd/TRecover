@@ -430,6 +430,7 @@ class CollaborativeOptimizer(object):
                                            offload_optimizer=True,
                                            delay_grad_averaging=True,
                                            delay_optimizer_step=True,
+                                           average_state_every=self.args.average_state_every,
                                            target_batch_size=self.args.target_batch_size,
                                            batch_size_per_step=self.batch_size_per_step,
                                            grad_compression=averaging_compression,
