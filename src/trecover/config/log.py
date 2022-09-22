@@ -17,7 +17,7 @@ project_logger = logging.getLogger('trecover')
 project_logger.setLevel(logging.DEBUG)
 project_logger.propagate = False
 
-project_console = Console(force_terminal=True, record=True)
+project_console = Console(record=True)
 console_handler = RichHandler(console=project_console, markup=True, show_time=False, show_level=False, show_path=False)
 console_handler.setLevel(logging.DEBUG)
 project_logger.addHandler(hdlr=console_handler)
