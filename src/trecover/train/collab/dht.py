@@ -108,7 +108,8 @@ class DHTManager:
             try:
                 self._ip = Speedtest().config['client']['ip']
             except SpeedtestException:
-                log.project_console.print('Unable to determine ip address to announce', style='red', justify='right')
+                log.project_console.print('Unable to determine ip address for announcement',
+                                          style='red', justify='right')
                 return None
 
         return self._ip
