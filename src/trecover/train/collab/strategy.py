@@ -95,8 +95,7 @@ class CollaborativeStrategy(Strategy):
 
         if not self.tune:
             self._collab_opt.restore_from_backup()
-            if self.collab_opt.local_epoch < self.collab_opt.global_epoch:
-                self._collab_opt.sync_state()
+            self._collab_opt.sync_state()
             self._collab_opt.backup_state()
 
         if not self.args.no_reuse_grad_buffers:

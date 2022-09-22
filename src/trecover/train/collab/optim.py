@@ -624,13 +624,16 @@ class CollaborativeOptimizer(object):
 
     @torch.no_grad()
     @atomic
-    def sync_state(self) -> None:
-        t_start = time.monotonic()
-        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
-        self.opt.load_state_from_peers()
-        log.project_console.print(
-            f'Sync is finished in {time.monotonic() - t_start:.4} sec', style='salmon1', justify='right'
-        )
+    def sync_state(self, force: bool = False) -> None:
+        if force or self.local_epoch < self.global_epoch:
+            t_start = time.monotonic()
+            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+            self.opt.load_state_from_peers()
+            log.project_console.print(
+                f'Sync is finished in {time.monotonic() - t_start:.4} sec', style='salmon1', justify='right'
+            )
+        else:
+            log.project_console.print('No need to sync state with other peers', style='salmon1', justify='right')
 
     @torch.no_grad()
     @atomic
@@ -745,8 +748,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
             with self.transaction:
                 self.restore_from_backup()
-                if self.local_epoch < self.global_epoch:
-                    self.sync_state()
+                self.sync_state()
 
                 if self.allow_state_sharing or self.args.backup_every_step:
                     self.backup_state()
