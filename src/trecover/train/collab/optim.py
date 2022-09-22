@@ -745,7 +745,8 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
             with self.transaction:
                 self.restore_from_backup()
-                self.sync_state()
+                if self.local_epoch != self.global_epoch:
+                    self.sync_state()
 
                 if self.allow_state_sharing or self.args.backup_every_step:
                     self.backup_state()
