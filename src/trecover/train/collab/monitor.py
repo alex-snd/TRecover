@@ -58,7 +58,8 @@ class CollaborativeMonitor(object):
                 id=wandb_id,
                 dir=wandb_registry,
                 resume='allow',
-                anonymous='never'
+                anonymous='never',
+                settings=wandb.Settings(start_method='thread')
             )
 
         self._peer_status()
