@@ -159,6 +159,7 @@ class CollaborativeMonitor(object):
     def _is_time_to_upload(self) -> bool:
         return (
                 self.wandb_report
+                and self.upload_state
                 and self.aux_opt
                 and self.aux_opt.state_path.exists()
                 and self.aux_opt.state_path.stat().st_mtime > self.last_upload_time
