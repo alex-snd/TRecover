@@ -15,6 +15,7 @@ from speedtest import Speedtest, SpeedtestException
 from torch.optim.lr_scheduler import LambdaLR
 
 from trecover.config import log
+from trecover.train.collab.dht import DHTManager, OptimizerStatus
 from trecover.train.collab.status import CommonStatus, Status
 from trecover.train.collab.wrapper import BaseModelWrapper
 from trecover.train.scheduler import get_linear_scheduler_with_warmup
@@ -342,14 +343,15 @@ class CollaborativeOptimizer(object):
     transaction = _ATOMIC_RLOCK
 
     def __init__(self,
-                 dht: hivemind.DHT,
+                 dht_manager: DHTManager,
                  wrapped_model: BaseModelWrapper,
                  args: Namespace,
                  batch_size_per_step: Optional[int],
                  verbose: bool = True):
-        self.dht = dht
+        self.dht_manager = dht_manager
         self.wrapped_model = wrapped_model
         self.args = args
+        self.status_key = f'{args.experiment_prefix}_optimizer_status'
         self.state_path: Path = args.state_path
         self.batch_size_per_step = batch_size_per_step
         self.verbose = verbose
@@ -420,7 +422,7 @@ class CollaborativeOptimizer(object):
             averaging_compression = SizeAdaptiveCompression(
                 threshold=2 ** 16 + 1, less=Float16Compression(), greater_equal=Uniform8BitQuantization())
 
-            self._opt = hivemind.Optimizer(dht=self.dht,
+            self._opt = hivemind.Optimizer(dht=self.dht_manager.dht,
                                            run_id=self.args.experiment_prefix,
                                            params=self.trainable_params,
                                            optimizer=self.wrapped_optimizer,
@@ -428,6 +430,7 @@ class CollaborativeOptimizer(object):
                                            offload_optimizer=True,
                                            delay_grad_averaging=True,
                                            delay_optimizer_step=True,
+                                           average_state_every=self.args.average_state_every,
                                            target_batch_size=self.args.target_batch_size,
                                            batch_size_per_step=self.batch_size_per_step,
                                            grad_compression=averaging_compression,
@@ -537,6 +540,11 @@ class CollaborativeOptimizer(object):
 
     @property
     @atomic
+    def client_mode(self) -> bool:
+        return self.opt.client_mode
+
+    @property
+    @atomic
     def min_noise(self) -> int:
         return self.wrapped_model.collate.min_noise
 
@@ -545,6 +553,37 @@ class CollaborativeOptimizer(object):
     def max_noise(self) -> int:
         return self.wrapped_model.collate.max_noise
 
+    @atomic
+    def outrun(self, gap: Optional[int] = None) -> bool:
+        if gap is None:
+            gap = self.args.outrun_gap
+
+        if status_dict := self._fetch_status_dict():
+            for status in status_dict.values():
+                status = OptimizerStatus.parse_obj(status.value)
+                if self.opt.local_epoch > status.step + gap:
+                    return True
+
+        return False
+
+    @atomic
+    def wait_lagging_peers(self) -> None:
+        log.project_console.print('Waiting for lagging peers...', style='magenta', justify='right')
+        while self.outrun(gap=0):
+            time.sleep(self.args.wait_period)
+        log.project_console.print('Stop waiting for lagging peers', style='magenta', justify='right')
+
+    @atomic
+    def report_status(self) -> None:
+        self.dht_manager.dht.store(
+            key=self.status_key,
+            subkey=self.dht_manager.local_public_key,
+            value=OptimizerStatus(step=self.local_epoch, client=self.client_mode).dict(),
+            expiration_time=hivemind.get_dht_time() + self.args.status_expiration,
+            return_future=True
+        )
+
+    @torch.no_grad()
     @atomic
     def recover_state(self, sync: bool = False) -> None:
         log.project_console.print('Trying to recover collab state...', style='yellow', justify='right')
@@ -585,13 +624,16 @@ class CollaborativeOptimizer(object):
 
     @torch.no_grad()
     @atomic
-    def sync_state(self) -> None:
-        t_start = time.monotonic()
-        log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
-        self.opt.load_state_from_peers()
-        log.project_console.print(
-            f'Sync is finished in {time.monotonic() - t_start:.4} sec', style='salmon1', justify='right'
-        )
+    def sync_state(self, force: bool = False) -> None:
+        if force or self.local_epoch < self.global_epoch:
+            t_start = time.monotonic()
+            log.project_console.print('Sync state with other peers...', style='salmon1', justify='right')
+            self.opt.load_state_from_peers()
+            log.project_console.print(
+                f'Sync is finished in {time.monotonic() - t_start:.4} sec', style='salmon1', justify='right'
+            )
+        else:
+            log.project_console.print('No need to sync state with other peers', style='salmon1', justify='right')
 
     @torch.no_grad()
     @atomic
@@ -659,14 +701,21 @@ class CollaborativeOptimizer(object):
         else:
             log.project_console.print('Backup does not exist', style='yellow', justify='right')
 
+    def _fetch_status_dict(self) -> Optional[Dict]:
+        if ((status_entry := self.dht_manager.dht.get(self.status_key, latest=True))
+                and (status_dict := status_entry.value)):
+            status_dict.pop(self.dht_manager.local_public_key, None)
+
+            return status_dict
+
 
 class AuxiliaryOptimizer(CollaborativeOptimizer):
     def __init__(self,
-                 dht: hivemind.DHT,
+                 dht_manager: DHTManager,
                  wrapped_model: BaseModelWrapper,
                  args: Namespace,
                  common_status: Optional[CommonStatus] = None):
-        super(AuxiliaryOptimizer, self).__init__(dht=dht,
+        super(AuxiliaryOptimizer, self).__init__(dht_manager=dht_manager,
                                                  wrapped_model=wrapped_model,
                                                  args=args,
                                                  batch_size_per_step=0 if args.as_active_peer else None,
@@ -728,6 +777,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
                     self._update_state_sharing_status_step()
                     self._check_finiteness_step()
                     self.opt.step()
+                    self.report_status()
 
                     if self._is_time_to_backup:
                         self._backup_step()
@@ -782,7 +832,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
         if self.allow_state_sharing and not self.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
             self.status.update('State recovering...', style='yellow')
-            self.recover_state(sync=False)
+            self.recover_state(sync=True)
             self.status.update('Assist in averaging...', style=self._status_style)
 
     def _backup_step(self) -> None:

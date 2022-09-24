@@ -52,12 +52,16 @@ class CollabCheckpoint(Callback):
 
         if not self.collab_opt.params_are_finite:
             log.project_console.print('Model parameters are not finite', style='red', justify='right')
-            self.collab_opt.recover_state(sync=False)
+            self.collab_opt.recover_state(sync=True)
             return
 
         self.steps += 1
         self.loss += outputs['loss'].item()
         self.accuracy += outputs['accuracy']
+        self.collab_opt.report_status()
+
+        if self.collab_opt.client_mode and self.collab_opt.outrun():
+            self.collab_opt.wait_lagging_peers()
 
         if (current_step := self.collab_opt.local_epoch) != self.last_reported_step and current_step != 0:
             self._report_metrics(step=current_step)
@@ -97,14 +101,13 @@ class CollabCheckpoint(Callback):
         self._print_metrics(step=step - 1)
 
         if self.collab_opt.local_epoch == self.collab_opt.global_epoch:
-            if not self.dht_manager.dht.store(
-                    key=f'{self.collab_opt.run_id}_metrics',
-                    subkey=self.dht_manager.local_public_key,
-                    value=statistics.dict(),
-                    expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
-                    return_future=True
-            ):
-                log.project_console.print('Failed to store metrics', style='red', justify='right')
+            self.dht_manager.dht.store(
+                key=f'{self.collab_opt.run_id}_metrics',
+                subkey=self.dht_manager.local_public_key,
+                value=statistics.dict(),
+                expiration_time=hivemind.get_dht_time() + self.statistics_expiration,
+                return_future=True
+            )
 
         self.steps = 0
         self.loss = 0
@@ -135,7 +138,8 @@ class CollabCheckpoint(Callback):
 
     def _should_skip_saving_checkpoint(self, trainer: pl.Trainer) -> bool:
         return (
-                trainer.fast_dev_run  # disable checkpointing with fast_dev_run
+                not self.collab_opt.params_are_finite
+                or trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
                 or trainer.sanity_checking  # don't save anything during sanity check
                 or self.last_reported_step == self.collab_opt.local_epoch  # already saved the last step
