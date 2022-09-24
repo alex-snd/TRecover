@@ -50,9 +50,7 @@ class BaseCollate(object):
             self._max_noise.value = value
 
     def sync(self, verbose: bool = False) -> None:
-        if verbose:
-            log.project_console.print('BaseCollate:Unable to synchronize CollabCollate arguments', style='yellow',
-                                      justify='right')
+        pass
 
     def generate_subsequent_mask(self, size: int) -> Tensor:
         return torch.triu(torch.ones((size, size), dtype=torch.float, device=self.device), diagonal=1) == 1
