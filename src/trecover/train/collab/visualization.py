@@ -68,11 +68,6 @@ class CollaborativeVisualizer(object):
             with self.aux_opt.transaction:
                 if self._is_time_to_visualize:
                     if self._need_to_sync:
-                        log.project_console.print(
-                            'Need to synchronize this peer before visualization',
-                            style='salmon1',
-                            justify='right'
-                        )
                         self.status.update('Need to synchronize this peer before visualization...')
                         self.aux_opt.sync_state()
 
