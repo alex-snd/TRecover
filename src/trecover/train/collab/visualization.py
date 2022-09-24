@@ -58,8 +58,7 @@ class CollaborativeVisualizer(object):
                 id=wandb_id,
                 dir=wandb_registry,
                 resume='allow',
-                anonymous='never',
-                settings=wandb.Settings(start_method='thread')
+                anonymous='never'
             )
 
     def stream(self) -> Generator[Tuple[int, List[Panel]], None, None]:
