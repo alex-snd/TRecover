@@ -69,7 +69,7 @@ class CollaborativeVisualizer(object):
                 if self._is_time_to_visualize:
                     if self._need_to_sync:
                         self.status.update('Need to synchronize this peer before visualization...')
-                        self.aux_opt.sync_state()
+                        self.aux_opt.sync_state(force=True)
 
                     self.aux_opt.sync_collate()
 
