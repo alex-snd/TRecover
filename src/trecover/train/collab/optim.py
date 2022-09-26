@@ -837,11 +837,11 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
 
     def _backup_step(self) -> None:
         try:
-            if self.auxiliary:
+            if self.auxiliary or not self.allow_state_sharing:
                 self.status.update('Since this peer is not active, we need to sync it with others before backup...',
                                    style=self._status_style)
 
-                self.sync_state()
+                self.sync_state(force=True)
 
                 if not self.params_are_finite:
                     log.project_console.print(

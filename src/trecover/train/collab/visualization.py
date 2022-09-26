@@ -74,7 +74,7 @@ class CollaborativeVisualizer(object):
                             justify='right'
                         )
                         self.status.update('Need to synchronize this peer before visualization...')
-                        self.aux_opt.sync_state()
+                        self.aux_opt.sync_state(force=True)
 
                     self.aux_opt.sync_collate()
 
@@ -195,4 +195,4 @@ class CollaborativeVisualizer(object):
                     for visualization in step_visualizations:
                         wandb_recorder.print(visualization, justify='full')
 
-                wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())}, step=step)
+                wandb.log({'visualization': wandb.Html(wandb_recorder.export_html())})
