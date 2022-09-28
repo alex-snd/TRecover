@@ -597,7 +597,7 @@ class CollaborativeOptimizer(object):
         if sync:
             while not self.params_are_finite:
                 self.restore_from_backup()
-                self.sync_state(force=True)
+                self.sync_state()
         else:
             self.restore_from_backup()
 
