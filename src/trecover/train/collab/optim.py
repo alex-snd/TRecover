@@ -818,6 +818,7 @@ class AuxiliaryOptimizer(CollaborativeOptimizer):
             self.status.update('Need to synchronize this auxiliary peer to enable state sharing',
                                style=self._status_style)
 
+            self.restore_from_backup()
             self.sync_state()
             self.allow_state_sharing = True
 
