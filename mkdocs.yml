@@ -133,7 +133,7 @@ nav:
       - Train: getting_started/train.md
   - Objective:
       - Task definition: objective/task_definition.md
-      - Related work: objective/related_work.md
+      - Summary: objective/summary.md
   - Demo: demo.md
   - Reference:
       - CLI:
