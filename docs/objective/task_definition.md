@@ -26,7 +26,7 @@ For a clearer explanation of the problem, let me introduce the following concept
 ## Simple case
 
 <p align="justify">
-    Let's consider a simple example in which only two letters \(\gamma', \, \gamma'' \in A\) can be used as 
+    Let's consider a simple example in which only two letters \(\gamma', \, \gamma'' \in A\) can be used as a 
     <a href="https://en.wikipedia.org/wiki/Keystream">keystream</a> 
     \(\bar{\gamma}=(\gamma_1, \, \gamma_2, \, … \, , \, \gamma_n)\) values, that is, the 
     <a href="https://en.wikipedia.org/wiki/Ciphertext">ciphertext</a> 
