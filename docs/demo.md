@@ -56,21 +56,29 @@ hide:
 
     === "💻 Local"
         <font size="+1">
-            To run the service locally, 
-            <a href="https://alex-snd.github.io/TRecover/getting_started/installation/">trecover</a> and 
-            <a href="https://docs.docker.com/engine/install/">docker</a> must be installed.<br><br>
-            First you need to download pretrained model:
+            To run the service locally, <a href="https://docs.docker.com/engine/install/">docker</a> must be installed.
         </font>
 
-        ```shell
-        trecover download artifacts
-        ```
-        
-        <font size="+1">Then you can run the service:</font>
-        
-        ```shell
-        trecover up
-        ```
+        <div class="termy" align="center">
+            ```console
+            // Install the package
+            $ pip install trecover[demo]
+            <b>Successfully installed trecover</b>
+            <br>
+            // Initialize project's environment
+            $ trecover init
+            <b>Project's environment is initialized.</b>
+            <br>
+            // Download pretrained model
+            $ trecover download artifacts
+            <b>Downloaded "model.pt" to ../inference/model.pt</b>
+            <b>Downloaded "config.json" to ../inference/config.json</b>
+            <br>
+            // Start the service
+            $ trecover up
+            <b>🚀 The service is started</b>
+            ```
+        </div>
         
         <font size="+1">
             :grey_question: For more information use ``trecover --help`` or read the 
