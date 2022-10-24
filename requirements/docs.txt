@@ -3,3 +3,4 @@ griffe==0.21.0
 mkdocs-material==8.3.3
 mkdocstrings[python]==0.18.1
 mkdocs-macros-plugin==0.7.0
+mkdocs-glightbox==0.3.0

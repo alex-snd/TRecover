@@ -79,6 +79,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+      options:
+        custom_icons:
+          - docs/static/images
   - admonition # alerts
   - pymdownx.details #  collapsible alerts
   - pymdownx.superfences # nest code and content inside alerts
@@ -94,7 +97,7 @@ markdown_extensions:
       generic: true
   - pymdownx.tasklist:
       custom_checkbox: true
-      clickable_checkbox: true
+      clickable_checkbox: false
   - codehilite
   - pymdownx.highlight:
       use_pygments: true
@@ -120,17 +123,25 @@ plugins:
             show_category_heading: false
             separate_signature: true
             members_order: source
-
       watch:
         - src/trecover
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      auto_caption: false
+      caption_position: bottom
 
 # Page tree
 nav:
   - Home: index.md
-  - Getting started:
-      - Installation: getting_started/installation.md
-      - Data: getting_started/data.md
-      - Train: getting_started/train.md
+  - Join Training:
+      - join/train.md
+      - join/doubts.md
   - Objective:
       - Task definition: objective/task_definition.md
       - Summary: objective/summary.md
