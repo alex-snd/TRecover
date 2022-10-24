@@ -1,6 +1,6 @@
 <h1 align="center">Welcome to <a href="https://alex-snd.github.io/TRecover">Text Recovery Project</a> 👋</h1>
 <p align="center">
-  A python library for decentralized training of a Transformer neural network across the Internet to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.
+  A python library for distributed training of a Transformer neural network across the Internet to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, widely known in the field of cryptography.
 </p>
 
 ![Preview Animation](https://github.com/alex-snd/TRecover/blob/assets/preview_animation.gif?raw=true)
