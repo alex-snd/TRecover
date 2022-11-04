@@ -104,7 +104,7 @@ $ python3 -m venv venv
 // Activate the virtual environment
 $ source venv/bin/activate
 <br>
-// Install the package (also see other installation options below)
+// Install the package
 $ pip install -e .[collab]
 <b>Successfully installed trecover</b>
 <br>
