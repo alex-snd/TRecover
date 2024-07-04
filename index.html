@@ -1,0 +1,973 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="A Python library to train Transformer neural network for keyless reading task." name="description"/>
+<meta content="Alexander Shulga" name="author"/>
+<link href="static/images/favicon.ico" rel="icon"/>
+<meta content="mkdocs-1.3.0, mkdocs-material-8.3.3" name="generator"/>
+<title>🤷 About the project - TRecover</title>
+<link href="assets/stylesheets/main.4a0965b7.min.css" rel="stylesheet"/>
+<link href="assets/stylesheets/palette.cbb835fc.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Georgia:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Georgia";--md-code-font:"Roboto Mono"}</style>
+<link href="assets/_mkdocstrings.css" rel="stylesheet"/>
+<link href="static/css/custom.css" rel="stylesheet"/>
+<link href="static/css/termynal.css" rel="stylesheet"/>
+<script>__md_scope=new URL(".",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+<script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-1NKZB5WK07"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){this.value&&gtag("event","search",{search_term:this.value})}),"undefined"!=typeof location$&&location$.subscribe(function(e){gtag("config","G-1NKZB5WK07",{page_path:e.pathname})})})</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1NKZB5WK07"></script>
+<link href="assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gdesc-inner { font-size: 0.75rem; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            
+                .gscrollbar-fixer { padding-right: 15px; }
+                </style><script src="assets/javascripts/glightbox.min.js"></script></head>
+<body data-md-color-accent="none" data-md-color-primary="none" data-md-color-scheme="" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#task-definition">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="TRecover" class="md-header__button md-logo" data-md-component="logo" href="." title="TRecover">
+<img alt="logo" src="static/images/logo.png"/>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            TRecover
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              🤷 About the project
+            
+          </span>
+</div>
+</div>
+</div>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"></path></svg>
+</button>
+</nav>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/alex-snd/TRecover" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+</div>
+<div class="md-source__repository">
+    alex-snd/TRecover
+  </div>
+</a>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-tabs__inner md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link md-tabs__link--active" href=".">
+      Home
+    </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="src/trecover/app/cli/">
+        Reference
+      </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden="">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="TRecover" class="md-nav__button md-logo" data-md-component="logo" href="." title="TRecover">
+<img alt="logo" src="static/images/logo.png"/>
+</a>
+    TRecover
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/alex-snd/TRecover" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+</div>
+<div class="md-source__repository">
+    alex-snd/TRecover
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href=".">
+        Home
+      </a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#task-definition">
+    💡 Task Definition
+  </a>
+<nav aria-label="💡 Task Definition" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#notations">
+    Notations
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#simple-case">
+    Simple case
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#general-case">
+    General case
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#depth-limitation">
+    Depth limitation
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#demo">
+    👀 Demo
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-collaborative-training">
+    💪 Join Collaborative Training
+  </a>
+<nav aria-label="💪 Join Collaborative Training" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#easy-way">
+    😎 Easy way
+  </a>
+<nav aria-label="😎 Easy way" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-a-client-peer">
+    Join as a client peer
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#preferred-way">
+    😊 Preferred way
+  </a>
+<nav aria-label="😊 Preferred way" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#installation">
+    Installation
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-a-trainer-peer">
+    Join as a trainer peer
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-an-auxiliary-peer">
+    Join as an auxiliary peer
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_2" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-label="Reference" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_2_1" id="__nav_2_1" type="checkbox"/>
+<div class="md-nav__link md-nav__link--index">
+<a href="src/trecover/app/cli/">CLI</a>
+<label for="__nav_2_1">
+<span class="md-nav__icon md-icon"></span>
+</label>
+</div>
+<nav aria-label="CLI" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_1">
+<span class="md-nav__icon md-icon"></span>
+          CLI
+        </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/download/">
+        Download
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/collab/">
+        Collab
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/mlflow/">
+        Mlflow
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/dashboard/">
+        Dashboard
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/api/">
+        API
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/worker/">
+        Worker
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/broker/">
+        Broker
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/cli/backend/">
+        Backend
+      </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_2_2" id="__nav_2_2" type="checkbox"/>
+<div class="md-nav__link md-nav__link--index">
+<a href="src/trecover/app/api/">API</a>
+<label for="__nav_2_2">
+<span class="md-nav__icon md-icon"></span>
+</label>
+</div>
+<nav aria-label="API" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_2">
+<span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/api/schemas/">
+        Schemas
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/app/api/backend/tasks/">
+        Celery Tasks
+      </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_2_3" id="__nav_2_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3">
+          Utils
+          <span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-label="Utils" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_3">
+<span class="md-nav__icon md-icon"></span>
+          Utils
+        </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/beam_search/">
+        Beam Search
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/cli/">
+        CLI
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/docker/">
+        Docker
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/inference/">
+        Inference
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/model/">
+        Model
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/train/">
+        Train
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/transform/">
+        Transform
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="src/trecover/utils/visualization/">
+        Visualization
+      </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#task-definition">
+    💡 Task Definition
+  </a>
+<nav aria-label="💡 Task Definition" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#notations">
+    Notations
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#simple-case">
+    Simple case
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#general-case">
+    General case
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#depth-limitation">
+    Depth limitation
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#demo">
+    👀 Demo
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-collaborative-training">
+    💪 Join Collaborative Training
+  </a>
+<nav aria-label="💪 Join Collaborative Training" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#easy-way">
+    😎 Easy way
+  </a>
+<nav aria-label="😎 Easy way" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-a-client-peer">
+    Join as a client peer
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#preferred-way">
+    😊 Preferred way
+  </a>
+<nav aria-label="😊 Preferred way" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#installation">
+    Installation
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-a-trainer-peer">
+    Join as a trainer peer
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#join-as-an-auxiliary-peer">
+    Join as an auxiliary peer
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 align="center"><a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/preview_animation_white_crop.gif?raw=true"><img alt="Preview Animation" src="https://github.com/alex-snd/TRecover/blob/assets/preview_animation_white_crop.gif?raw=true"/></a></h1>
+<div align="center">
+<h2 align="center">👋 Welcome to Text Recovery Project </h2>
+<h3 align="center">A Python library for distributed LLM training over the Internet to solve the <a href="https://en.wikipedia.org/wiki/Running_key_cipher">Running Key Cipher</a>, a well-known Cryptography problem</h3>
+</div>
+<p align="justify">
+<font size="4">
+    Nowadays, Big Tech corporations are training state of the art multi-billion parameter models on thousands of GPUs, 
+    spending millions of dollars on it, which the ordinary researcher cannot afford.
+    <br/><br/>
+    What I want to show with this project is that even for a non-profit research task, you can find like-minded 
+    volunteers and train a fairly large machine learning model.
+    <br/><br/>
+    The main goal of the project is to study the possibility of using LLM to “read” meaningful text 
+    in columns that can be compiled for a Running Key Cipher.
+    The second goal is to train a fairly large model in a distributed manner with the help of volunteers 
+    from around the globe.
+</font>
+</p>
+<p><br/><br/></p>
+<h2 id="task-definition"><div align="center">💡 Task Definition</div></h2>
+<h3 id="notations"><font size="5">Notations</font></h3>
+<p><font size="4">For a clearer explanation of the problem, let me introduce the following concepts.</font></p>
+<p align="justify">
+<font size="4">
+    Let \(A\) be the alphabet of the English language, the letters of which are arranged in natural order. The 
+   \(\alpha + \gamma = \beta \,\) notation will be understood as the modular addition of letter numbers from  
+   \(\{ 0, \, 1, \, 2, \, ... \, , \, |A|- 1 \}\) modulo \(|A|\), where \(\alpha, \, \gamma, \, \beta \in A\). 
+    That is, when encrypting <a href="https://en.wikipedia.org/wiki/Plaintext">plaintext</a>, we will identify letters 
+    with their numbers in the alphabet \(A\).
+</font>
+</p>
+<h3 id="simple-case"><font size="5">Simple case</font></h3>
+<p align="justify">
+<font size="4">
+    Let's consider a simple example in which only two letters \(\gamma', \, \gamma'' \in A\) can be used as a 
+    <a href="https://en.wikipedia.org/wiki/Keystream">keystream</a> 
+    \(\bar{\gamma}=(\gamma_1, \, \gamma_2, \, … \, , \, \gamma_n)\) values, that is, the 
+    <a href="https://en.wikipedia.org/wiki/Ciphertext">ciphertext</a> 
+    \(\bar{\beta}=(\beta_1, \, \beta_2, \, … \, , \, \beta_n)\) formation equation has the form 
+    \(\alpha_i + \gamma_i = \beta_i, \; i \in \{1, \, 2, \, … \, , \, n\}\), where \(n\) is the length of the message. 
+    In this case, recovering the plaintext \(\bar{\alpha}=(\alpha_1, \, \alpha_2, \, ... \, , \, \alpha_n)\) by ciphertext
+    \(\bar{\beta}\) isn't difficult. Indeed, we will make up the columns 
+    \(\bar{\nabla}=(\bar{\nabla_1}, \, \bar{\nabla_2}, \, ... \, , \, \bar{\nabla_n})\) according to the known ciphertext 
+    \(\bar{\beta}\), where \(\bar{\nabla_i}=(\beta_i-\gamma', \, \beta_i-\gamma''), \; i \in \{1, \, 2, \, ... \, , \, n\}\):
+</font>
+</p>
+<div align="center">
+<table align="center">
+<tr align="center"><td><font size="4">\(\beta_1-\gamma'\)</font></td><td><font size="4">\(\beta_2-\gamma'\)</font></td><td><font size="4">\(\beta_3-\gamma'\)</font></td><td><font size="4">\(...\)</font></td><td><font size="4">\(\beta_n-\gamma'\)</font></td></tr>
+<tr align="center"><td><font size="4">\(\beta_1-\gamma''\)</font></td><td><font size="4">\(\beta_2-\gamma''\)</font></td><td><font size="4">\(\beta_3-\gamma''\)</font></td><td><font size="4">\(...\)</font></td><td><font size="4">\(\beta_n-\gamma''\)</font></td></tr>
+</table>
+</div>
+<p align="justify">
+<font size="4">
+    Obviously, each column  \(\bar{\nabla_i} \) consists of unique values and contains one letter  \(\alpha_i \) of 
+    the plaintext \(\bar{\alpha} \). You can try to recover this text using its 
+    <a href="https://en.wikipedia.org/wiki/Redundancy_(linguistics)">redundancy</a>. 
+    Without going into details, here is one example for “reading” in columns:
+</font>
+</p>
+<div align="center">
+<table align="center">
+<tr align="center"><td><font size="4">\(c\)</font></td><td><font size="4">\(d\)</font></td><td><font size="4">\(l\)</font></td><td><font size="4">\(p\)</font></td><td><font size="4">\(q\)</font></td><td><font size="4">\(o\)</font></td><td><font size="4">\(k\)</font></td><td><font size="4">\(u\)</font></td><td><font size="4">\(a\)</font></td><td><font size="4">\(x\)</font></td><td><font size="4">\(h\)</font></td><td><font size="4">\(g\)</font></td></tr>
+<tr align="center"><td><font size="4">\(y\)</font></td><td><font size="4">\(r\)</font></td><td><font size="4">\(y\)</font></td><td><font size="4">\(w\)</font></td><td><font size="4">\(t\)</font></td><td><font size="4">\(j\)</font></td><td><font size="4">\(g\)</font></td><td><font size="4">\(r\)</font></td><td><font size="4">\(b\)</font></td><td><font size="4">\(p\)</font></td><td><font size="4">\(m\)</font></td><td><font size="4">\(y\)</font></td></tr>
+</table>
+</div>
+<details class="help">
+<summary>Have you read the word ...</summary>
+<p><h4 align="center"><strong><em>cryptography</em></strong> 😉?</h4></p>
+</details>
+<div class="admonition info">
+<p><div align="justify">
+<font size="4">If four letters were used for encryption, then the column depth would be equal to four. And if 
+all the letters were used, then the depth of the columns would be equal to <span class="arithmatex">\(|A|\)</span> and in this case you can read any
+text in them.</font>
+</div></p>
+</div>
+<h3 id="general-case"><font size="5">General case</font></h3>
+<p align="justify">
+<font size="4">
+    Let's take a closer look at an example in which all letters from the alphabet \(A\) can be used as keystream 
+    \(\bar{\gamma}\) values. In this case, there are also certain approaches for making up the columns \(\bar{\nabla}\).
+    One of them is that in each column 
+    \(\bar{\nabla_i}=(\alpha_i^{(1)}, \, \alpha_i^{(2)}, \, ... \, , \, \alpha_i^{(|A|)})\) the order of possible 
+    plaintext letters \(\alpha_i^{(j)} \in A\) is determined by decreasing (more precisely, not increasing) their 
+    probabilities:
+    \[P(\alpha_i^{(j)} \, | \, \beta_i) = \frac{P(\alpha_i^{(j)}, \,  \beta_i)}{P(\beta_i)}=\frac{\phi(\alpha_i^{(j)}) 
+    \cdot \varphi(\beta_i-\alpha_i^{(j)})}{\sum_{\alpha’ \in A} \phi(\alpha’) \cdot \varphi(\beta_i-\alpha’)},\]
+    \[i \in \{1, \, 2, \, ... \, , \, n\}, \; j \in \{1, \, 2, \, ... \, , \, |A|\},\]
+    with a known fixed letter \(\beta_i \in A\) of the ciphertext \(\bar{\beta}\). Here \(\phi(\alpha), \; \alpha \in A\) is
+    probability distribution of letters of meaningful texts for the alphabet \(A, \; \varphi (\gamma), \, \gamma \in A\) 
+    is probability distribution of the \(\bar{\gamma}\) keystream values.
+</font>
+</p>
+<div class="admonition info">
+<p><div align="justify">
+<font size="4">Also, for a more accurate ordering of letters in columns, their probabilities are calculated
+based on n-grams.</font>
+</div></p>
+</div>
+<h3 id="depth-limitation"><font size="5">Depth limitation</font></h3>
+<p align="justify">
+<font size="4">
+    The depth \(\bar{h}=(h_1, \, h_2, \, ... \, , \, h_n)\)  of the columns 
+    \(\bar{\nabla}=(\bar{\nabla_1}, \, \bar{\nabla_2}, \, ... \, , \, \bar{\nabla_n})\) can be limited using a 
+    pre-selected value of the \(\epsilon \in (0, 1]\) parameter:
+    \[\begin{aligned} h_i=max\{\ell \in \{ 1, \, 2, \, ... \, , \, |A|\} : \sum_{j=1}^{\ell} 
+    P(\alpha_i^{(j)} \, | \, \beta_i) \le \epsilon \}. \end{aligned}\]
+</font>
+</p>
+<p align="justify">
+<font size="4">
+    The critical depth of the columns \(\hat{h}\), at which it is possible to unambiguously determine the original 
+    plaintext, is calculated by the formula:
+    \[\begin{aligned} \hat{h}=|A|^{1 - H(A)}, \end{aligned}\]
+    where \(H(A)\) is <a href="https://en.wikipedia.org/wiki/Entropy_(information_theory)">entropy</a> of a language 
+    with the \(A\) alphabet. 
+</font>
+</p>
+<div class="admonition info">
+<p><div align="justify">
+<font size="4">For English, <span class="arithmatex">\(\hat{h} \approx 13\)</span>.</font>
+</div></p>
+</div>
+<p><br/><br/></p>
+<h2 id="demo"><div align="center">👀 Demo</div></h2>
+<div class="admonition important">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"><input id="__tabbed_1_2" name="__tabbed_1" type="radio"><input id="__tabbed_1_3" name="__tabbed_1" type="radio"><input id="__tabbed_1_4" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="__tabbed_1_1">🤗 Hugging Face</label><label for="__tabbed_1_2">🐳 Docker Compose</label><label for="__tabbed_1_3">💻 Local</label><label for="__tabbed_1_4"><span class="twemoji"><svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M323.5 51.25c-20.7 19.25-39.5 39.5-56.1 59.85C240.1 73.62 206.2 35.5 168 0 69.75 91.12 0 210 0 281.6 0 408.9 100.2 512 224 512s224-103.1 224-230.4c0-53.2-52-163.1-124.5-230.35zM304.1 391.9C282.4 407 255.8 416 226.9 416 154.77 416 96 368.27 96 290.8c0-38.63 24.24-72.64 72.74-130.8 7 8 98.88 125.4 98.88 125.4l58.63-66.88c4.125 6.75 7.867 13.52 11.24 19.9C364.9 290.6 353.4 357.4 304.1 391.9z"></path></svg></span> Torch Hub</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><font size="+1">You can play with a pre-trained model hosted on <a href="https://huggingface.co/spaces/alex-snd/TRecover">HuggingFace Sphere</a>.</font></p>
+<p><a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/dashboard_demo.gif?raw=true"><img src="https://github.com/alex-snd/TRecover/blob/assets/dashboard_demo.gif?raw=true"/></a></p>
+</div>
+<div class="tabbed-block">
+<p><font size="+1">Use the command below to run the service via Docker Compose.</font></p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio"><input id="__tabbed_2_2" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="__tabbed_2_1">Pull from Docker Hub</label><label for="__tabbed_2_2">Build from source</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio"><input id="__tabbed_3_2" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="__tabbed_3_1">standalone</label><label for="__tabbed_3_2">scallable</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker/compose/all-in-one-service.yml<span class="w"> </span>up
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker/compose/scalable-service.yml<span class="w"> </span>up
+</code></pre></div>
+</div>
+</div>
+</input></input></div>
+</div>
+<div class="tabbed-block">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio"/><input id="__tabbed_4_2" name="__tabbed_4" type="radio"/><div class="tabbed-labels"><label for="__tabbed_4_1">standalone</label><label for="__tabbed_4_2">scallable</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>trecover<span class="w"> </span>download<span class="w"> </span>artifacts
+<a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker/compose/all-in-one-service-duild.yml<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a>trecover<span class="w"> </span>download<span class="w"> </span>artifacts
+<a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker/compose/scalable-service-build.yml<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</input></input></div>
+<p><br/>
+<font size="+1">
+    You can also try the <a href="https://labs.play-with-docker.com/"> Play with Docker</a> service mentioned in
+    the official 
+    <a href="https://docs.docker.com/get-started/04_sharing_app/#run-the-image-on-a-new-instance">
+        docker documentation
+    </a>. 
+</font></p>
+</div>
+<div class="tabbed-block">
+<p><font size="+1">
+    To run the service locally, <a href="https://docs.docker.com/engine/install/">docker</a> must be installed.
+</font></p>
+<p><div align="center" class="termy">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="go">// Install the package</span>
+<a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>trecover<span class="o">[</span>demo<span class="o">]</span>
+<a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="go">&lt;b&gt;Successfully installed trecover&lt;/b&gt;</span>
+<a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="go">// Initialize project's environment</span>
+<a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a><span class="gp">$ </span>trecover<span class="w"> </span>init
+<a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="go">&lt;b&gt;Project's environment is initialized.&lt;/b&gt;</span>
+<a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a><span class="go">// Download pretrained model</span>
+<a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="gp">$ </span>trecover<span class="w"> </span>download<span class="w"> </span>artifacts
+<a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a><span class="go">&lt;b&gt;Downloaded "model.pt" to ../inference/model.pt&lt;/b&gt;</span>
+<a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a><span class="go">&lt;b&gt;Downloaded "config.json" to ../inference/config.json&lt;/b&gt;</span>
+<a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-4-14" id="__codelineno-4-14" name="__codelineno-4-14"></a><span class="go">// Start the service</span>
+<a href="#__codelineno-4-15" id="__codelineno-4-15" name="__codelineno-4-15"></a><span class="gp">$ </span>trecover<span class="w"> </span>up
+<a href="#__codelineno-4-16" id="__codelineno-4-16" name="__codelineno-4-16"></a><span class="go">&lt;b&gt;🚀 The service is started&lt;/b&gt;</span>
+</code></pre></div>
+</div></p>
+<p><font size="+1">
+<img alt="❔" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/2754.svg" title=":grey_question:"/> For more information use <code>trecover --help</code> or read the 
+    <a href="https://alex-snd.github.io/TRecover/src/trecover/app/cli/">reference</a>.
+</font></p>
+</div>
+<div class="tabbed-block">
+<p><font size="+1">You can load the pre-trained model directly from the python script.</font></p>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a href="#__codelineno-5-2" id="__codelineno-5-2" name="__codelineno-5-2"></a>
+<a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">'cuda'</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">'cpu'</span><span class="p">)</span>
+<a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'alex-snd/TRecover'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'trecover'</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">'latest'</span><span class="p">)</span>
+</code></pre></div>
+<p><font size="+1">To print a help message and available pre-trained models run this:</font></p>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a>
+<a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">help</span><span class="p">(</span><span class="s1">'alex-snd/TRecover'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'trecover'</span><span class="p">,</span> <span class="n">force_reload</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</code></pre></div>
+</div>
+</div>
+</input></input></input></input></div>
+</div>
+<details class="question">
+<summary>Do you want to challenge yourself ? 😉</summary>
+<p><font size="+1">Try to read meaningful text in these columns:</font>
+<div align="center">
+<font size="+1">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a>a   d   f   o   n   p   p   u   w   f   o   u   d   d   y   k   d   d   a   u   n   t   r   y   x   g   n   k   w   n   t   n   t   t   a   t   t   u   r   e   t   g   t   x   r   u   e   w   r   t   h   n   x   o   d   v   t   i   t   i   o   t   p   f   m   o   b   k   j   z   t   g   d   s   c   y   w   w   w   t   d   x   h   k   n   d   p   d   a   r   d   x   d   n   g   t   h   p   u   r   w   u   n   d   d   n   z
+<a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a>    s   p   f   g       g   e   a   r           n   g   r   h   e   h   o       w   l       z   w   c   g   l   i   f       o   p   c   e   w   w   r   e           y       g   c   b       l       y       w   d       n       h   k   k           w   s   r   o   e       u   s   i   n   e   g       i   s   h   n   p   h   n   v   u   v   b   o   b   u           z   a   u   x   p   p       i   i       b   i       w   k   k   s
+<a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a>        z   e   k       h       q   l           x   r   t   o   u   y           z   e       p   a   e   e   q   q   p           g   f       a                       u       o       h       e               p   s       h       i   c   u           n       i               i   q       y       r       o       i   e       l   p   p   r   e   f   m   e   s           r   c       k   u   i       e   m       h           g   e   w   
+<a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a>        i       h       l           q           r       s       a   s           h           e   b       r   t       r           q   h       s                       t               q                       e   c       e       r   q   o                   o               q           e       q       e       c           o   r   y   l   a   p   e   a   m           q   e       u   l                       r           p   i   h   
+<a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a>        q       b                   j           m       c       s   c           y               c           o       s                                               s                                       a           l                                                   t                   s                               s   r   m   j           j   o           s           a   c                       j               o   q   
+<a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a>                o                   o                   o       m                                                   o                                               m                                       q           m                                                   b                                                   c   t                                   m           i   m                                           s
+</code></pre></div>
+</font>
+</div></p>
+<p><font size="+1">And see what the pre-trained model will recover:</font><br/></p>
+<p><font size="+1">1. Copy these columns</font>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a>a ds fpziq ofe ngkhbo p pghl ue waq frlqjo o u dnxrm dgr yrtsco kho deuasm dhysc ao u nwzhy tle r yzpe xwabc gce nger klqto wiq nfprso t no tpgq tcfh ae twas tw ur re e t gyutsm t xgo rc ubhq e wle r ty h nwpeaq xdsc o dnhelm v thir ikcq tkuo i o twn ps frio mo oe b kuiqtb jsq zi tnye ge dgrqs s cioe ys whic wne wp thlo dnprsc xvpyrt hurlm kveaj nbfp dome pbeaj dusmo a r dzrqsm xace du nxkuai gpulcm tpi h pie uim r wbhrj ui n dwgp dkeio nkwhqs zs
+</code></pre></div></p>
+<p><font size="+1">2. Open the dashboard hosted <a href="https://huggingface.co/spaces/alex-snd/TRecover">here</a></font>
+<br/> <br/>
+<font size="+1">3. In the sidebar, select "Noisy columns" as an input type</font>
+<br> <br/>
+<font size="+1">4. Paste the copied columns into the input field</font>
+<br> <br/>
+<font size="+1">5. Click the "Recover" button 🎉</font></br></br></p>
+</details>
+<p><br/><br/></p>
+<h2 id="join-collaborative-training"><div align="center">💪 Join Collaborative Training</div></h2>
+<h3 id="easy-way">😎 Easy way</h3>
+<p align="justify">
+<font size="4">
+You can help to train the model by running a pre-prepared Jupyter Notebook on Kaggle or Google Colab.
+To join the collaborative training, all you have to do is to keep the Notebook running for 
+<a><b>at least 15 minutes</b></a> (but more is better) and you're free to close it 
+after that and join again in another time.
+</font>
+</p>
+<h4 id="join-as-a-client-peer"><font size="4">Join as a client peer</font></h4>
+<p align="justify">
+<font size="4">
+Kaggle gives you around 40 hrs per week of GPU time, so it's preferred over Colab, unless you have
+Colab Pro or Colab Pro+.
+</font>
+</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio"/><input id="__tabbed_5_2" name="__tabbed_5" type="radio"/><div class="tabbed-labels"><label for="__tabbed_5_1"><font size="5"><span class="twemoji"><?xml version="1.0" ?><!DOCTYPE svg  PUBLIC '-//W3C//DTD SVG 1.1//EN'  'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>
+
+<svg height="512px" style="enable-background:new 0 0 512 512;" version="1.1" viewbox="0 0 512 512" width="512px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="_x31_89-kaggle"><g><path d="M385.708,476.478L254.742,313.713l125.578-121.534c2.334-2.426,1.526-9.433-4.761-9.433h-62.16    c-3.145,0-6.288,1.618-9.433,4.761L185.128,307.604V32.738c0-4.491-2.247-6.737-6.738-6.737h-46.618    c-4.492,0-6.737,2.246-6.737,6.737v446.433c0,4.491,2.246,6.738,6.737,6.738h46.618c4.491,0,6.738-2.247,6.738-6.738v-97.91    l27.666-26.317l99.257,126.294c2.695,3.145,5.839,4.762,9.432,4.762h60.095c3.143,0,4.939-0.899,5.389-2.696L385.708,476.478z" style="fill:#20BEFF;"></path></g></g><g id="Layer_1"></g></svg></span></font><font size="4">Kaggle (recommended)</font></label><label for="__tabbed_5_2"><font size="5"><span class="twemoji"><svg focusable="false" height="602" preserveaspectratio="xMidYMid meet" style="pointer-events: none; display: block; width: 100%; height: 100%;" viewbox="0 0 24 24" width="977" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g>
+<path d="M4.54,9.46,2.19,7.1a6.93,6.93,0,0,0,0,9.79l2.36-2.36A3.59,3.59,0,0,1,4.54,9.46Z" fill="#E8710A" style=""></path>
+<path d="M2.19,7.1,4.54,9.46a3.59,3.59,0,0,1,5.08,0l1.71-2.93h0l-.1-.08h0A6.93,6.93,0,0,0,2.19,7.1Z" fill="#F9AB00" style=""></path>
+<path d="M11.34,17.46h0L9.62,14.54a3.59,3.59,0,0,1-5.08,0L2.19,16.9a6.93,6.93,0,0,0,9,.65l.11-.09" fill="#F9AB00" style=""></path>
+<path d="M12,7.1a6.93,6.93,0,0,0,0,9.79l2.36-2.36a3.59,3.59,0,1,1,5.08-5.08L21.81,7.1A6.93,6.93,0,0,0,12,7.1Z" fill="#F9AB00" style=""></path>
+<path d="M21.81,7.1,19.46,9.46a3.59,3.59,0,0,1-5.08,5.08L12,16.9A6.93,6.93,0,0,0,21.81,7.1Z" fill="#E8710A" style=""></path>
+</g></svg></span></font><font size="4">Google Colab</font></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/kaggle_animation.gif?raw=true"><img src="https://github.com/alex-snd/TRecover/blob/assets/kaggle_animation.gif?raw=true"/></a></p>
+<details class="success">
+<summary>Please make sure to select GPU accelerator and switch the "Internet" ON, in kernel settings</summary>
+<p><font size="3">If you are a new Kaggle member, you will need to verify your phone number in the 
+settings pane to turn on the Internet.
+</font>
+<a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/kaggle_ensure.png?raw=true"><img src="https://github.com/alex-snd/TRecover/blob/assets/kaggle_ensure.png?raw=true"/></a></p>
+</details>
+<div class="admonition danger">
+<p class="admonition-title">Warning: please don't use multiple Kaggle accounts at once</p>
+</div>
+<p><div align="center"><a class="md-button" href="https://www.kaggle.com/code/alexsnd/collaborativetrain">Open in Kaggle</a></div></p>
+</div>
+<div class="tabbed-block">
+<p><a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/collab_animation.gif?raw=true"><img src="https://github.com/alex-snd/TRecover/blob/assets/collab_animation.gif?raw=true"/></a></p>
+<details class="success">
+<summary>Please make sure to select GPU accelerator</summary>
+<p><a class="glightbox" data-desc-position="bottom" data-description="" data-height="auto" data-title="" data-width="100%" href="https://github.com/alex-snd/TRecover/blob/assets/colab_ensure.png?raw=true"><img src="https://github.com/alex-snd/TRecover/blob/assets/colab_ensure.png?raw=true"/></a></p>
+</details>
+<div class="admonition danger">
+<p class="admonition-title">Warning: please don't use multiple Google Colab accounts at once</p>
+</div>
+<p><div align="center"><a class="md-button" href="https://colab.research.google.com/github/alex-snd/TRecover/blob/master/notebooks/TRecover-train-colab.ipynb">Open in Colab</a></div></p>
+</div>
+</div>
+</div>
+<h3 id="preferred-way">😊 Preferred way</h3>
+<p align="justify">
+<font size="4">
+You can join the collaborative training as an auxiliary peer if you have a Linux computer with 15+ GB RAM, at least 
+100 Mbit/s download&amp;upload speed and one port opened to incoming connections. Also, if in addition to all this there is also 
+a GPU, then you can join as a trainer peer.
+</font>
+</p>
+<details class="question">
+<summary>Why is this way more preferable?</summary>
+<p><p align="justify">
+<font size="3">
+There are two broad types of peers: normal (full) peers and client mode peers. Client peers rely on others to 
+average their gradients, but otherwise behave the same as full peers. This way of participation is preferable as 
+the auxiliary and trainer peers not only don’t rely on others, but also can serve as relays and help others with 
+all-reduce.  <br/>
+</font>
+</p></p>
+</details>
+<h4 id="installation"><font size="4">Installation</font></h4>
+<p align="justify">
+<font size="4">
+This step is common to the trainer and auxiliary peer, and requires Python 3.8 or higher.
+Open a <a href="https://tmuxcheatsheet.com">tmux</a> (or screen) session that will stay up after you logout and follow 
+the instructions below.
+</font>
+</p>
+<div align="center" class="termy">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="go">// Clone the repository</span>
+<a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="gp">$ </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/alex-snd/TRecover.git
+<a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="go">Cloning into 'TRecover'...    </span>
+<a href="#__codelineno-9-4" id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="go">remote: Enumerating objects: 4716, done.</span>
+<a href="#__codelineno-9-5" id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="go">remote: Counting objects: 100% (368/368), done.</span>
+<a href="#__codelineno-9-6" id="__codelineno-9-6" name="__codelineno-9-6"></a><span class="go">remote: Compressing objects: 100% (133/133), done.</span>
+<a href="#__codelineno-9-7" id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="go">remote: Total 4716 (delta 196), reused 348 (delta 181)</span>
+<a href="#__codelineno-9-8" id="__codelineno-9-8" name="__codelineno-9-8"></a><span class="go">---&gt; 100%</span>
+<a href="#__codelineno-9-9" id="__codelineno-9-9" name="__codelineno-9-9"></a><span class="go">Receiving objects: 100% (4716/4716), 18.69 MiB | 4.36 MiB/s, done.</span>
+<a href="#__codelineno-9-10" id="__codelineno-9-10" name="__codelineno-9-10"></a><span class="go">Resolving deltas: 100% (2908/2908), done.</span>
+<a href="#__codelineno-9-11" id="__codelineno-9-11" name="__codelineno-9-11"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-12" id="__codelineno-9-12" name="__codelineno-9-12"></a><span class="go">// Change the working dir</span>
+<a href="#__codelineno-9-13" id="__codelineno-9-13" name="__codelineno-9-13"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>TRecover
+<a href="#__codelineno-9-14" id="__codelineno-9-14" name="__codelineno-9-14"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-15" id="__codelineno-9-15" name="__codelineno-9-15"></a><span class="go">// Create a virtual environment</span>
+<a href="#__codelineno-9-16" id="__codelineno-9-16" name="__codelineno-9-16"></a><span class="gp">$ </span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<a href="#__codelineno-9-17" id="__codelineno-9-17" name="__codelineno-9-17"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-18" id="__codelineno-9-18" name="__codelineno-9-18"></a><span class="go">// Activate the virtual environment</span>
+<a href="#__codelineno-9-19" id="__codelineno-9-19" name="__codelineno-9-19"></a><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+<a href="#__codelineno-9-20" id="__codelineno-9-20" name="__codelineno-9-20"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-21" id="__codelineno-9-21" name="__codelineno-9-21"></a><span class="go">// Install the package</span>
+<a href="#__codelineno-9-22" id="__codelineno-9-22" name="__codelineno-9-22"></a><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>collab<span class="o">]</span>
+<a href="#__codelineno-9-23" id="__codelineno-9-23" name="__codelineno-9-23"></a><span class="go">&lt;b&gt;Successfully installed trecover&lt;/b&gt;</span>
+<a href="#__codelineno-9-24" id="__codelineno-9-24" name="__codelineno-9-24"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-25" id="__codelineno-9-25" name="__codelineno-9-25"></a><span class="go">// Initialize project's environment</span>
+<a href="#__codelineno-9-26" id="__codelineno-9-26" name="__codelineno-9-26"></a><span class="gp">$ </span>trecover<span class="w"> </span>init
+<a href="#__codelineno-9-27" id="__codelineno-9-27" name="__codelineno-9-27"></a><span class="go">&lt;b&gt;Project's environment is initialized.&lt;/b&gt;</span>
+<a href="#__codelineno-9-28" id="__codelineno-9-28" name="__codelineno-9-28"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-29" id="__codelineno-9-29" name="__codelineno-9-29"></a><span class="go">&lt;br&gt;</span>
+<a href="#__codelineno-9-30" id="__codelineno-9-30" name="__codelineno-9-30"></a><span class="go">// For more information use &lt;font color="#36464E"&gt;trecover --help&lt;/font&gt; or read the &lt;a href="https://alex-snd.github.io/TRecover/src/trecover/app/cli"&gt;reference&lt;/a&gt;.</span>
+</code></pre></div>
+</div>
+<h4 id="join-as-a-trainer-peer"><font size="4">Join as a trainer peer</font></h4>
+<p align="justify">
+<font size="4">
+Trainers are peers with GPUs (or other compute accelerators) that compute gradients, average them via all-reduce and 
+perform optimizer steps. 
+</font>
+</p>
+<div align="center" class="termy">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="go">// Download the train dataset</span>
+<a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="gp">$ </span>trecover<span class="w"> </span>download<span class="w"> </span>data
+<a href="#__codelineno-10-3" id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="go">---&gt; 100%</span>
+<a href="#__codelineno-10-4" id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="go">Downloaded "data.zip" to ../data/data.zip</span>
+<a href="#__codelineno-10-5" id="__codelineno-10-5" name="__codelineno-10-5"></a><span class="go">Archive extracted to ../data</span>
+<a href="#__codelineno-10-6" id="__codelineno-10-6" name="__codelineno-10-6"></a>
+<a href="#__codelineno-10-7" id="__codelineno-10-7" name="__codelineno-10-7"></a><span class="go">// Run the trainer peer</span>
+<a href="#__codelineno-10-8" id="__codelineno-10-8" name="__codelineno-10-8"></a><span class="gp">$ </span>trecover<span class="w"> </span>collab<span class="w"> </span>train<span class="w"> </span>--sync-args<span class="w"> </span>--batch-size<span class="w"> </span><span class="m">1</span><span class="w"> </span>--n-workers<span class="w"> </span><span class="m">2</span><span class="w"> </span>--backup-every-step<span class="w"> </span><span class="m">1</span>
+<a href="#__codelineno-10-9" id="__codelineno-10-9" name="__codelineno-10-9"></a>
+<a href="#__codelineno-10-10" id="__codelineno-10-10" name="__codelineno-10-10"></a><span class="go">// Use &lt;font color="#36464E"&gt;--help&lt;/font&gt; flag for more details</span>
+</code></pre></div>
+</div>
+<h4 id="join-as-an-auxiliary-peer"><font size="4">Join as an auxiliary peer</font></h4>
+<p align="justify">
+<font size="4">
+Auxiliary peers are low-end servers without GPU that will keep track of the latest model checkpoint 
+and assist in gradient averaging. 
+</font>
+</p>
+<div align="center" class="termy">
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-11-1" id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="go">// Run the auxiliary peer</span>
+<a href="#__codelineno-11-2" id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="gp">$ </span>trecover<span class="w"> </span>collab<span class="w"> </span>aux<span class="w"> </span>--sync-args<span class="w"> </span>--verbose<span class="w"> </span>--as-active-peer<span class="w"> </span>--backup-every-step<span class="w"> </span><span class="m">1</span>
+<a href="#__codelineno-11-3" id="__codelineno-11-3" name="__codelineno-11-3"></a>
+<a href="#__codelineno-11-4" id="__codelineno-11-4" name="__codelineno-11-4"></a><span class="go">// Use &lt;font color="#36464E"&gt;--help&lt;/font&gt; flag for more details</span>
+</code></pre></div>
+</div>
+</article>
+<script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+</div>
+</div>
+<a class="md-top md-icon" data-md-component="top" hidden="" href="#">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"></path></svg>
+            Back to top
+          </a>
+</main>
+<footer class="md-footer">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a aria-label="Next: Command Line Interface" class="md-footer__link md-footer__link--next" href="src/trecover/app/cli/" rel="next">
+<div class="md-footer__title">
+<div class="md-ellipsis">
+<span class="md-footer__direction">
+                Next
+              </span>
+              Command Line Interface
+            </div>
+</div>
+<div class="md-footer__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"></path></svg>
+</div>
+</a>
+</nav>
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+<div class="md-copyright__highlight">
+      Copyright © 2022
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+<div class="md-social">
+<a class="md-social__link" href="https://www.linkedin.com/in/alex-snd" rel="noopener" target="_blank" title="www.linkedin.com">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+</a>
+<a class="md-social__link" href="https://t.me/alexsnd" rel="noopener" target="_blank" title="t.me">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M248 8C111.033 8 0 119.033 0 256s111.033 248 248 248 248-111.033 248-248S384.967 8 248 8Zm114.952 168.66c-3.732 39.215-19.881 134.378-28.1 178.3-3.476 18.584-10.322 24.816-16.948 25.425-14.4 1.326-25.338-9.517-39.287-18.661-21.827-14.308-34.158-23.215-55.346-37.177-24.485-16.135-8.612-25 5.342-39.5 3.652-3.793 67.107-61.51 68.335-66.746.153-.655.3-3.1-1.154-4.384s-3.59-.849-5.135-.5q-3.283.746-104.608 69.142-14.845 10.194-26.894 9.934c-8.855-.191-25.888-5.006-38.551-9.123-15.531-5.048-27.875-7.717-26.8-16.291q.84-6.7 18.45-13.7 108.446-47.248 144.628-62.3c68.872-28.647 83.183-33.623 92.511-33.789 2.052-.034 6.639.474 9.61 2.885a10.452 10.452 0 0 1 3.53 6.716 43.765 43.765 0 0 1 .417 9.769Z"></path></svg>
+</a>
+<a class="md-social__link" href="mailto:alexandershulga.sh@gmail.com" rel="noopener" target="_blank" title="">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M207.8 20.73c-93.45 18.32-168.7 93.66-187 187.1-27.64 140.9 68.65 266.2 199.1 285.1 19.01 2.888 36.17-12.26 36.17-31.49v-.663c0-15.74-11.44-28.88-26.84-31.24-84.35-12.98-149.2-86.13-149.2-174.2 0-102.9 88.61-185.5 193.4-175.4 91.54 8.869 158.6 91.25 158.6 183.2v16.16c0 22.09-17.94 40.05-40 40.05s-40.01-17.96-40.01-40.05v-120.1c0-8.847-7.16-16.02-16.01-16.02l-31.98.003c-7.299 0-13.2 4.992-15.12 11.68-24.85-12.15-54.24-16.38-86.06-5.106-38.75 13.73-68.12 48.91-73.72 89.64-9.483 69.01 43.81 128 110.9 128 26.44 0 50.43-9.544 69.59-24.88 24 31.3 65.23 48.69 109.4 37.49C465.2 369.3 496 324.1 495.1 277.2v-20.9c0-149.2-133.9-265.632-287.3-235.57zm31.3 283.57c-26.47 0-48-21.56-48-48.05s21.53-48.05 48-48.05 48 21.56 48 48.05-20.6 48.05-48 48.05z"></path></svg>
+</a>
+<a class="md-social__link" href="https://github.com/alex-snd" rel="noopener" target="_blank" title="github.com">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+</a>
+<a class="md-social__link" href="https://hub.docker.com/u/alexsnd0" rel="noopener" target="_blank" title="hub.docker.com">
+<svg viewbox="0 0 640 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M349.9 236.3h-66.1v-59.4h66.1v59.4zm0-204.3h-66.1v60.7h66.1V32zm78.2 144.8H362v59.4h66.1v-59.4zm-156.3-72.1h-66.1v60.1h66.1v-60.1zm78.1 0h-66.1v60.1h66.1v-60.1zm276.8 100c-14.4-9.7-47.6-13.2-73.1-8.4-3.3-24-16.7-44.9-41.1-63.7l-14-9.3-9.3 14c-18.4 27.8-23.4 73.6-3.7 103.8-8.7 4.7-25.8 11.1-48.4 10.7H2.4c-8.7 50.8 5.8 116.8 44 162.1 37.1 43.9 92.7 66.2 165.4 66.2 157.4 0 273.9-72.5 328.4-204.2 21.4.4 67.6.1 91.3-45.2 1.5-2.5 6.6-13.2 8.5-17.1l-13.3-8.9zm-511.1-27.9h-66v59.4h66.1v-59.4zm78.1 0h-66.1v59.4h66.1v-59.4zm78.1 0h-66.1v59.4h66.1v-59.4zm-78.1-72.1h-66.1v60.1h66.1v-60.1z"></path></svg>
+</a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.expand", "navigation.indexes", "toc.follow", "navigation.instant", "navigation.tracking", "content.tabs.link", "navigation.top"], "search": "assets/javascripts/workers/search.b028fd86.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+<script src="assets/javascripts/bundle.f758a944.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="static/js/termynal.js"></script>
+<script src="static/js/custom.js"></script>
+<script>document$.subscribe(() => {const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom"});})</script></body>
+</html>
