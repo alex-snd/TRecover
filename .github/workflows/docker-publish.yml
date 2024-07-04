@@ -11,7 +11,7 @@ jobs:
   model_weights_dependent:
 
     name: Push ${{ matrix.service }} image to Docker Hub and GitHub Packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
