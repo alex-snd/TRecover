@@ -139,13 +139,6 @@ plugins:
 # Page tree
 nav:
   - Home: index.md
-  - Join Training:
-      - join/train.md
-      - join/doubts.md
-  - Objective:
-      - Task definition: objective/task_definition.md
-      - Summary: objective/summary.md
-  - Demo: demo.md
   - Reference:
       - CLI:
           - src/trecover/app/cli/index.md
